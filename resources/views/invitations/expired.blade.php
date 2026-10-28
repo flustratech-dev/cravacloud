@@ -1,0 +1,2 @@
+@extends('layouts.auth', ['title' => 'Undangan Tidak Berlaku'])
+@section('content')<div class="w-full max-w-md px-6"><div class="bg-white border border-slate-200 rounded-2xl p-8 text-center shadow-sm"><h1 class="text-2xl font-bold">Undangan tidak berlaku</h1><p class="text-sm text-slate-500 mt-3">Undangan ini sudah diterima, dicabut, atau kadaluarsa.</p><a href="{{ route('home') }}" class="inline-block mt-6 rounded-lg bg-black px-4 py-2.5 text-sm font-bold text-white">Kembali ke beranda</a></div></div>@endsection

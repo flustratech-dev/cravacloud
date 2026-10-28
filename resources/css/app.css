@@ -1,0 +1,1123 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@source "../views";
+@source "../../app";
+
+@layer base {
+  html.dark *,
+  html.dark ::after,
+  html.dark ::before,
+  html.dark ::backdrop {
+    border-color: #27272a;
+  }
+}
+
+@theme {
+  --color-primary: #4A6FA5;
+  --color-primary-dark: #3A5B88;
+  --color-primary-light: #6588BC;
+  --color-primary-50: #F4F7FC;
+  --color-primary-100: #E8EFF8;
+  --color-success: #6ABD73;
+  --color-success-dark: #52A05B;
+  --color-success-50: #F2F9F3;
+  --color-dark: #1E293B;
+  --color-dark-800: #0F172A;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  /* Semantic Surface Tokens untuk Dark Mode (Hitam / Neutral Zinc) */
+  --color-surface-light: #ffffff;
+  --color-surface-dark: #09090b;        /* Zinc-950 (Hitam pekat) */
+  --color-surface-card-dark: #18181b;   /* Zinc-900 (Permukaan Card/Panel) */
+  --color-border-dark: #27272a;         /* Zinc-800 (Garis Batas) */
+  --color-text-primary-dark: #fafafa;   /* Zinc-50 (Teks Utama) */
+  --color-text-muted-dark: #a1a1aa;     /* Zinc-400 (Teks Sekunder) */
+}
+
+/* ==========================================================================
+   STANDARISASI DARK MODE GLOBAL — MURNI HITAM / NEUTRAL ZINC (TANPA BIRU)
+   Canvas: #09090b | Card: #18181b | Sub-Card: #111113 / #222226 | Border: #27272a
+   ========================================================================== */
+html.dark {
+  color-scheme: dark;
+  background-color: #09090b;
+  color: #fafafa;
+}
+
+html.dark body {
+  background-color: #09090b;
+  color: #fafafa;
+}
+
+html.dark ::selection {
+  background-color: #3f3f46 !important;
+  color: #fafafa !important;
+}
+
+/* 1. Sembunyikan Ornamen Bokeh Biru & Netralkan Ilustrasi Rocket SVG + Promo Modal di Dark Mode */
+html.dark [class*="from-[#CADFF8]"],
+html.dark [class*="from-[#A5C6EE]"],
+html.dark [class*="from-[#7EA7DB]"],
+html.dark [class*="from-[#9BBFE6]"],
+html.dark .pointer-events-none[class*="from-[#4A6FA5]"] {
+  display: none !important;
+}
+
+html.dark .vh-blob-group path:first-child {
+  fill: #18181b !important;
+  stroke: #27272a;
+  stroke-width: 1.5px;
+}
+
+html.dark .vh-smoke-group path {
+  fill: #27272a !important;
+}
+
+html.dark #vhRocketBodyGrad stop:nth-child(1),
+html.dark #vhRocketBodyGradAuth stop:nth-child(1) {
+  stop-color: #fafafa !important;
+}
+html.dark #vhRocketBodyGrad stop:nth-child(2),
+html.dark #vhRocketBodyGradAuth stop:nth-child(2) {
+  stop-color: #e4e4e7 !important;
+}
+html.dark #vhRocketBodyGrad stop:nth-child(3),
+html.dark #vhRocketBodyGradAuth stop:nth-child(3) {
+  stop-color: #d4d4d8 !important;
+}
+html.dark #vhRocketBodyGrad stop:nth-child(4),
+html.dark #vhRocketBodyGradAuth stop:nth-child(4) {
+  stop-color: #a1a1aa !important;
+}
+
+html.dark #vhFinGradLeft stop:first-child,
+html.dark #vhFinGradRight stop:first-child,
+html.dark #vhFinGradLeftAuth stop:first-child,
+html.dark #vhFinGradRightAuth stop:first-child {
+  stop-color: #52525b !important;
+}
+html.dark #vhFinGradLeft stop:last-child,
+html.dark #vhFinGradRight stop:last-child,
+html.dark #vhFinGradLeftAuth stop:last-child,
+html.dark #vhFinGradRightAuth stop:last-child {
+  stop-color: #27272a !important;
+}
+
+html.dark #vhWindowGlow stop:nth-child(1),
+html.dark #vhWindowGlowAuth stop:nth-child(1) {
+  stop-color: #3f3f46 !important;
+}
+html.dark #vhWindowGlow stop:nth-child(2),
+html.dark #vhWindowGlowAuth stop:nth-child(2) {
+  stop-color: #18181b !important;
+}
+html.dark #vhWindowGlow stop:nth-child(3),
+html.dark #vhWindowGlowAuth stop:nth-child(3) {
+  stop-color: #09090b !important;
+}
+
+html.dark #vhFlameGrad stop:nth-child(1),
+html.dark #vhFlameGradAuth stop:nth-child(1) {
+  stop-color: #fafafa !important;
+}
+html.dark #vhFlameGrad stop:nth-child(2),
+html.dark #vhFlameGradAuth stop:nth-child(2) {
+  stop-color: #d4d4d8 !important;
+}
+html.dark #vhFlameGrad stop:nth-child(3),
+html.dark #vhFlameGradAuth stop:nth-child(3) {
+  stop-color: #71717a !important;
+}
+html.dark #vhFlameGrad stop:nth-child(4),
+html.dark #vhFlameGradAuth stop:nth-child(4) {
+  stop-color: #27272a !important;
+}
+
+html.dark .vh-flame-group ellipse:first-child {
+  filter: drop-shadow(0 0 8px rgba(250, 250, 250, 0.45)) !important;
+}
+
+html.dark .vh-rocket-group path[fill="#233B5E"] {
+  fill: #27272a !important;
+}
+
+html.dark .vh-sparkle circle[fill="#93C5FD"] {
+  fill: #d4d4d8 !important;
+}
+
+html.dark svg[aria-label*="Rocket"] {
+  filter: drop-shadow(0 25px 40px rgba(0, 0, 0, 0.75)) !important;
+}
+
+html.dark div[class*="shadow-[0_20px_50px_rgba(74,111,165"] {
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85) !important;
+  border-color: #3f3f46 !important;
+}
+
+/* 2. Standarisasi Form Controls di Dark Mode (Anti Teks Hitam & Anti Blending dengan Card #18181b) */
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="range"]):not([type="color"]):not(.bg-transparent):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark select:not(.bg-transparent):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark textarea:not(.bg-transparent):not([class*="dark:bg-"]):not(.qris-light-box *) {
+  background-color: #09090b !important;
+  border-color: #3f3f46;
+  color: #fafafa !important;
+}
+
+html.dark input.bg-transparent:not(.qris-light-box *),
+html.dark select.bg-transparent:not(.qris-light-box *),
+html.dark textarea.bg-transparent:not(.qris-light-box *) {
+  background-color: transparent !important;
+  color: #fafafa !important;
+}
+
+html.dark input.focus\:bg-white:focus,
+html.dark select.focus\:bg-white:focus,
+html.dark textarea.focus\:bg-white:focus {
+  background-color: #09090b !important;
+  border-color: #71717a !important;
+  color: #fafafa !important;
+}
+
+html.dark input[type="checkbox"],
+html.dark input[type="radio"] {
+  accent-color: #fafafa;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #71717a;
+}
+
+html.dark input:disabled,
+html.dark select:disabled,
+html.dark textarea:disabled {
+  background-color: #18181b !important;
+  color: #71717a !important;
+  border-color: #27272a !important;
+}
+
+/* 3. Hierarki Permukaan 3-Lapis: Canvas (#09090b) -> Card (#18181b) -> Sub-Card (#111113 / #222226 / #27272a) */
+
+/* Lapis 1: Full-Bleed Section & Page Canvas -> Hitam Pekat (#09090b) */
+html.dark section.bg-white:not([class*="rounded-"]):not([class*="dark:bg-"]),
+html.dark section.bg-slate-50:not([class*="rounded-"]):not([class*="dark:bg-"]),
+html.dark section.bg-gray-50:not([class*="rounded-"]):not([class*="dark:bg-"]),
+html.dark section.bg-neutral-50:not([class*="rounded-"]):not([class*="dark:bg-"]),
+html.dark main.bg-white:not([class*="rounded-"]):not([class*="dark:bg-"]),
+html.dark main.bg-slate-50:not([class*="rounded-"]):not([class*="dark:bg-"]),
+html.dark header.bg-white:not([class*="rounded-"]):not(.sticky):not([class*="dark:bg-"]),
+html.dark header.bg-slate-50:not([class*="rounded-"]):not(.sticky):not([class*="dark:bg-"]),
+html.dark .min-h-screen.bg-white:not([class*="dark:bg-"]),
+html.dark .min-h-screen.bg-slate-50:not([class*="dark:bg-"]),
+html.dark .min-h-screen.bg-gray-50:not([class*="dark:bg-"]),
+html.dark .min-h-screen.bg-neutral-50:not([class*="dark:bg-"]),
+html.dark .min-h-screen.bg-\[\#F8FAFC\]:not([class*="dark:bg-"]),
+html.dark .h-screen.bg-white:not([class*="dark:bg-"]),
+html.dark .h-screen.bg-slate-50:not([class*="dark:bg-"]) {
+  background-color: #09090b;
+}
+
+/* Lapis 2A: Card & Panel Utama (.bg-white) -> Zinc-900 (#18181b) */
+html.dark .bg-white:not(input):not(select):not(textarea):not(section:not([class*="rounded-"])):not(main:not([class*="rounded-"])):not(header:not([class*="rounded-"]):not(.sticky)):not(.min-h-screen):not(.h-screen):not(body):not([class*="dark:bg-"]):not(.qris-light-box):not(.qris-light-box *):not(.light-isolated):not(.light-isolated *) {
+  background-color: #18181b;
+}
+
+html.dark .bg-white\/95:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated),
+html.dark .bg-white\/90:not([class*="dark:bg-"]):not(.qris-light-box *):not(.payment-badge-light):not(.light-isolated),
+html.dark .bg-white\/85:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated),
+html.dark .bg-white\/80:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated),
+html.dark .bg-white\/75:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated),
+html.dark .bg-white\/70:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated),
+html.dark .bg-white\/60:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated),
+html.dark .bg-white\/50:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated) {
+  background-color: rgba(24, 24, 27, 0.92);
+}
+
+/* Tombol & Link Aksi Sekunder Ber-class .bg-white -> Elevated Zinc-800 (#27272a) agar kontras di atas Card (#18181b) */
+html.dark button.bg-white.border-slate-300:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark a.bg-white.border-slate-300:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark button.bg-white[class*="hover:bg-"]:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark a.bg-white[class*="hover:bg-"]:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated *) {
+  background-color: #27272a;
+  border-color: #3f3f46;
+  color: #fafafa;
+}
+
+html.dark button.bg-white.border-slate-300:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated *):hover,
+html.dark a.bg-white.border-slate-300:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated *):hover,
+html.dark button.bg-white[class*="hover:bg-slate-"]:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated *):hover,
+html.dark a.bg-white[class*="hover:bg-slate-"]:not([class*="dark:bg-"]):not(.qris-light-box *):not(.light-isolated *):hover {
+  background-color: #3f3f46 !important;
+  border-color: #52525b !important;
+}
+
+/* Segmented Tab Switcher (.bg-slate-100 track dengan button.bg-white aktif di dalamnya) */
+html.dark .bg-slate-100:has(> button):not([class*="dark:bg-"]) {
+  background-color: #111113 !important;
+  border-color: #27272a !important;
+}
+
+html.dark .bg-slate-100 > button.bg-white:not([class*="dark:bg-"]),
+html.dark .bg-slate-100 > a.bg-white:not([class*="dark:bg-"]) {
+  background-color: #27272a !important;
+  color: #fafafa !important;
+  box-shadow: inset 0 0 0 1px #3f3f46 !important;
+}
+
+/* Lapis 2B: Card / Box / Stepper Mandiri ber-class .bg-slate-50 (memiliki sudut rounded) -> Zinc-900 (#18181b) */
+html.dark [class*="rounded-"].bg-slate-50:not(input):not(select):not(textarea):not(section:not([class*="rounded-"])):not(.min-h-screen):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-slate-50\/50:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-slate-50\/60:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-slate-50\/70:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-slate-50\/80:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-slate-50\/90:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-gray-50:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-neutral-50:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-neutral-50\/70:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *) {
+  background-color: #18181b;
+}
+
+/* Lapis 3A: Sub-Card, Header Tabel (thead), & Footer Bar di dalam Card .bg-white -> Recessed Dark (#111113) */
+html.dark .bg-slate-50:not(input):not(select):not(textarea):not([class*="rounded-"]):not(section):not(main):not(header):not(.min-h-screen):not(.h-screen):not(body):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-slate-50\/50:not(input):not(select):not(textarea):not([class*="rounded-"]):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-slate-50\/60:not(input):not(select):not(textarea):not([class*="rounded-"]):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-slate-50\/70:not(input):not(select):not(textarea):not([class*="rounded-"]):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-slate-50\/80:not(input):not(select):not(textarea):not([class*="rounded-"]):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-slate-50\/90:not(input):not(select):not(textarea):not([class*="rounded-"]):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-gray-50:not(input):not(select):not(textarea):not([class*="rounded-"]):not(section):not(main):not(.min-h-screen):not(body):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-neutral-50:not(input):not(select):not(textarea):not([class*="rounded-"]):not(section):not(main):not(.min-h-screen):not(body):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-neutral-50\/70:not(input):not(select):not(textarea):not([class*="rounded-"]):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-white .bg-slate-50:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-white .bg-slate-50\/50:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-white .bg-slate-50\/60:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-white .bg-slate-50\/70:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-white .bg-slate-50\/80:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-white .bg-slate-50\/90:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-white .bg-gray-50:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-white .bg-neutral-50:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark [class*="rounded-"].bg-white .bg-neutral-50\/70:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box *) {
+  background-color: #111113;
+}
+
+/* Lapis 3B: Sub-Card ber-class .bg-white di dalam Card .bg-slate-50 atau di dalam Card .bg-white -> Elevated Zinc (#222226) */
+html.dark [class*="rounded-"].bg-slate-50 [class*="rounded-"].bg-white:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box):not(.qris-light-box *):not(.light-isolated):not(.light-isolated *),
+html.dark [class*="rounded-"].bg-white [class*="rounded-"].bg-white:not(input):not(select):not(textarea):not([class*="dark:bg-"]):not(.qris-light-box):not(.qris-light-box *):not(.light-isolated):not(.light-isolated *) {
+  background-color: #222226;
+}
+
+/* Elemen Badge / Pill / Tombol Sekunder (.bg-slate-100, .bg-slate-200, .bg-slate-300) */
+html.dark .bg-slate-100:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-slate-100\/60:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-slate-100\/80:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-gray-100:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-neutral-100:not([class*="dark:bg-"]):not(.qris-light-box *) {
+  background-color: #27272a;
+}
+
+html.dark .bg-slate-200:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-slate-200\/60:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-slate-200\/70:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-gray-200:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-neutral-200:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-slate-300:not([class*="dark:bg-"]):not(.qris-light-box *) {
+  background-color: #3f3f46;
+}
+
+/* Toggle Switch (peer-checked:bg-black) di Dark Mode -> Hijau Emerald Aktif agar terlihat jelas */
+html.dark .peer:checked ~ .peer-checked\:bg-black {
+  background-color: #10b981 !important;
+  box-shadow: none !important;
+}
+
+/* 4. Isolasi Pill Putih untuk Logo Pembayaran & Invert Ikon SVG Hitam */
+html.dark .bg-white:has(> img[src*="images/payments/"]),
+html.dark .light-isolated {
+  background-color: #ffffff !important;
+  border-color: #3f3f46 !important;
+}
+
+html.dark img[src*="dokploy.svg"],
+html.dark img[src*="ollama.svg"],
+html.dark img[src*="ghost.svg"],
+html.dark img[src*="prestashop_bagisto.svg"],
+html.dark img[src*="9router.svg"],
+html.dark img[src*="anythingllm.svg"] {
+  filter: invert(1) brightness(1.8);
+}
+
+/* 5. Netralisasi Warna Gelap & Brand Biru (#4A6FA5) Menjadi Hitam / Zinc Murni */
+html.dark .bg-slate-950:not([class*="dark:bg-"]),
+html.dark .bg-\[\#0b1120\],
+html.dark .bg-\[\#0B0F19\],
+html.dark .bg-\[\#0f172a\],
+html.dark .bg-\[\#0F172A\] {
+  background-color: #09090b;
+}
+
+html.dark pre.bg-slate-900 {
+  background-color: #09090b !important;
+  border: 1px solid #27272a;
+}
+
+html.dark .bg-slate-900:not(button):not(a):not(span):not(pre):not([class*="dark:bg-"]),
+html.dark .bg-\[\#1e293b\],
+html.dark .bg-\[\#1E293B\] {
+  background-color: #18181b;
+}
+
+html.dark button.bg-slate-900:not([class*="dark:bg-"]),
+html.dark a.bg-slate-900:not([class*="dark:bg-"]),
+html.dark span.bg-slate-900:not([class*="dark:bg-"]),
+html.dark button.bg-black:not([class*="dark:bg-"]),
+html.dark a.bg-black:not([class*="dark:bg-"]),
+html.dark span.bg-black:not([class*="dark:bg-"]),
+html.dark div.bg-black:not([class*="dark:bg-"]),
+html.dark .bg-\[\#4A6FA5\]:not([class*="dark:bg-"]),
+html.dark .bg-\[\#3D5E8C\]:not([class*="dark:bg-"]) {
+  background-color: #27272a;
+  color: #fafafa;
+  box-shadow: inset 0 0 0 1px #3f3f46;
+}
+
+/* Counter Badge di dalam Tab Aktif (.bg-black span.bg-white) */
+html.dark .bg-black span.bg-white:not(.qris-light-box *),
+html.dark .bg-slate-900 span.bg-white:not(.qris-light-box *) {
+  background-color: #3f3f46 !important;
+  color: #fafafa !important;
+}
+
+/* Elemen .bg-black / .bg-slate-900 (Avatar/Badge Admin) di dalam Bubble .bg-slate-100 */
+html.dark .bg-slate-100 .bg-black:not(:empty),
+html.dark .bg-slate-100 .bg-slate-900:not(:empty) {
+  background-color: #09090b !important;
+  box-shadow: inset 0 0 0 1px #3f3f46 !important;
+}
+
+/* Indikator Dot Kecil, Navbar Active Bar, Progress Bar Fill, & Stepper Line -> Putih Terang (#fafafa) */
+html.dark span.rounded-full.bg-slate-900:empty,
+html.dark span.rounded-full.bg-black:empty,
+html.dark span.h-\[2px\].bg-\[\#4A6FA5\]:empty,
+html.dark div.h-1\.5.bg-black,
+html.dark div.h-2.bg-black,
+html.dark div.h-px.bg-black {
+  background-color: #fafafa !important;
+  box-shadow: none !important;
+}
+
+/* Circular Step Badges (1, 2, 3, 4, 5) ber-class span.rounded-full.bg-black -> Lingkaran Putih Kontras (#fafafa) dengan Angka Hitam (#09090b) */
+html.dark span.rounded-full.bg-black:not(:empty) {
+  background-color: #fafafa !important;
+  color: #09090b !important;
+  box-shadow: none !important;
+}
+
+html.dark button.bg-slate-900:not([class*="dark:bg-"]):hover,
+html.dark a.bg-slate-900:not([class*="dark:bg-"]):hover,
+html.dark button.bg-black:not([class*="dark:bg-"]):hover,
+html.dark a.bg-black:not([class*="dark:bg-"]):hover,
+html.dark a.bg-\[\#4A6FA5\]:not([class*="dark:bg-"]):hover,
+html.dark button.bg-\[\#4A6FA5\]:not([class*="dark:bg-"]):hover,
+html.dark .hover\:bg-\[\#4A6FA5\]:hover:not([class*="dark:hover:bg-"]),
+html.dark .group:hover .group-hover\:bg-\[\#4A6FA5\],
+html.dark .hover\:bg-\[\#3D5E8C\]:hover:not([class*="dark:hover:bg-"]),
+html.dark .hover\:bg-slate-800:hover:not([class*="dark:hover:bg-"]),
+html.dark .hover\:bg-neutral-800:hover:not([class*="dark:hover:bg-"]) {
+  background-color: #3f3f46 !important;
+}
+
+html.dark .bg-slate-800:not([class*="dark:bg-"]),
+html.dark .bg-neutral-900:not([class*="dark:bg-"]) {
+  background-color: #27272a;
+}
+
+/* 6. Selected Cards, Active Borders & Ring States (.border-black, .ring-black, .border-[#4A6FA5]) */
+html.dark .border-black:not([class*="dark:border-"]),
+html.dark .border-slate-900:not([class*="dark:border-"]),
+html.dark .border-\[\#4A6FA5\]:not([class*="dark:border-"]),
+html.dark .focus\:border-black:focus,
+html.dark .focus\:border-slate-900:focus {
+  border-color: #d4d4d8 !important;
+}
+
+html.dark .ring-black:not([class*="dark:ring-"]),
+html.dark .ring-slate-900:not([class*="dark:ring-"]),
+html.dark .ring-\[\#4A6FA5\]:not([class*="dark:ring-"]),
+html.dark .focus\:ring-black:focus,
+html.dark .focus\:ring-\[\#4A6FA5\]:focus {
+  --tw-ring-color: #d4d4d8 !important;
+}
+
+html.dark .ring-black\/10 {
+  --tw-ring-color: rgba(250, 250, 250, 0.15) !important;
+}
+
+html.dark .ring-blue-300\/40 {
+  --tw-ring-color: rgba(161, 161, 170, 0.25) !important;
+}
+
+html.dark .ring-emerald-300\/40 {
+  --tw-ring-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+html.dark .bg-slate-50.border-black,
+html.dark .bg-slate-50\/60.border-black,
+html.dark .bg-slate-50.border-slate-900,
+html.dark .bg-blue-50\/40.border-\[\#4A6FA5\] {
+  background-color: #27272a !important;
+}
+
+/* 7. Standarisasi Border & Garis Pemisah Tabel di Dark Mode (Kompatibel Penuh dengan Tailwind CSS v4) */
+html.dark .border-slate-100:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-slate-200:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-slate-200\/50:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-slate-200\/60:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-slate-200\/70:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-slate-200\/80:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-slate-200\/90:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-gray-100:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-gray-200:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-neutral-100:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-neutral-200:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-slate-800:not([class*="dark:border-"]) {
+  border-color: #27272a;
+}
+
+html.dark .border-slate-300:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-slate-300\/80:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-slate-400:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-gray-300:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-neutral-300:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-slate-700:not([class*="dark:border-"]) {
+  border-color: #3f3f46;
+}
+
+html.dark .hover\:border-slate-300:hover:not([class*="dark:hover:border-"]),
+html.dark .hover\:border-slate-400:hover:not([class*="dark:hover:border-"]),
+html.dark .hover\:border-\[\#4A6FA5\]\/40:hover,
+html.dark .hover\:border-\[\#4A6FA5\]\/50:hover,
+html.dark .hover\:border-\[\#4A6FA5\]\/60:hover {
+  border-color: #52525b;
+}
+
+html.dark .divide-y:not([class*="dark:divide-"]) > *,
+html.dark .divide-x:not([class*="dark:divide-"]) > *,
+html.dark .lg\:divide-x:not([class*="dark:divide-"]) > *,
+html.dark .divide-slate-100:not([class*="dark:divide-"]) > *,
+html.dark .divide-slate-200:not([class*="dark:divide-"]) > *,
+html.dark .divide-gray-100:not([class*="dark:divide-"]) > *,
+html.dark .divide-gray-200:not([class*="dark:divide-"]) > *,
+html.dark .divide-neutral-100:not([class*="dark:divide-"]) > *,
+html.dark .divide-neutral-200:not([class*="dark:divide-"]) > *,
+html.dark .divide-slate-800:not([class*="dark:divide-"]) > * {
+  border-color: #27272a !important;
+}
+
+/* 8. Standarisasi Tipografi di Dark Mode */
+html.dark .text-slate-900:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark .text-slate-950:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark .text-gray-900:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark .text-neutral-900:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark .text-black:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *) {
+  color: #fafafa;
+}
+
+html.dark .text-slate-800:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark .text-gray-800:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark .text-neutral-800:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *) {
+  color: #f4f4f5;
+}
+
+html.dark .text-slate-700:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark .text-gray-700:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark .text-neutral-700:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark .text-\[\#4A6FA5\]:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-\[\#6588BC\]:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .dark\:text-\[\#7da2d8\],
+html.dark .dark\:text-blue-300,
+html.dark .dark\:text-blue-400 {
+  color: #e4e4e7 !important;
+}
+
+html.dark .text-slate-600:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark .text-gray-600:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark .text-neutral-600:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *) {
+  color: #a1a1aa;
+}
+
+html.dark .text-slate-500:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark .text-gray-500:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark .text-neutral-500:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *) {
+  color: #a1a1aa;
+}
+
+html.dark .text-slate-400:not([class*="dark:text-"]):not(.qris-light-box *):not(.light-isolated *),
+html.dark .text-slate-300:not([class*="dark:text-"]):not(th):not(.qris-light-box *):not(.light-isolated *) {
+  color: #71717a;
+}
+
+/* 9. Hover States di Dark Mode */
+html.dark .hover\:bg-slate-50:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *),
+html.dark .hover\:bg-slate-50\/60:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *),
+html.dark .hover\:bg-slate-50\/70:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *),
+html.dark .hover\:bg-slate-50\/80:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *),
+html.dark .hover\:bg-slate-100:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *),
+html.dark .hover\:bg-slate-100\/60:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *),
+html.dark .hover\:bg-gray-50:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *),
+html.dark .hover\:bg-neutral-50:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *),
+html.dark .hover\:bg-neutral-100:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *),
+html.dark .hover\:bg-white:hover:not([class*="dark:hover:bg-"]):not(.light-isolated) {
+  background-color: #27272a;
+}
+
+html.dark .hover\:bg-slate-200:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *),
+html.dark .hover\:bg-slate-200\/70:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *),
+html.dark .hover\:bg-neutral-200:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *),
+html.dark .hover\:bg-blue-100:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *) {
+  background-color: #3f3f46;
+}
+
+html.dark .hover\:bg-emerald-50:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *),
+html.dark .hover\:bg-emerald-100:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *) {
+  background-color: rgba(6, 78, 59, 0.55) !important;
+}
+
+html.dark .hover\:bg-amber-100:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *) {
+  background-color: rgba(120, 53, 15, 0.55) !important;
+}
+
+html.dark .hover\:bg-rose-50:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *),
+html.dark .hover\:bg-red-50:hover:not([class*="dark:hover:bg-"]):not(.qris-light-box *) {
+  background-color: rgba(136, 19, 55, 0.55) !important;
+}
+
+html.dark .hover\:text-slate-900:hover:not([class*="dark:hover:text-"]):not(.qris-light-box *),
+html.dark .hover\:text-slate-800:hover:not([class*="dark:hover:text-"]):not(.qris-light-box *),
+html.dark .hover\:text-slate-700:hover:not([class*="dark:hover:text-"]):not(.qris-light-box *),
+html.dark .hover\:text-black:hover:not([class*="dark:hover:text-"]):not(.qris-light-box *),
+html.dark .hover\:text-blue-800:hover:not(.qris-light-box *),
+html.dark .dark\:hover\:text-blue-200:hover,
+html.dark .hover\:text-\[\#4A6FA5\]:hover:not(.qris-light-box *),
+html.dark .hover\:text-\[\#3D5E8C\]:hover:not(.qris-light-box *),
+html.dark .dark\:hover\:text-\[\#6588BC\]:hover,
+html.dark .group:hover .group-hover\:text-black:not(.qris-light-box *),
+html.dark .group:hover .group-hover\:text-slate-900:not(.qris-light-box *),
+html.dark .group:hover .group-hover\:text-slate-700:not(.qris-light-box *),
+html.dark .group:hover .group-hover\:text-\[\#4A6FA5\]:not(.qris-light-box *) {
+  color: #fafafa !important;
+}
+
+/* 10. Status Badges & Alert Soft Backgrounds di Dark Mode */
+
+/* Emerald / Green (Success / Active) */
+html.dark .bg-emerald-50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-emerald-50\/40:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-emerald-50\/50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-emerald-50\/60:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-emerald-50\/70:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-emerald-50\/80:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-emerald-100:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-emerald-100\/80:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-green-50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-green-100:not([class*="dark:bg-"]):not(.qris-light-box *) {
+  background-color: rgba(6, 78, 59, 0.35);
+}
+html.dark .text-emerald-950:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-emerald-900:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-emerald-800:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-emerald-700:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-emerald-600:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-green-900:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-green-800:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-green-700:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-\[\#6ABD73\]:not([class*="dark:text-"]):not(.qris-light-box *) {
+  color: #6ee7b7;
+}
+html.dark .border-emerald-300:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-emerald-200:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-emerald-200\/80:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-emerald-100:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-green-200:not([class*="dark:border-"]):not(.qris-light-box *) {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+/* Amber / Yellow / Orange (Warning / Pending / Maintenance / Shopee) */
+html.dark .bg-amber-50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-amber-50\/20:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-amber-50\/30:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-amber-50\/40:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-amber-50\/50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-amber-50\/60:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-amber-50\/70:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-amber-50\/80:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-amber-50\/90:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-amber-100:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-amber-100\/80:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-amber-200:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-amber-200\/80:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-yellow-50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-yellow-100:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-orange-50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-orange-50\/40:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-orange-50\/50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-orange-50\/60:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-orange-50\/70:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-orange-50\/80:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-orange-100:not([class*="dark:bg-"]):not(.qris-light-box *) {
+  background-color: rgba(120, 53, 15, 0.35);
+}
+/* Sub-Card Shopee Marketplace (bg-orange-50/60 border-orange-100) dinetralkan sejajar dengan Website Direct */
+html.dark [class*="rounded-"].bg-orange-50\/60:not([class*="dark:bg-"]):not(.qris-light-box *) {
+  background-color: #27272a;
+  border-color: #3f3f46;
+}
+html.dark .text-amber-950:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-amber-900:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-amber-800:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-amber-700:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-amber-600:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-yellow-900:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-yellow-800:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-orange-900:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-orange-800:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-orange-700:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-orange-600:not([class*="dark:text-"]):not(.qris-light-box *) {
+  color: #fcd34d;
+}
+html.dark .border-amber-300:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-amber-300\/80:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-amber-200:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-amber-200\/60:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-amber-200\/80:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-amber-100:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-yellow-200:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-orange-300:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-orange-200:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-orange-100:not([class*="dark:border-"]):not(.qris-light-box *) {
+  border-color: rgba(217, 119, 6, 0.45);
+}
+
+/* Rose / Red (Error / Danger / Terminated) */
+html.dark .bg-rose-50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-rose-50\/20:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-rose-50\/30:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-rose-50\/40:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-rose-50\/50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-rose-50\/60:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-rose-50\/70:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-rose-50\/80:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-rose-100:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-rose-100\/50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-red-50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-red-50\/60:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-red-50\/80:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-red-100:not([class*="dark:bg-"]):not(.qris-light-box *) {
+  background-color: rgba(136, 19, 55, 0.35);
+}
+html.dark .text-rose-950:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-rose-900:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-rose-800:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-rose-700:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-rose-600:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-red-900:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-red-800:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-red-700:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-red-600:not([class*="dark:text-"]):not(.qris-light-box *) {
+  color: #fda4af;
+}
+html.dark .border-rose-300:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-rose-200:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-rose-200\/70:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-rose-100:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-red-300:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-red-200:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-red-100:not([class*="dark:border-"]):not(.qris-light-box *) {
+  border-color: rgba(225, 29, 72, 0.45);
+}
+
+/* Blue / Indigo / Sky / Cyan / Purple -> Dinetralkan ke Zinc di Dark Mode (Sesuai Instruksi: Jangan Biru) */
+html.dark .bg-blue-50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-blue-50\/40:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-blue-50\/50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-blue-50\/60:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-blue-50\/70:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-blue-50\/80:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-blue-100:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-blue-500\/10:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .dark\:bg-blue-950\/40,
+html.dark .bg-indigo-50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-indigo-50\/50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-indigo-100:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-sky-50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-sky-50\/50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-sky-100:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-sky-500\/10:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-cyan-50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-cyan-50\/50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-cyan-100:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-cyan-500\/10:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-purple-50:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-purple-100:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-purple-500\/10:not([class*="dark:bg-"]):not(.qris-light-box *) {
+  background-color: #27272a !important;
+}
+html.dark .bg-blue-500:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-sky-500:not([class*="dark:bg-"]):not(.qris-light-box *),
+html.dark .bg-cyan-500:not([class*="dark:bg-"]):not(.qris-light-box *) {
+  background-color: #a1a1aa !important;
+}
+html.dark .text-blue-950:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-blue-900:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-blue-800:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-blue-700:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-blue-600:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-blue-500:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-blue-400:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-indigo-900:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-indigo-800:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-indigo-700:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-indigo-600:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-sky-800:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-sky-700:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-sky-600:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-sky-400:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-cyan-800:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-cyan-700:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-cyan-400:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-purple-700:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-purple-600:not([class*="dark:text-"]):not(.qris-light-box *),
+html.dark .text-purple-400:not([class*="dark:text-"]):not(.qris-light-box *) {
+  color: #e4e4e7 !important;
+}
+html.dark .border-blue-300:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-blue-200:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-blue-100:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-blue-500\/20:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .dark\:border-blue-800\/50,
+html.dark .border-indigo-200:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-indigo-100:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-sky-200:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-sky-500\/20:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-cyan-200:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-cyan-500\/20:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-purple-200:not([class*="dark:border-"]):not(.qris-light-box *),
+html.dark .border-purple-500\/20:not([class*="dark:border-"]):not(.qris-light-box *) {
+  border-color: #3f3f46 !important;
+}
+
+/* Pastikan teks sekunder di dalam Box Alert/Sub-Card berwarna tetap kontras tajam */
+html.dark [class*="bg-amber-"] .text-slate-500,
+html.dark [class*="bg-amber-"] .text-slate-600,
+html.dark [class*="bg-orange-"] .text-slate-500,
+html.dark [class*="bg-orange-"] .text-slate-600,
+html.dark [class*="bg-emerald-"] .text-slate-500,
+html.dark [class*="bg-emerald-"] .text-slate-600,
+html.dark [class*="bg-rose-"] .text-slate-500,
+html.dark [class*="bg-rose-"] .text-slate-600,
+html.dark [class*="bg-red-"] .text-slate-500,
+html.dark [class*="bg-red-"] .text-slate-600,
+html.dark [class*="bg-blue-"] .text-slate-500,
+html.dark [class*="bg-blue-"] .text-slate-600 {
+  color: #d4d4d8;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+/* Prevent double-tap zoom delay & accidental double-tap zoom */
+input, select, textarea, button, a {
+  touch-action: manipulation;
+}
+
+/* Prevent iOS Safari & mobile auto-zoom on input focus */
+@media screen and (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="hidden"]):not([type="file"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 28s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+.animate-marquee-fast {
+  display: flex;
+  width: max-content;
+  animation: marquee 18s linear infinite;
+}
+
+.animate-marquee-fast:hover {
+  animation-play-state: paused;
+}
+
+@keyframes crava-marquee-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+
+.crava-pay-track {
+    animation: crava-marquee-scroll 35s linear infinite;
+    will-change: transform;
+}
+
+.crava-pay-marquee:hover .crava-pay-track {
+    animation-play-state: paused;
+}
+
+.crava-stack-track {
+    animation: crava-marquee-scroll 55s linear infinite;
+    will-change: transform;
+}
+
+.crava-stack-marquee:hover .crava-stack-track {
+    animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .crava-pay-track,
+    .crava-stack-track { animation: none; }
+}
+
+/* Rocket Launch & Hero Floating Animations */
+@keyframes vh-rocket-flight {
+    0% {
+        transform: translateY(0px) rotate(-1deg);
+    }
+    50% {
+        transform: translateY(-16px) rotate(1.5deg);
+    }
+    100% {
+        transform: translateY(0px) rotate(-1deg);
+    }
+}
+
+@keyframes vh-blob-breathe {
+    0%, 100% {
+        transform: scale(1) translateY(0px);
+    }
+    50% {
+        transform: scale(1.025) translateY(6px);
+    }
+}
+
+@keyframes vh-smoke-pulse {
+    0%, 100% {
+        transform: scaleY(0.95) scaleX(0.97);
+        opacity: 0.85;
+    }
+    50% {
+        transform: scaleY(1.08) scaleX(1.03);
+        opacity: 1;
+    }
+}
+
+@keyframes vh-flame-flicker {
+    0%, 100% {
+        transform: scaleY(0.85) scaleX(0.92);
+        opacity: 0.75;
+    }
+    50% {
+        transform: scaleY(1.22) scaleX(1.08);
+        opacity: 1;
+    }
+}
+
+.vh-rocket-group {
+    animation: vh-rocket-flight 3.8s ease-in-out infinite;
+    transform-origin: 250px 280px;
+    transform-box: view-box;
+    will-change: transform;
+    transition: transform 0.4s ease;
+}
+
+.vh-blob-group {
+    animation: vh-blob-breathe 7s ease-in-out infinite;
+    transform-origin: 250px 275px;
+    transform-box: view-box;
+    will-change: transform;
+}
+
+.vh-smoke-group {
+    animation: vh-smoke-pulse 2.2s ease-in-out infinite;
+    transform-origin: 250px 370px;
+    transform-box: view-box;
+    will-change: transform, opacity;
+}
+
+.vh-flame-group {
+    animation: vh-flame-flicker 0.4s ease-in-out infinite alternate;
+    transform-origin: 250px 355px;
+    transform-box: view-box;
+    will-change: transform, opacity;
+}
+
+@keyframes vh-sparkle-float {
+    0%, 100% {
+        transform: translateY(0px) scale(0.8);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translateY(-10px) scale(1.2);
+        opacity: 0.9;
+    }
+}
+
+.vh-sparkle {
+    animation: vh-sparkle-float 3s ease-in-out infinite;
+    will-change: transform, opacity;
+}
+
+@keyframes vh-float-slow {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+@keyframes vh-float-delay {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(8px);
+    }
+}
+
+.animate-float-slow {
+    animation: vh-float-slow 4s ease-in-out infinite;
+    will-change: transform;
+}
+
+.animate-float-delay {
+    animation: vh-float-delay 4.5s ease-in-out infinite 0.75s;
+    will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vh-rocket-group,
+    .vh-blob-group,
+    .vh-smoke-group,
+    .vh-flame-group,
+    .vh-sparkle,
+    .animate-float-slow,
+    .animate-float-delay {
+        animation: none !important;
+    }
+}
+
+/* SweetAlert2 Dark Mode Enhancements (Hitam / Zinc) */
+html.dark .swal2-popup {
+  background-color: #18181b !important;
+  color: #fafafa !important;
+  border: 1px solid #27272a !important;
+}
+html.dark .swal2-title {
+  color: #fafafa !important;
+}
+html.dark .swal2-html-container {
+  color: #a1a1aa !important;
+}
+html.dark .swal2-validation-message {
+  background-color: #09090b !important;
+  color: #f87171 !important;
+}
+html.dark .swal2-icon.swal2-success [class^='swal2-success-circular-line'],
+html.dark .swal2-icon.swal2-success .swal2-success-fix {
+  background-color: #18181b !important;
+}
+html.dark .swal2-timer-progress-bar {
+  background-color: #52525b !important;
+}
+html.dark .swal2-confirm {
+  background-color: #27272a !important;
+  color: #fafafa !important;
+  box-shadow: inset 0 0 0 1px #3f3f46 !important;
+}
+html.dark .swal2-confirm:hover {
+  background-color: #3f3f46 !important;
+}
+html.dark .swal2-cancel {
+  background-color: #111113 !important;
+  color: #a1a1aa !important;
+  box-shadow: inset 0 0 0 1px #27272a !important;
+}
+html.dark .swal2-cancel:hover {
+  background-color: #27272a !important;
+  color: #fafafa !important;
+}
+
+/* Custom Scrollbar (4px — Sama dengan CravaCloud Client) */
+*::-webkit-scrollbar,
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+*::-webkit-scrollbar-track,
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+*::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb {
+  background: #E4E4E7;
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:hover {
+  background: #D4D4D8;
+}
+html.dark *::-webkit-scrollbar-thumb,
+html.dark ::-webkit-scrollbar-thumb,
+.dark *::-webkit-scrollbar-thumb,
+.dark ::-webkit-scrollbar-thumb {
+  background: #27272A !important;
+  border-radius: 4px;
+}
+html.dark *::-webkit-scrollbar-thumb:hover,
+html.dark ::-webkit-scrollbar-thumb:hover,
+.dark *::-webkit-scrollbar-thumb:hover,
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #3F3F46 !important;
+}
+*::-webkit-scrollbar-corner,
+::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #E4E4E7 transparent;
+  }
+  html.dark,
+  html.dark * {
+    scrollbar-color: #27272A transparent;
+  }
+}

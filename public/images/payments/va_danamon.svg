@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" fill="none">
+  <!-- Danamon Stripe Emblem -->
+  <rect x="10" y="8" width="8" height="24" rx="2" fill="#FF8200"/>
+  <rect x="22" y="8" width="6" height="24" rx="1.5" fill="#FFC72C"/>
+  <!-- Danamon Typography -->
+  <text x="36" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="20" font-weight="800" fill="#003B64" letter-spacing="-0.5">Danamon</text>
+</svg>

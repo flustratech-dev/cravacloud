@@ -1,0 +1,25 @@
+{
+    "name": "CravaCloud",
+    "short_name": "CravaCloud",
+    "description": "Cloud VPS NVMe KVM, Managed Database, dan AI Stack dengan datacenter Jakarta & Singapore.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#4A6FA5",
+    "lang": "id",
+    "icons": [
+        {
+            "src": "/images/favicon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/images/favicon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ]
+}

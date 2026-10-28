@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /order/payment/
+Disallow: /two-factor/
+Disallow: /checkout/quick-login
+
+Sitemap: https://cravacloud.id/sitemap.xml
