@@ -129,7 +129,7 @@ class AdminApiController extends Controller
                     'db_port' => $dbPort,
                     'app_url' => $appUrl,
                     'app_name' => $appName,
-                    'provider' => $order->provider ?? 'tencent',
+                    'provider' => $order->provider ?: Order::DEFAULT_PROVIDER,
                     'uptime_percent' => null,
                     'billing_cycle' => $order->billing_cycle ?? 'monthly',
                     'starts_at' => $startsAt,
@@ -270,62 +270,74 @@ class AdminApiController extends Controller
         $user->switchToOrganization($organization);
 
         $packageKey = strtolower(trim($validated['package']));
-        $packageMap = [
-            'student basic' => 1,
-            'student-basic' => 1,
-            'student' => 1,
-            'basic' => 1,
-            'standard' => 2,
-            'standar' => 2,
-            'premium' => 3,
-            'startup' => 4,
-            'business' => 5,
-            'bisnis' => 5,
-            'mahasiswa basic' => 6,
-            'mahasiswa-basic' => 6,
-            'mahasiswa' => 6,
-            'terminal coding agent' => 7,
-            'terminal-coding-agent' => 7,
-            'terminal' => 7,
-            'claude opencode' => 7,
-            'cloud ai workstation' => 8,
-            'cloud-ai-workstation' => 8,
-            'ai workstation' => 8,
-            'vscode server' => 8,
-            'hermes autonomous hub' => 9,
-            'hermes-autonomous-hub' => 9,
-            'hermes' => 9,
-            'omniroute' => 9,
-            'enterprise private ai & rag' => 10,
-            'enterprise private ai and rag' => 10,
-            'enterprise private ai' => 10,
-            'enterprise-private-ai-rag' => 10,
-            'private ai' => 10,
-            'dify' => 10,
-            'ollama' => 10,
-            'db micro' => 11,
-            'db-micro' => 11,
-            'micro' => 11,
-            'db standard' => 12,
-            'db-standard' => 12,
-            'db enterprise' => 13,
-            'db-enterprise' => 13,
-            'db enterprise / ai vector' => 13,
-            'ai vector' => 13,
+        $packageNameMap = [
+            'starter xs' => 'Starter XS',
+            'starter-xs' => 'Starter XS',
+            'starter s' => 'Starter S',
+            'starter-s' => 'Starter S',
+            'starter m' => 'Starter M',
+            'starter-m' => 'Starter M',
+            'starter l' => 'Starter L',
+            'starter-l' => 'Starter L',
+            'enterprise pro' => 'Enterprise Pro',
+            'enterprise-pro' => 'Enterprise Pro',
+            'enterprise max' => 'Enterprise Max',
+            'enterprise-max' => 'Enterprise Max',
+            'enterprise ultra' => 'Enterprise Ultra',
+            'enterprise-ultra' => 'Enterprise Ultra',
+            'enterprise extreme' => 'Enterprise Extreme',
+            'enterprise-extreme' => 'Enterprise Extreme',
+            'student basic' => 'Starter XS',
+            'student-basic' => 'Starter XS',
+            'student' => 'Starter XS',
+            'basic' => 'Starter XS',
+            'mahasiswa basic' => 'Starter XS',
+            'mahasiswa-basic' => 'Starter XS',
+            'mahasiswa' => 'Starter XS',
+            'standard' => 'Starter S',
+            'standar' => 'Starter S',
+            'premium' => 'Starter M',
+            'startup' => 'Starter L',
+            'business' => 'Enterprise Pro',
+            'bisnis' => 'Enterprise Pro',
+            'terminal coding agent' => 'Terminal Coding Agent',
+            'terminal-coding-agent' => 'Terminal Coding Agent',
+            'terminal' => 'Terminal Coding Agent',
+            'claude opencode' => 'Terminal Coding Agent',
+            'cloud ai workstation' => 'Cloud AI Workstation',
+            'cloud-ai-workstation' => 'Cloud AI Workstation',
+            'ai workstation' => 'Cloud AI Workstation',
+            'vscode server' => 'Cloud AI Workstation',
+            'hermes autonomous hub' => 'Hermes Autonomous Hub',
+            'hermes-autonomous-hub' => 'Hermes Autonomous Hub',
+            'hermes' => 'Hermes Autonomous Hub',
+            'omniroute' => 'Hermes Autonomous Hub',
+            'enterprise private ai & rag' => 'Enterprise Private AI & RAG',
+            'enterprise private ai and rag' => 'Enterprise Private AI & RAG',
+            'enterprise private ai' => 'Enterprise Private AI & RAG',
+            'enterprise-private-ai-rag' => 'Enterprise Private AI & RAG',
+            'private ai' => 'Enterprise Private AI & RAG',
+            'dify' => 'Enterprise Private AI & RAG',
+            'ollama' => 'Enterprise Private AI & RAG',
+            'db micro' => 'DB Micro',
+            'db-micro' => 'DB Micro',
+            'micro' => 'DB Micro',
+            'db standard' => 'DB Standard',
+            'db-standard' => 'DB Standard',
+            'db enterprise' => 'DB Enterprise / AI Vector',
+            'db-enterprise' => 'DB Enterprise / AI Vector',
+            'db enterprise / ai vector' => 'DB Enterprise / AI Vector',
+            'ai vector' => 'DB Enterprise / AI Vector',
         ];
-        $specId = $packageMap[$packageKey] ?? (is_numeric($packageKey) ? (int)$packageKey : null);
-        $spec = ($specId ? VpsSpec::find($specId) : null)
+        $mappedName = $packageNameMap[$packageKey] ?? null;
+        $spec = (is_numeric($packageKey) ? VpsSpec::find((int) $packageKey) : null)
+            ?? ($mappedName ? VpsSpec::whereRaw('LOWER(name) = ?', [strtolower($mappedName)])->first() : null)
             ?? VpsSpec::whereRaw('LOWER(name) = ?', [$packageKey])->first()
-            ?? VpsSpec::find(2)
+            ?? VpsSpec::where('is_active', true)->orderBy('sell_price', 'asc')->first()
             ?? VpsSpec::first();
 
-        $requestedProvider = $validated['provider'] ?? null;
-        $provider = ($requestedProvider && $spec->isProviderAllowed($requestedProvider))
-            ? $requestedProvider
-            : $spec->defaultProvider();
-        $datacenterLocation = ($provider === 'cloudeka')
-            ? 'indonesia'
-            : ($validated['datacenter_location'] ?? 'singapore');
+        $provider = Order::DEFAULT_PROVIDER;
+        $datacenterLocation = $validated['datacenter_location'] ?? 'indonesia';
 
         try {
             $order = DB::transaction(function () use ($user, $organization, $spec, $validated, $provider, $datacenterLocation) {

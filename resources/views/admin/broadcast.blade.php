@@ -15,14 +15,14 @@
 }">
 
     @php
-        $inputClass = 'w-full px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-black';
-        $labelClass = 'block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1';
+        $inputClass = 'w-full px-3 py-2 border border-hairline text-xs text-ink bg-white focus:outline-none focus:border-electric';
+        $labelClass = 'block font-mono text-[10px] font-bold text-muted uppercase tracking-widest mb-1.5';
     @endphp
 
     @if($errors->any())
-        <div class="bg-white p-5 rounded-lg border border-red-200">
-            <span class="text-xs font-semibold text-red-600 uppercase tracking-wider block mb-2">Periksa Kembali Isian Anda</span>
-            <ul class="list-disc list-inside space-y-1 text-xs text-red-700">
+        <div class="bg-white p-5 border-2 border-ink">
+            <span class="font-mono text-[10px] font-bold text-ink uppercase tracking-widest block mb-2">Periksa Kembali Isian Anda</span>
+            <ul class="list-disc list-inside space-y-1 text-xs text-ink">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -31,49 +31,49 @@
     @endif
 
     <!-- Peringatan nada pesan -->
-    <div class="bg-white p-5 rounded-lg border border-amber-200">
+    <div class="bg-white p-5 border border-ink">
         <div class="flex items-start gap-3">
-            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
+            <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-ink text-cream shrink-0 mt-0.5">
                 Penting
             </span>
             <div>
-                <div class="text-sm font-bold text-slate-900">Jangan Menuduh Penerima Melanggar</div>
-                <p class="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                <div class="font-display text-sm font-bold text-ink">Jangan Menuduh Penerima Melanggar</div>
+                <p class="text-xs text-muted mt-1 leading-relaxed">
                     Broadcast ini menjangkau seluruh pelanggan, yang mayoritasnya tidak melakukan pelanggaran apa pun.
                     Gunakan rumusan gangguan di sisi upstream. Untuk pelanggan yang memang melanggar, pakai menu
-                    <a href="{{ route('admin.abuse.index') }}" class="font-semibold text-slate-800 underline underline-offset-2">Kasus Pelanggaran</a>.
+                    <a href="{{ route('admin.abuse.index') }}" class="font-semibold text-electric hover:underline">Kasus Pelanggaran</a>.
                 </p>
             </div>
         </div>
     </div>
 
     <!-- Ringkasan penerima -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-5 rounded-lg border border-slate-200">
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">Seluruh Pelanggan</span>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-hairline border border-hairline">
+        <div class="bg-white p-5">
+            <span class="font-mono text-[10px] font-bold text-muted uppercase tracking-widest block mb-1">Seluruh Pelanggan</span>
             <div class="flex items-baseline gap-2">
-                <span class="text-2xl font-extrabold text-slate-900 font-mono-code">{{ $recipientCounts['all'] }}</span>
-                <span class="text-xs text-slate-500">Penerima</span>
+                <span class="font-display text-2xl font-bold text-ink">{{ $recipientCounts['all'] }}</span>
+                <span class="font-mono text-[11px] text-muted">Penerima</span>
             </div>
         </div>
-        <div class="bg-white p-5 rounded-lg border border-slate-200">
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">Punya Layanan Aktif</span>
+        <div class="bg-white p-5">
+            <span class="font-mono text-[10px] font-bold text-muted uppercase tracking-widest block mb-1">Punya Layanan Aktif</span>
             <div class="flex items-baseline gap-2">
-                <span class="text-2xl font-extrabold text-emerald-600 font-mono-code">{{ $recipientCounts['active_customers'] }}</span>
-                <span class="text-xs text-emerald-600 font-medium">Penerima</span>
+                <span class="font-display text-2xl font-bold text-electric">{{ $recipientCounts['active_customers'] }}</span>
+                <span class="font-mono text-[11px] text-electric font-bold">Penerima</span>
             </div>
         </div>
-        <div class="bg-white p-5 rounded-lg border border-slate-200">
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">Instance Bermasalah</span>
+        <div class="bg-white p-5">
+            <span class="font-mono text-[10px] font-bold text-muted uppercase tracking-widest block mb-1">Instance Bermasalah</span>
             <div class="flex items-baseline gap-2">
-                <span class="text-2xl font-extrabold text-amber-600 font-mono-code">{{ $recipientCounts['affected_instances'] }}</span>
-                <span class="text-xs text-slate-500">Penerima</span>
+                <span class="font-display text-2xl font-bold text-ink">{{ $recipientCounts['affected_instances'] }}</span>
+                <span class="font-mono text-[11px] text-muted">Penerima</span>
             </div>
         </div>
-        <div class="bg-white p-5 rounded-lg border border-slate-200">
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">Broadcast Terakhir</span>
+        <div class="bg-white p-5">
+            <span class="font-mono text-[10px] font-bold text-muted uppercase tracking-widest block mb-1">Broadcast Terakhir</span>
             <div class="flex items-baseline gap-2">
-                <span class="text-sm font-extrabold text-slate-900 font-mono-code">
+                <span class="font-mono text-sm font-bold text-ink">
                     {{ $lastSent?->sent_at?->timezone('Asia/Jakarta')->format('d M H:i') ?? '—' }}
                 </span>
             </div>
@@ -82,18 +82,18 @@
 
     <!-- Formulir Broadcast -->
     <form action="{{ route('admin.broadcast.send') }}" method="POST"
-          class="bg-white rounded-lg border border-slate-200 overflow-hidden"
+          class="bg-white border border-hairline overflow-hidden"
           onsubmit="return confirm('Kirim broadcast ke seluruh penerima pada segmen yang dipilih?');">
         @csrf
 
-        <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="px-5 py-4 border-b border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-                <h3 class="font-bold text-slate-900 text-base">Susun Broadcast</h3>
+                <h3 class="font-display font-bold text-ink text-base">Susun Broadcast</h3>
                 {{-- Literal kurung kurawal ditulis dengan @ agar tidak ikut dikompilasi Blade. --}}
-                <p class="text-xs text-slate-500">Placeholder <span class="font-mono-code">@{{nama}}</span> otomatis diisi nama tiap penerima.</p>
+                <p class="text-xs text-muted mt-0.5">Placeholder <span class="font-mono font-semibold text-ink">@{{nama}}</span> otomatis diisi nama tiap penerima.</p>
             </div>
             <a href="{{ route('admin.broadcast.export') }}"
-               class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200 transition-colors shrink-0">
+               class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:border-ink text-ink font-mono text-xs font-bold uppercase tracking-wider border border-hairline transition-colors shrink-0">
                 Ekspor Kontak CSV
             </a>
         </div>
@@ -127,37 +127,37 @@
             <div>
                 <label class="{{ $labelClass }}">Isi Pesan</label>
                 <textarea name="body" x-model="body" rows="12" required maxlength="5000"
-                          class="{{ $inputClass }} font-mono-code text-xs"></textarea>
+                          class="{{ $inputClass }} font-mono"></textarea>
             </div>
 
-            <label class="flex items-start gap-2 cursor-pointer px-3 py-3 rounded-lg border border-slate-200 bg-slate-50">
+            <label class="flex items-start gap-2.5 cursor-pointer px-3.5 py-3 border border-hairline bg-creamDark/40">
                 <input type="checkbox" name="confirm" value="1" required
-                       class="w-4 h-4 mt-0.5 rounded border-slate-300 text-black focus:ring-black shrink-0">
-                <span class="text-xs text-slate-700 leading-relaxed">
+                       class="w-4 h-4 mt-0.5 border-ink accent-electric shrink-0">
+                <span class="text-xs text-ink leading-relaxed">
                     Saya sudah memeriksa isi pesan dan memastikan tidak ada tuduhan pelanggaran
                     terhadap pelanggan yang tidak bersalah.
                 </span>
             </label>
         </div>
 
-        <div class="px-5 py-4 border-t border-slate-100 flex justify-end">
+        <div class="px-5 py-4 border-t border-hairline flex justify-end">
             <button type="submit"
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-black hover:bg-neutral-800 text-white text-xs font-bold transition-colors">
+                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-electric hover:bg-electricHover text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
                 Kirim Broadcast
             </button>
         </div>
     </form>
 
     <!-- Riwayat -->
-    <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-100">
-            <h3 class="font-bold text-slate-900 text-base">Riwayat Broadcast</h3>
-            <p class="text-xs text-slate-500">Bukti kapan pemberitahuan dikirim dan ke berapa penerima.</p>
+    <div class="bg-white border border-hairline overflow-hidden">
+        <div class="px-5 py-4 border-b border-hairline">
+            <h3 class="font-display font-bold text-ink text-base">Riwayat Broadcast</h3>
+            <p class="text-xs text-muted mt-0.5">Bukti kapan pemberitahuan dikirim dan ke berapa penerima.</p>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
-                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider border-y border-slate-200">
+                <thead class="bg-creamDark/60 text-muted font-mono text-[10px] font-bold uppercase tracking-widest border-y border-hairline">
                     <tr>
                         <th class="px-5 py-3.5">Subjek</th>
                         <th class="px-5 py-3.5">Segmen</th>
@@ -166,30 +166,30 @@
                         <th class="px-5 py-3.5">Waktu</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody class="divide-y divide-hairline">
                     @forelse($logs as $log)
-                        <tr class="hover:bg-slate-50/80 transition-colors">
+                        <tr class="hover:bg-creamDark/30 transition-colors">
                             <td class="px-5 py-3.5">
-                                <span class="font-bold text-slate-900 text-sm block">{{ Str::limit($log->subject, 55) }}</span>
-                                <span class="text-[11px] text-slate-400 font-mono-code">
+                                <span class="font-bold text-ink text-sm block">{{ Str::limit($log->subject, 55) }}</span>
+                                <span class="text-[11px] text-muted font-mono">
                                     ID: #BC-{{ str_pad($log->id, 3, '0', STR_PAD_LEFT) }}
                                     @if($log->sender) &middot; {{ $log->sender->name }} @endif
                                 </span>
                             </td>
-                            <td class="px-5 py-3.5 text-slate-700">{{ $log->audience_label }}</td>
-                            <td class="px-5 py-3.5 text-center font-mono-code font-semibold text-emerald-700">
+                            <td class="px-5 py-3.5 text-ink">{{ $log->audience_label }}</td>
+                            <td class="px-5 py-3.5 text-center font-mono font-bold text-electric">
                                 {{ $log->sent_count }}
                             </td>
-                            <td class="px-5 py-3.5 text-center font-mono-code font-semibold {{ $log->failed_count > 0 ? 'text-red-700' : 'text-slate-400' }}">
+                            <td class="px-5 py-3.5 text-center font-mono font-bold {{ $log->failed_count > 0 ? 'text-ink' : 'text-muted' }}">
                                 {{ $log->failed_count }}
                             </td>
-                            <td class="px-5 py-3.5 font-mono-code text-slate-600">
+                            <td class="px-5 py-3.5 font-mono text-muted">
                                 {{ $log->sent_at?->timezone('Asia/Jakarta')->format('d M Y H:i') ?? '—' }}
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-5 py-10 text-center text-slate-500 text-sm">
+                            <td colspan="5" class="px-5 py-10 text-center font-mono text-xs text-muted">
                                 Belum ada broadcast yang pernah dikirim.
                             </td>
                         </tr>
@@ -199,7 +199,7 @@
         </div>
 
         @if($logs->hasPages())
-            <div class="px-5 py-4 border-t border-slate-100">
+            <div class="px-5 py-4 border-t border-hairline">
                 {{ $logs->links() }}
             </div>
         @endif

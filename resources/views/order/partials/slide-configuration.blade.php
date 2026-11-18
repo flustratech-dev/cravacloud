@@ -1,137 +1,203 @@
-<div class="border border-slate-200 rounded-2xl p-5 sm:p-7 bg-white shadow-xs space-y-6">
-    {{-- 1. VPS Name & Akses Root --}}
-    <div>
-        <div class="flex items-center gap-3 mb-4">
-            <span class="w-6 h-6 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center">1</span>
-            <h2 class="font-semibold text-slate-900">Nama Server (Hostname)</h2>
-        </div>
+@php
+    $retiredLegacyNames = ['Student Basic', 'Standard', 'Premium', 'Startup', 'Business', 'Mahasiswa Basic'];
+    $availableCheckoutSpecs = $specs->filter(function ($s) use ($retiredLegacyNames, $selectedSpec) {
+        $isSelected = $selectedSpec && (int) $s->id === (int) $selectedSpec->id;
+        if ($isSelected) {
+            return true;
+        }
+        return $s->is_active
+            && !in_array($s->category, ['ai_combo', 'managed_db'], true)
+            && !in_array($s->name, $retiredLegacyNames, true);
+    });
+@endphp
+
+<div class="border border-hairline bg-white p-5 sm:p-8 space-y-8">
+    <div class="border-b border-hairline pb-4 flex items-center justify-between gap-4">
         <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                Hostname / VPS Name <span class="text-rose-600">*</span>
-            </label>
-            <input type="text" name="hostname" x-model="vpsName" required minlength="3" maxlength="63" pattern="[A-Za-z0-9][A-Za-z0-9-]*" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono-code focus:border-black focus:ring-1 focus:ring-black" autocomplete="off">
-            <p class="text-[11px] text-slate-500 mt-2 flex items-center gap-1.5">
-                <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                <span>Password root akan dibuat secara otomatis &amp; aman oleh retail provider, dan akan dikirimkan kepada Anda begitu instance selesai dipersiapkan.</span>
-            </p>
+            <span class="font-mono text-[10px] uppercase tracking-widest text-electric font-bold block mb-1">LANGKAH 01 // SPESIFIKASI &amp; STACK</span>
+            <h2 class="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">Konfigurasi VPS Anda</h2>
         </div>
+        <span class="w-8 h-8 bg-electric text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">01</span>
     </div>
 
-    {{-- 2. Paket VPS Dipilih --}}
+    {{-- Step 1: VPS Hostname --}}
     <div>
-        <div class="flex items-center gap-3 mb-4">
-            <span class="w-6 h-6 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center">2</span>
-            <h2 class="font-semibold text-slate-900">Paket VPS Dipilih</h2>
+        <div class="flex items-center gap-2.5 mb-2.5">
+            <span class="w-5 h-5 bg-ink text-cream font-mono text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
+            <label for="checkout-vps-name" class="font-mono text-xs font-bold uppercase tracking-wider text-ink">Hostname / Nama VPS</label>
         </div>
-        <div class="rounded-lg border border-black bg-slate-50 p-4 flex items-center justify-between gap-4">
-            <div>
-                <p class="font-semibold text-slate-900" x-text="specs[selectedSpec] ? specs[selectedSpec].name : 'Paket VPS'"></p>
-                <p class="text-xs text-slate-500 mt-0.5" x-text="specs[selectedSpec] ? specs[selectedSpec].cpu + ' vCPU · ' + specs[selectedSpec].ram + ' GB RAM · ' + specs[selectedSpec].disk + ' GB SSD · ' + specs[selectedSpec].bandwidth + ' Mbps' : ''"></p>
-            </div>
-            <div class="text-right">
-                <p class="text-lg font-bold text-slate-900 font-mono-code" x-text="formatRupiah(currentBaseMonthlyPrice)"></p>
-                <p class="text-xs text-slate-500">/bulan</p>
-            </div>
-        </div>
-        <input type="hidden" name="vps_spec_id" :value="selectedSpec">
-        <input type="hidden" name="billing_cycle" value="monthly">
+        <input id="checkout-vps-name"
+               type="text"
+               x-model="vpsName"
+               placeholder="contoh: prod-api-jakarta-01"
+               class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric transition-colors">
+        <p class="font-mono text-[11px] text-muted mt-1.5">Gunakan huruf, angka, dan tanda hubung (`-`). Maksimal 63 karakter.</p>
     </div>
 
-    {{-- 3. Pilih Provider --}}
+    {{-- Step 2: Select Package --}}
     <div>
-        <div class="flex items-center gap-3 mb-4">
-            <span class="w-6 h-6 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center">3</span>
-            <h2 class="font-semibold text-slate-900">Pilih Provider</h2>
+        <div class="flex items-center gap-2.5 mb-2.5">
+            <span class="w-5 h-5 bg-ink text-cream font-mono text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
+            <label for="checkout-package-spec" class="font-mono text-xs font-bold uppercase tracking-wider text-ink">Paket Layanan</label>
         </div>
-        <div class="grid gap-3" :class="(canUseProvider('tencent') && canUseProvider('cloudeka')) ? 'sm:grid-cols-2' : 'grid-cols-1'">
-            <button type="button" 
-                    x-show="canUseProvider('tencent')"
-                    @click="selectProvider('tencent')" 
-                    :class="provider === 'tencent' ? 'border-black bg-slate-50 ring-1 ring-black' : 'border-slate-200 hover:border-slate-300'" 
-                    class="p-4 rounded-lg border text-left transition-all flex items-center gap-3.5">
-                <img src="{{ asset('images/logos/providers/tencent.svg') }}" alt="Tencent Cloud" class="w-8 h-8 object-contain shrink-0" />
-                <p class="font-semibold text-sm text-slate-900">Tencent Cloud</p>
-            </button>
-            <button type="button" 
-                    x-show="canUseProvider('cloudeka')"
-                    @click="selectProvider('cloudeka')" 
-                    :class="provider === 'cloudeka' ? 'border-black bg-slate-50 ring-1 ring-black' : 'border-slate-200 hover:border-slate-300'" 
-                    class="p-4 rounded-lg border text-left transition-all flex items-center gap-3.5">
-                <img src="{{ asset('images/logos/providers/cloudeka.svg') }}" alt="Cloudeka by Lintasarta" class="w-8 h-8 object-contain shrink-0" />
-                <p class="font-semibold text-sm text-slate-900">Cloudeka by Lintasarta</p>
-            </button>
-        </div>
-        <input type="hidden" name="provider" :value="provider">
-    </div>
+        <select id="checkout-package-spec"
+                x-model.number="selectedSpec"
+                class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono font-semibold focus:outline-none focus:border-electric transition-colors">
+            @foreach($availableCheckoutSpecs as $spec)
+                <option value="{{ $spec->id }}">
+                    {{ $spec->name }} — {{ $spec->cpu }} vCPU / {{ $spec->ram }} GB RAM / {{ $spec->disk }} GB NVMe (Rp {{ number_format($spec->sell_price, 0, ',', '.') }}/bln){{ !$spec->is_active ? ' [Maintenance]' : '' }}
+                </option>
+            @endforeach
+        </select>
 
-    {{-- 4. Datacenter & OS --}}
-    <div>
-        <div class="flex items-center gap-3 mb-4">
-            <span class="w-6 h-6 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center">4</span>
-            <h2 class="font-semibold text-slate-900">Datacenter &amp; OS</h2>
-        </div>
-        <div class="space-y-4">
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-2">Lokasi Datacenter</label>
-                <div class="grid sm:grid-cols-2 gap-3">
-                    <label x-show="provider === 'tencent'" class="p-3.5 rounded-lg border cursor-pointer flex items-center justify-between" :class="datacenter === 'singapore' ? 'border-black bg-slate-50 ring-1 ring-black' : 'border-slate-200 hover:border-slate-300'">
-                        <input type="radio" name="datacenter_location" value="singapore" x-model="datacenter" class="sr-only">
-                        <span class="text-sm font-semibold text-slate-900">Singapore</span>
-                    </label>
-                    <label class="p-3.5 rounded-lg border cursor-pointer flex items-center justify-between" :class="datacenter === 'indonesia' ? 'border-black bg-slate-50 ring-1 ring-black' : 'border-slate-200 hover:border-slate-300'">
-                        <input type="radio" name="datacenter_location" value="indonesia" x-model="datacenter" class="sr-only">
-                        <span class="text-sm font-semibold text-slate-900">Indonesia (Jakarta)</span>
-                    </label>
+        <template x-if="currentSpec">
+            <div class="mt-3 p-4 bg-creamDark/60 border border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <div class="font-display font-bold text-ink text-sm" x-text="currentSpec.name"></div>
+                    <div class="font-mono text-xs text-muted mt-0.5"
+                         x-text="currentSpec.cpu + ' vCPU Dedicated • ' + currentSpec.ram + ' GB RAM • ' + currentSpec.disk + ' GB NVMe SSD'"></div>
+                </div>
+                <div class="font-mono font-bold text-electric text-sm shrink-0">
+                    <span x-text="formatRupiah(totalPrice)"></span><span class="text-[11px] text-muted font-normal">/bln</span>
                 </div>
             </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Operating System</label>
-                <select name="os" x-model="os" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm bg-white focus:border-black focus:ring-1 focus:ring-black">
-                    <template x-for="[value, label] in Object.entries(operatingSystems[provider])" :key="value">
-                        <option :value="value" x-text="label"></option>
-                    </template>
-                </select>
+        </template>
+    </div>
+
+    {{-- Step 3: Datacenter & OS --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <div class="flex items-center gap-2.5 mb-2.5">
+                <span class="w-5 h-5 bg-ink text-cream font-mono text-[10px] font-bold flex items-center justify-center shrink-0">3A</span>
+                <label class="font-mono text-xs font-bold uppercase tracking-wider text-ink">Lokasi Datacenter</label>
             </div>
+            <div class="grid grid-cols-2 gap-px bg-hairline border border-hairline">
+                <label class="p-3.5 text-center cursor-pointer transition-colors relative"
+                       :class="datacenter === 'singapore' ? 'bg-cream border-2 border-electric -m-px z-10' : 'bg-white hover:bg-creamDark/40'">
+                    <input type="radio" name="datacenter" value="singapore" x-model="datacenter" class="sr-only">
+                    <div class="font-display font-bold text-sm text-ink">Singapore</div>
+                    <div class="font-mono text-[10px] uppercase text-muted mt-0.5">SIN-1 Edge</div>
+                </label>
+                <label class="p-3.5 text-center cursor-pointer transition-colors relative"
+                       :class="datacenter === 'indonesia' ? 'bg-cream border-2 border-electric -m-px z-10' : 'bg-white hover:bg-creamDark/40'">
+                    <input type="radio" name="datacenter" value="indonesia" x-model="datacenter" class="sr-only">
+                    <div class="font-display font-bold text-sm text-ink">Indonesia</div>
+                    <div class="font-mono text-[10px] uppercase text-muted mt-0.5">JKT DCI-ID</div>
+                </label>
+            </div>
+        </div>
+
+        <div>
+            <div class="flex items-center gap-2.5 mb-2.5">
+                <span class="w-5 h-5 bg-ink text-cream font-mono text-[10px] font-bold flex items-center justify-center shrink-0">3B</span>
+                <label for="checkout-os" class="font-mono text-xs font-bold uppercase tracking-wider text-ink">Sistem Operasi (OS)</label>
+            </div>
+            <select id="checkout-os"
+                    x-model="os"
+                    class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric transition-colors">
+                <template x-for="[key, label] in Object.entries(operatingSystems || {})" :key="key">
+                    <option :value="key" x-text="label"></option>
+                </template>
+            </select>
         </div>
     </div>
 
-    {{-- 5. Pilih Stack Server --}}
+    {{-- Step 4: Stack Selection --}}
     <div>
-        <div class="flex items-center gap-3 mb-4">
-            <span class="w-6 h-6 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center">5</span>
-            <h2 class="font-semibold text-slate-900">Pilih Stack Server</h2>
+        <div class="flex items-center gap-2.5 mb-2.5">
+            <span class="w-5 h-5 bg-ink text-cream font-mono text-[10px] font-bold flex items-center justify-center shrink-0">4</span>
+            <label class="font-mono text-xs font-bold uppercase tracking-wider text-ink">1-Click Stack / Control Panel</label>
         </div>
-        <div class="grid sm:grid-cols-3 gap-3 mb-4">
-            <button type="button" @click="selectStack('none')" :class="stackType === 'none' ? 'border-black bg-slate-50 ring-1 ring-black' : 'border-slate-200 hover:border-slate-300'" class="p-3.5 rounded-lg border text-center transition-all">
-                <p class="font-semibold text-sm text-slate-900">Tanpa Control Panel</p>
+
+        {{-- Stack Type Tabs --}}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-px bg-hairline border border-hairline mb-5">
+            <button type="button" @click="selectStack('none')"
+                    :class="stackType === 'none' ? 'bg-ink text-cream' : 'bg-white text-ink hover:bg-creamDark/50'"
+                    class="py-3 px-4 font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer text-center">
+                OS Bersih (Fresh)
             </button>
-            <button type="button" @click="selectStack('control_panel')" :class="stackType === 'control_panel' ? 'border-black bg-slate-50 ring-1 ring-black' : 'border-slate-200 hover:border-slate-300'" class="p-3.5 rounded-lg border text-center transition-all">
-                <p class="font-semibold text-sm text-slate-900">Control Panel</p>
+            <button type="button" @click="selectStack('control_panel')"
+                    :class="stackType === 'control_panel' ? 'bg-ink text-cream' : 'bg-white text-ink hover:bg-creamDark/50'"
+                    class="py-3 px-4 font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer text-center">
+                Control Panel
             </button>
-            <button type="button" @click="selectStack('application')" :class="stackType === 'application' ? 'border-black bg-slate-50 ring-1 ring-black' : 'border-slate-200 hover:border-slate-300'" class="p-3.5 rounded-lg border text-center transition-all">
-                <p class="font-semibold text-sm text-slate-900">Aplikasi</p>
+            <button type="button" @click="selectStack('app')"
+                    :class="stackType === 'app' ? 'bg-ink text-cream' : 'bg-white text-ink hover:bg-creamDark/50'"
+                    class="py-3 px-4 font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer text-center">
+                AI &amp; Tools App
             </button>
         </div>
-        <div x-show="stackType === 'control_panel'" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            @foreach(['coolify' => 'Coolify', 'dokploy' => 'Dokploy', 'aapanel' => 'aaPanel', 'cloudpanel' => 'CloudPanel', 'docker' => 'Docker', 'cyberpanel' => 'CyberPanel', 'hestiacp' => 'HestiaCP'] as $value => $label)
-                <button type="button" @click="controlPanel = '{{ $value }}'" 
-                        :class="controlPanel === '{{ $value }}' ? 'border-black bg-slate-50 ring-1 ring-black shadow-xs' : 'border-slate-200 hover:border-slate-300 bg-white'" 
-                        class="p-3 rounded-lg border text-left flex items-center gap-3 transition-all min-h-[52px]">
-                    <img src="{{ asset('images/logos/panels/' . $value . '.svg') }}" alt="{{ $label }}" class="w-6 h-6 object-contain shrink-0" />
-                    <span class="text-xs sm:text-sm font-semibold text-slate-900 leading-tight">{{ $label }}</span>
-                </button>
+
+        {{-- Control Panel Selection Grid --}}
+        <div x-show="stackType === 'control_panel'" x-transition class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            @php
+                $panels = [
+                    'coolify' => ['name' => 'Coolify', 'desc' => 'Self-hosted PaaS', 'logo' => 'coolify.svg'],
+                    'dokploy' => ['name' => 'Dokploy', 'desc' => 'Docker PaaS', 'logo' => 'dokploy.svg'],
+                    'aapanel' => ['name' => 'aaPanel', 'desc' => 'Lightweight web panel', 'logo' => 'aapanel.svg'],
+                    'cloudpanel' => ['name' => 'CloudPanel', 'desc' => 'PHP, Node, Python UI', 'logo' => 'cloudpanel.svg'],
+                    'docker' => ['name' => 'Docker Engine', 'desc' => 'Container & Compose', 'logo' => 'docker.svg'],
+                    'cyberpanel' => ['name' => 'CyberPanel', 'desc' => 'OpenLiteSpeed panel', 'logo' => 'cyberpanel.svg'],
+                    'hestiacp' => ['name' => 'HestiaCP', 'desc' => 'Lightweight web panel', 'logo' => 'hestiacp.svg'],
+                ];
+            @endphp
+            @foreach($panels as $key => $info)
+                <label class="p-3.5 cursor-pointer transition-colors relative flex flex-col justify-between bg-white"
+                       :class="controlPanel === '{{ $key }}' ? 'border-2 border-electric bg-cream' : 'border border-hairline hover:border-ink/40'">
+                    <input type="radio" name="control_panel" value="{{ $key }}" x-model="controlPanel" class="sr-only">
+                    <div class="w-8 h-8 mb-2.5 flex items-center justify-center">
+                        <img src="{{ asset('images/logos/panels/' . $info['logo']) }}" alt="{{ $info['name'] }}" class="max-h-full max-w-full object-contain">
+                    </div>
+                    <div>
+                        <div class="font-display font-bold text-sm text-ink">{{ $info['name'] }}</div>
+                        <div class="text-[11px] text-muted leading-tight mt-0.5">{{ $info['desc'] }}</div>
+                    </div>
+                </label>
             @endforeach
         </div>
-        <div x-show="stackType === 'application'" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            @foreach(['hermes_agent' => 'Hermes Agent', 'openclaw' => 'OpenClaw', 'omniroute' => 'OmniRoute', '9router' => '9router', 'agent_zero' => 'Agent Zero', 'n8n' => 'n8n', 'ollama' => 'Ollama', 'anythingllm' => 'AnythingLLM', 'librechat' => 'LibreChat', 'vscode_server' => 'Visual Studio Code Server', 'gitea_forgejo' => 'Gitea / Forgejo', 'uptime_kuma' => 'Uptime Kuma', 'netdata_beszel' => 'Netdata / Beszel', 'wordpress' => 'WordPress', 'ghost' => 'Ghost', 'strapi_directus' => 'Strapi / Directus', 'prestashop_bagisto' => 'PrestaShop / Bagisto'] as $value => $label)
-                <button type="button" @click="controlPanel = '{{ $value }}'" 
-                        :class="controlPanel === '{{ $value }}' ? 'border-black bg-slate-50 ring-1 ring-black shadow-xs' : 'border-slate-200 hover:border-slate-300 bg-white'" 
-                        class="p-3 rounded-lg border text-left flex items-center gap-3 transition-all min-h-[52px]">
-                    <img src="{{ asset('images/logos/apps/' . $value . '.svg') }}" alt="{{ $label }}" class="w-6 h-6 object-contain shrink-0" />
-                    <span class="text-xs sm:text-sm font-semibold text-slate-900 leading-tight">{{ $label }}</span>
-                </button>
+
+        {{-- App Selection Grid --}}
+        <div x-show="stackType === 'app'" x-transition class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            @php
+                $apps = [
+                    'hermes_agent' => ['name' => 'Hermes Agent', 'desc' => 'Autonomous AI agent', 'logo' => 'hermes_agent.svg'],
+                    'openclaw' => ['name' => 'OpenClaw', 'desc' => 'AI Agent gateway', 'logo' => 'openclaw.svg'],
+                    'omniroute' => ['name' => 'OmniRoute', 'desc' => 'Smart LLM gateway', 'logo' => 'omniroute.svg'],
+                    '9router' => ['name' => '9router', 'desc' => 'Lightweight AI router', 'logo' => '9router.svg'],
+                    'agent_zero' => ['name' => 'Agent Zero', 'desc' => 'Dynamic AI framework', 'logo' => 'agent_zero.svg'],
+                    'n8n' => ['name' => 'n8n Automation', 'desc' => 'Workflow automation', 'logo' => 'n8n.svg'],
+                    'ollama' => ['name' => 'Ollama', 'desc' => 'Run local LLMs', 'logo' => 'ollama.svg'],
+                    'dify_ollama' => ['name' => 'Dify + Ollama', 'desc' => 'AI RAG orchestration', 'logo' => 'ollama.svg'],
+                    'anythingllm' => ['name' => 'AnythingLLM', 'desc' => 'Private RAG chat', 'logo' => 'anythingllm.svg'],
+                    'librechat' => ['name' => 'LibreChat', 'desc' => 'Open-source AI chat', 'logo' => 'librechat.svg'],
+                    'vscode_server' => ['name' => 'VS Code Server', 'desc' => 'Web-based IDE', 'logo' => 'vscode_server.svg'],
+                    'gitea_forgejo' => ['name' => 'Gitea / Forgejo', 'desc' => 'Self-hosted Git', 'logo' => 'gitea_forgejo.svg'],
+                    'uptime_kuma' => ['name' => 'Uptime Kuma', 'desc' => 'Monitoring tool', 'logo' => 'uptime_kuma.svg'],
+                    'netdata_beszel' => ['name' => 'Netdata / Beszel', 'desc' => 'Server metrics', 'logo' => 'netdata_beszel.svg'],
+                    'wordpress' => ['name' => 'WordPress', 'desc' => 'Popular CMS + Nginx', 'logo' => 'wordpress.svg'],
+                    'ghost' => ['name' => 'Ghost CMS', 'desc' => 'Modern publishing', 'logo' => 'ghost.svg'],
+                    'strapi_directus' => ['name' => 'Strapi / Directus', 'desc' => 'Headless CMS', 'logo' => 'strapi_directus.svg'],
+                    'prestashop_bagisto' => ['name' => 'PrestaShop / Bagisto', 'desc' => 'E-Commerce platform', 'logo' => 'prestashop_bagisto.svg'],
+                ];
+            @endphp
+            @foreach($apps as $key => $info)
+                <label class="p-3.5 cursor-pointer transition-colors relative flex flex-col justify-between bg-white"
+                       :class="controlPanel === '{{ $key }}' ? 'border-2 border-electric bg-cream' : 'border border-hairline hover:border-ink/40'">
+                    <input type="radio" name="control_panel" value="{{ $key }}" x-model="controlPanel" class="sr-only">
+                    <div class="w-8 h-8 mb-2.5 flex items-center justify-center">
+                        <img src="{{ asset('images/logos/apps/' . $info['logo']) }}" alt="{{ $info['name'] }}" class="max-h-full max-w-full object-contain">
+                    </div>
+                    <div>
+                        <div class="font-display font-bold text-sm text-ink">{{ $info['name'] }}</div>
+                        <div class="text-[11px] text-muted leading-tight mt-0.5">{{ $info['desc'] }}</div>
+                    </div>
+                </label>
             @endforeach
         </div>
-        <input type="hidden" name="control_panel" :value="controlPanel">
+
+        {{-- Fresh OS confirmation --}}
+        <div x-show="stackType === 'none'" x-transition class="p-4 bg-creamDark/60 border border-hairline text-xs text-ink/80 font-mono">
+            Server dikirim dengan clean Ubuntu/Debian OS (akses penuh `root` SSH tanpa software tambahan).
+        </div>
     </div>
 </div>

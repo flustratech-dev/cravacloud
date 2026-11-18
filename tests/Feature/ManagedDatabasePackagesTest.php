@@ -21,40 +21,11 @@ class ManagedDatabasePackagesTest extends TestCase
         $this->seed(DatabaseSeeder::class);
     }
 
-    public function test_landing_page_renders_database_packages_with_clean_cards_and_no_marketing_fluff(): void
+    public function test_retired_database_product_routes_return_not_found(): void
     {
-        $response = $this->get('/');
-        $response->assertStatus(200);
-
-        // Section exists
-        $response->assertSee('id="database-packages"', false);
-        $response->assertSee('Paket Managed Database');
-        $response->assertSee('Server database khusus yang terpisah dari server aplikasi');
-        $response->assertDontSee('bebas dari OOM crash');
-
-        // All 3 database package tiers are present
-        $response->assertSee('DB Micro');
-        $response->assertSee('DB Standard');
-        $response->assertSee('DB Enterprise / AI Vector');
-
-        // Prices are present
-        $response->assertSee('95.000');
-        $response->assertSee('145.000');
-        $response->assertSee('225.000');
-
-        // Business & Technical specs points are present
-        $response->assertSee('Kapasitas Beban:');
-        $response->assertSee('Volume Data:');
-        $response->assertSee('Spesifikasi Mesin:');
-        $response->assertSee('Pilihan Engine Siap Pakai:');
-        $response->assertSee('2 Core vCPU');
-        $response->assertSee('Enterprise NVMe');
-
-        // Marketing tags must NOT appear
-        $response->assertDontSee('Zero Setup • Siap Pakai dalam Hitungan Menit');
-        $response->assertDontSee('🎯 Cocok Untuk:');
-        $response->assertDontSee('💡 Solusi yang Didapat:');
-        $response->assertDontSee('Flat bulanan • Siap pakai tanpa setup');
+        $this->get('/database')->assertStatus(404);
+        $this->get('/db')->assertStatus(404);
+        $this->get('/tambah-database')->assertStatus(404);
     }
 
     public function test_checkout_database_package_stores_order_with_defaults(): void
@@ -101,9 +72,11 @@ class ManagedDatabasePackagesTest extends TestCase
         $response = $this->actingAs($user)->get('/dashboard');
         $response->assertStatus(200);
 
-        // Button "Tambah Database" points to #database-packages
-        $response->assertSee('#database-packages');
-        $response->assertSee('Tambah Database');
+        // Database & ecosystem links removed from Client Console navigation
+        $response->assertDontSee('Tambah Database');
+        $response->assertDontSee('/database');
+        $response->assertDontSee('WA Gateway');
+        $response->assertDontSee('Jasa Web');
     }
 
     public function test_dashboard_renders_managed_db_badge_and_remote_connection_guidance(): void
@@ -126,7 +99,7 @@ class ManagedDatabasePackagesTest extends TestCase
             'organization_id' => $org->id,
             'vps_spec_id' => $dbSpec->id,
             'control_panel' => 'managed_database',
-            'provider' => 'cloudeka',
+            'provider' => 'cravacloud',
             'hostname' => 'cv-db-micro-test',
             'datacenter_location' => 'indonesia',
             'os' => 'ubuntu2404',
@@ -145,7 +118,7 @@ class ManagedDatabasePackagesTest extends TestCase
             'public_ip' => '103.150.100.30',
             'control_panel' => 'managed_database',
             'os' => 'Ubuntu 24.04 LTS',
-            'provider' => 'cloudeka',
+            'provider' => 'cravacloud',
             'status' => 'running',
             'cpu' => $dbSpec->cpu,
             'ram' => $dbSpec->ram,
@@ -228,7 +201,7 @@ class ManagedDatabasePackagesTest extends TestCase
             'db_password' => 'cravaSecretPass99',
             'db_port' => 5432,
             'os' => 'Ubuntu 24.04 LTS',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'status' => 'running',
             'cpu' => $dbSpec->cpu,
             'ram' => $dbSpec->ram,

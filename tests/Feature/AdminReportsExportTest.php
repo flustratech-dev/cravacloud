@@ -38,7 +38,7 @@ class AdminReportsExportTest extends TestCase
             'customer_id' => $this->customer->id,
             'vps_spec_id' => 1,
             'control_panel' => 'coolify',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'hostname' => 'vps-report-test',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',

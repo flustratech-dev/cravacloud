@@ -6,10 +6,9 @@ use App\Support\KatalogProduk;
 use Illuminate\Contracts\View\View;
 
 /**
- * Halaman produk: /vps, /ai, /database.
+ * Halaman produk: /vps.
  *
- * Ketiganya dulu hanya redirect ke anchor di beranda. Alasan mengubahnya
- * menjadi halaman sungguhan ada di App\Support\KatalogProduk.
+ * Alasan mengubahnya menjadi halaman sungguhan ada di App\Support\KatalogProduk.
  */
 class ProdukController extends Controller
 {

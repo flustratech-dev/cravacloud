@@ -1,136 +1,121 @@
-@extends('layouts.app', ['title' => 'Pesanan Berhasil — CravaCloud'])
+@extends('layouts.app', ['title' => 'CravaCloud Pesanan Berhasil', 'robots' => 'noindex, follow'])
 
 @section('content')
 @php
     $isPaid = (bool) ($order->paid_at || in_array($order->status, ['paid', 'provisioning', 'active'], true) || ($order->invoice && $order->invoice->status === 'paid'));
 @endphp
-<div class="py-16 bg-slate-50 min-h-screen">
-    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="bg-white rounded-lg border border-slate-200 p-8 sm:p-10 text-center">
+<div class="py-12 sm:py-16 bg-cream min-h-screen">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white border-2 border-ink p-6 sm:p-10 text-center">
 
             @if($order->status === 'active' && $order->vpsInstance)
-                {{-- Order sudah aktif dan VPS sudah di-provision oleh admin --}}
-                <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-5 border border-emerald-200">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <div class="w-12 h-12 bg-emerald-600 text-white flex items-center justify-center mx-auto mb-5">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
                 </div>
 
-                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 mb-2">VPS Anda Sudah Aktif</h1>
-                <p class="text-sm text-slate-600 mb-8 max-w-md mx-auto">
-                    Cloud VPS Anda telah berhasil di-setup dan siap digunakan. Kelola server Anda melalui dashboard.
+                <span class="font-mono text-[10px] uppercase tracking-widest text-emerald-700 font-bold block mb-1">PROVISIONING SELESAI</span>
+                <h1 class="font-display text-2xl sm:text-3xl font-bold text-ink tracking-tight mb-2">VPS Anda Sudah Aktif</h1>
+                <p class="text-xs sm:text-sm text-muted mb-8 max-w-md mx-auto">
+                    Cloud VPS Anda telah berhasil di-setup dan siap digunakan. Kelola server dan kredensial Anda melalui dashboard klien.
                 </p>
             @else
-                {{-- Order masih pending / menunggu pembayaran / menunggu provisioning --}}
-                <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-900 flex items-center justify-center mx-auto mb-5 border border-slate-300">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div class="w-12 h-12 bg-ink text-cream flex items-center justify-center mx-auto mb-5">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
 
-                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 mb-2">Pesanan Anda Sedang Diproses</h1>
-                <p class="text-sm text-slate-600 mb-8 max-w-md mx-auto">
+                <span class="font-mono text-[10px] uppercase tracking-widest text-electric font-bold block mb-1">STATUS PESANAN CLOUD</span>
+                <h1 class="font-display text-2xl sm:text-3xl font-bold text-ink tracking-tight mb-2">Pesanan Anda Sedang Diproses</h1>
+                <p class="text-xs sm:text-sm text-muted mb-8 max-w-md mx-auto leading-relaxed">
                     @if($isPaid)
                         Pembayaran telah dikonfirmasi lunas. Tim teknis kami sedang melakukan setup server Anda. Kredensial server akan dikirimkan ke email Anda.
                     @else
-                        Pembayaran Anda telah kami terima dan masuk dalam antrean verifikasi mutasi tim teknis. Tim kami akan segera memverifikasi dan menyiapkan server VPS Anda.
+                        Pembayaran Anda telah diterima dan masuk dalam antrean verifikasi. Server VPS segera disiapkan setelah terkonfirmasi.
                     @endif
                 </p>
 
-                {{-- Progress Steps --}}
-                <div class="flex items-center justify-center gap-2 mb-8 text-xs">
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-5 h-5 rounded-full bg-black text-white flex items-center justify-center text-[10px] font-bold">1</span>
-                        <span class="font-semibold text-slate-900">Pesanan Dibuat</span>
+                {{-- Editorial Stepper --}}
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-px bg-hairline border border-hairline mb-8 text-left">
+                    <div class="p-3 bg-white">
+                        <span class="font-mono text-[10px] font-bold text-electric block">01 // SELESAI</span>
+                        <span class="font-display text-xs font-bold text-ink">Pesanan Dibuat</span>
                     </div>
-                    <div class="w-8 h-px bg-black"></div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-5 h-5 rounded-full bg-black text-white flex items-center justify-center text-[10px] font-bold">2</span>
-                        <span class="font-semibold text-slate-900">Pembayaran Diterima</span>
+                    <div class="p-3 bg-white">
+                        <span class="font-mono text-[10px] font-bold text-electric block">02 // SELESAI</span>
+                        <span class="font-display text-xs font-bold text-ink">Pembayaran Diterima</span>
                     </div>
-                    <div class="w-8 h-px {{ $isPaid ? 'bg-black' : 'bg-slate-300' }}"></div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-5 h-5 rounded-full {{ $isPaid ? 'bg-black text-white' : 'bg-slate-200 text-slate-500' }} flex items-center justify-center text-[10px] font-bold">3</span>
-                        <span class="font-semibold {{ $isPaid ? 'text-slate-900' : 'text-slate-400' }}">Setup Server</span>
+                    <div class="p-3 {{ $isPaid ? 'bg-white' : 'bg-creamDark/40' }}">
+                        <span class="font-mono text-[10px] font-bold {{ $isPaid ? 'text-electric' : 'text-muted' }} block">03 // {{ $isPaid ? 'PROSES' : 'ANTRIAN' }}</span>
+                        <span class="font-display text-xs font-bold {{ $isPaid ? 'text-ink' : 'text-muted' }}">Setup Server</span>
                     </div>
-                    <div class="w-8 h-px bg-slate-300"></div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold">4</span>
-                        <span class="font-semibold text-slate-400">Aktif</span>
+                    <div class="p-3 bg-creamDark/40">
+                        <span class="font-mono text-[10px] font-bold text-muted block">04 // MENUNGGU</span>
+                        <span class="font-display text-xs font-bold text-muted">Server Aktif</span>
                     </div>
                 </div>
             @endif
 
             {{-- Order Details Box --}}
-            <div class="rounded-lg bg-slate-50 border border-slate-200 p-6 text-left mb-8 space-y-4 text-xs">
-                <div class="flex justify-between items-center pb-2">
+            <div class="bg-creamDark/40 border border-hairline p-5 sm:p-6 text-left mb-8 space-y-5 text-xs">
+                <div class="flex flex-wrap justify-between items-center gap-3 pb-3 border-b border-hairline">
                     <div>
-                        <span class="text-slate-500 block text-[11px]">Nomor Invoice:</span>
-                        <span class="font-mono-code font-bold text-slate-900 text-sm">{{ $order->invoice->invoice_number ?? 'INV-' . $order->id }}</span>
+                        <span class="font-mono text-[10px] uppercase tracking-wider text-muted block">Nomor Invoice</span>
+                        <span class="font-mono font-bold text-ink text-base">{{ $order->invoice->invoice_number ?? 'INV-' . $order->id }}</span>
                     </div>
-                    <span class="px-2.5 py-0.5 rounded font-bold uppercase border text-xs
-                        @if($isPaid)
-                            border-emerald-300 bg-emerald-50 text-emerald-700
-                        @else
-                            border-slate-300 bg-slate-100 text-slate-800
-                        @endif
-                    ">
+                    <span class="px-3 py-1 font-mono text-[11px] font-bold uppercase
+                        {{ $isPaid ? 'bg-emerald-700 text-white' : 'bg-ink text-cream' }}">
                         {{ $isPaid ? 'LUNAS' : 'DIPROSES (VERIFIKASI)' }}
                     </span>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 py-2 text-xs border-t border-slate-200">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div>
-                        <span class="text-slate-500 block">VPS Name:</span>
-                        <span class="font-semibold text-slate-900 font-mono-code">{{ $order->hostname ?? '-' }}</span>
+                        <span class="font-mono text-[10px] uppercase text-muted block mb-0.5">VPS Name</span>
+                        <span class="font-mono font-bold text-ink">{{ $order->hostname ?? '-' }}</span>
                     </div>
                     <div>
-                        <span class="text-slate-500 block">Paket VPS:</span>
-                        <span class="font-semibold text-slate-900">{{ $order->vpsSpec->name ?? 'Standard' }}</span>
+                        <span class="font-mono text-[10px] uppercase text-muted block mb-0.5">Paket VPS</span>
+                        <span class="font-display font-bold text-ink">{{ $order->vpsSpec->name ?? 'Cloud VPS' }}</span>
                     </div>
                     <div>
-                        <span class="text-slate-500 block">Provider:</span>
-                        <span class="font-semibold text-slate-900">{{ $order->provider_label }}</span>
+                        <span class="font-mono text-[10px] uppercase text-muted block mb-0.5">Infrastruktur</span>
+                        <span class="font-semibold text-ink">{{ $order->provider_label }}</span>
                     </div>
                     <div>
-                        <span class="text-slate-500 block">Datacenter & OS:</span>
-                        <span class="font-semibold text-slate-900 capitalize">{{ $order->datacenter_location }} · {{ $order->os_label }}</span>
+                        <span class="font-mono text-[10px] uppercase text-muted block mb-0.5">Datacenter &amp; OS</span>
+                        <span class="font-semibold text-ink capitalize">{{ $order->datacenter_location }} · {{ $order->os_label }}</span>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 py-2 text-xs border-t border-slate-200">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-hairline">
                     <div>
-                        <span class="text-slate-500 block">Stack Server:</span>
-                        <span class="font-semibold text-slate-900">{{ $order->control_panel_label }}</span>
+                        <span class="font-mono text-[10px] uppercase text-muted block mb-0.5">Stack Server</span>
+                        <span class="font-semibold text-ink">{{ $order->control_panel_label }}</span>
                     </div>
                     <div>
-                        <span class="text-slate-500 block">Spesifikasi:</span>
-                        <span class="font-semibold text-slate-900">
+                        <span class="font-mono text-[10px] uppercase text-muted block mb-0.5">Spesifikasi</span>
+                        <span class="font-mono font-semibold text-ink">
                             {{ $order->vpsSpec->cpu ?? '-' }} vCPU · {{ $order->vpsSpec->ram ?? '-' }} GB · {{ $order->vpsSpec->disk ?? '-' }} GB
                         </span>
                     </div>
                     <div>
-                        <span class="text-slate-500 block">Siklus Tagihan:</span>
-                        <span class="font-semibold text-slate-900">
-                            @if($order->billing_cycle === 'annual')
-                                12 Bulan (1 Tahun)
-                            @elseif($order->billing_cycle === 'semi_annual')
-                                6 Bulan
-                            @elseif($order->billing_cycle === 'quarterly')
-                                3 Bulan
-                            @else
-                                1 Bulan
-                            @endif
+                        <span class="font-mono text-[10px] uppercase text-muted block mb-0.5">Siklus Tagihan</span>
+                        <span class="font-semibold text-ink">
+                            @if($order->billing_cycle === 'annual') 12 Bulan (1 Tahun)
+                            @elseif($order->billing_cycle === 'semi_annual') 6 Bulan
+                            @elseif($order->billing_cycle === 'quarterly') 3 Bulan
+                            @else 1 Bulan @endif
                         </span>
                     </div>
                     <div>
-                        <span class="text-slate-500 block">Total Tagihan:</span>
-                        <span class="font-bold text-slate-900 font-mono-code">Rp {{ number_format($order->amount, 0, ',', '.') }}</span>
+                        <span class="font-mono text-[10px] uppercase text-muted block mb-0.5">Total Tagihan</span>
+                        <span class="font-bold text-electric font-mono text-sm">Rp {{ number_format($order->amount, 0, ',', '.') }}</span>
                     </div>
                 </div>
 
-                {{-- VPS Credentials - hanya tampil jika sudah di-provision oleh admin --}}
+                {{-- VPS Credentials when active --}}
                 @if($order->vpsInstance && $order->status === 'active')
                     @php $vps = $order->vpsInstance; @endphp
-                    <div class="pt-4 bg-white p-5 rounded-lg border border-slate-200 space-y-4" x-data="{
-                        showPassword: false,
-                        copied: false,
+                    <div class="bg-white p-5 border border-ink space-y-4" x-data="{
                         copiedSsh: false,
                         sshCmd: '{{ $vps->ssh_command }}',
                         copyText(text, type) {
@@ -138,70 +123,65 @@
                             if (type === 'ssh') { this.copiedSsh = true; setTimeout(() => this.copiedSsh = false, 2000); }
                         }
                     }">
-                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <div class="flex items-center space-x-2">
+                        <div class="flex items-center justify-between border-b border-hairline pb-3">
+                            <div class="flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                <p class="font-bold text-slate-900 text-sm">Informasi Akses Server</p>
+                                <p class="font-mono font-bold text-ink text-xs uppercase tracking-wider">Informasi Akses Server</p>
                             </div>
                             @php $badge = $vps->statusBadge; @endphp
-                            <span class="text-[11px] font-medium px-2 py-0.5 rounded border {{ $badge['bg'] }}">
+                            <span class="font-mono text-[10px] font-bold uppercase px-2 py-0.5 border border-hairline bg-creamDark text-ink">
                                 {{ $badge['label'] }}
                             </span>
                         </div>
 
                         <div class="grid sm:grid-cols-2 gap-3 text-xs">
                             <div>
-                                <span class="text-slate-500 block text-[11px] mb-0.5">Hostname:</span>
-                                <span class="font-mono-code font-semibold text-slate-800">{{ $vps->hostname }}</span>
+                                <span class="font-mono text-[10px] uppercase text-muted block mb-0.5">Hostname</span>
+                                <span class="font-mono font-bold text-ink">{{ $vps->hostname }}</span>
                             </div>
                             <div>
-                                <span class="text-slate-500 block text-[11px] mb-0.5">IP Publik & Port:</span>
-                                <span class="font-mono-code font-bold text-slate-950">{{ $vps->public_ip }}:{{ $vps->ssh_port ?? 22 }}</span>
+                                <span class="font-mono text-[10px] uppercase text-muted block mb-0.5">IP Publik &amp; Port</span>
+                                <span class="font-mono font-bold text-ink">{{ $vps->public_ip }}:{{ $vps->ssh_port ?? 22 }}</span>
                             </div>
                             <div>
-                                <span class="text-slate-500 block text-[11px] mb-0.5">Sistem Operasi:</span>
-                                <span class="font-medium text-slate-800">{{ $vps->os }}</span>
+                                <span class="font-mono text-[10px] uppercase text-muted block mb-0.5">Sistem Operasi</span>
+                                <span class="font-semibold text-ink">{{ $vps->os }}</span>
                             </div>
                             <div>
-                                <span class="text-slate-500 block text-[11px] mb-0.5">Masa Berlaku:</span>
-                                <span class="font-medium text-slate-800">
+                                <span class="font-mono text-[10px] uppercase text-muted block mb-0.5">Masa Berlaku</span>
+                                <span class="font-semibold text-ink">
                                     {{ $vps->expires_at ? $vps->expires_at->timezone('Asia/Jakarta')->format('d M Y') : '—' }}
                                 </span>
                             </div>
                         </div>
 
-                        {{-- SSH Command --}}
-                        <div class="p-3 bg-neutral-900 rounded-lg text-white space-y-1.5">
-                            <div class="flex items-center justify-between text-[11px] text-neutral-400">
-                                <span>Perintah Terminal SSH:</span>
-                                <button type="button" @click="copyText(sshCmd, 'ssh')" class="text-white hover:text-neutral-300 font-medium flex items-center gap-1 cursor-pointer">
-                                    <span x-text="copiedSsh ? 'Tersalin!' : 'Salin Perintah'"></span>
+                        <div class="p-3.5 bg-ink text-white space-y-1.5">
+                            <div class="flex items-center justify-between font-mono text-[10px] text-white/60 uppercase">
+                                <span>Perintah Terminal SSH</span>
+                                <button type="button" @click="copyText(sshCmd, 'ssh')" class="text-white hover:text-electric font-bold cursor-pointer">
+                                    <span x-text="copiedSsh ? 'TERSALIN!' : 'SALIN PERINTAH'"></span>
                                 </button>
                             </div>
-                            <div class="font-mono-code text-xs text-emerald-400 select-all">
+                            <div class="font-mono text-xs text-emerald-400 select-all">
                                 {{ $vps->ssh_command }}
                             </div>
                         </div>
 
-                        <div class="p-3 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-800">
-                            <span class="font-semibold">Catatan:</span> Username &amp; password SSH dapat dilihat di menu detail VPS pada Dashboard (tab Akses, klik ikon mata).
+                        <div class="p-3 bg-amber-50 border border-amber-400 text-xs text-amber-950">
+                            <span class="font-bold">Catatan:</span> Username &amp; password SSH dapat dilihat di menu detail VPS pada Dashboard (tab Akses, klik ikon mata).
                         </div>
                     </div>
                 @elseif($isPaid)
-                    {{-- Sudah bayar tapi belum di-provision --}}
-                    <div class="pt-4 bg-cyan-50 p-5 rounded-lg border border-cyan-200 text-center">
-                        <svg class="w-8 h-8 text-cyan-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        <p class="text-sm font-semibold text-cyan-800">Server Sedang Di-Setup</p>
-                        <p class="text-xs text-cyan-700 mt-1">Pembayaran telah dikonfirmasi lunas. Tim teknis kami sedang mempersiapkan VPS Anda. Kredensial akses server akan tersedia di Dashboard setelah proses setup selesai (maksimal 1×24 jam sejak pembayaran, umumnya lebih cepat). Anda juga akan menerima email &amp; WhatsApp saat server siap.</p>
+                    <div class="bg-white p-5 border border-electric text-center">
+                        <p class="font-display text-sm font-bold text-electric">Server Sedang Di-Setup</p>
+                        <p class="text-xs text-muted mt-1 leading-relaxed">Pembayaran telah dikonfirmasi lunas. Tim teknis sedang mempersiapkan VPS Anda. Kredensial akses tersedia di Dashboard setelah setup selesai (maksimal 1x24 jam sejak pembayaran, umumnya lebih cepat) dan dikirimkan melalui email &amp; WhatsApp.</p>
                     </div>
                 @else
-                    {{-- Belum bayar --}}
-                    <div class="pt-4 bg-amber-50 p-5 rounded-lg border border-amber-200 text-center">
-                        <svg class="w-8 h-8 text-amber-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <p class="text-sm font-semibold text-amber-800">Menunggu Pembayaran</p>
-                        <p class="text-xs text-amber-700 mt-1">Silakan lakukan pembayaran sesuai metode yang dipilih. Setelah pembayaran terkonfirmasi, VPS Anda akan segera di-setup oleh tim kami.</p>
+                    <div class="bg-amber-50 p-5 border border-amber-500 text-center">
+                        <p class="font-display text-sm font-bold text-amber-950">Menunggu Pembayaran</p>
+                        <p class="text-xs text-amber-900 mt-1">Silakan selesaikan pembayaran sesuai metode yang dipilih. Setelah pembayaran terkonfirmasi, VPS Anda segera disiapkan.</p>
                         @if($order->invoice && $order->invoice->due_at)
-                            <p class="text-xs text-amber-600 mt-2 font-medium">Batas waktu pembayaran: {{ $order->invoice->due_at->timezone('Asia/Jakarta')->format('d M Y, H:i') }} WIB</p>
+                            <p class="font-mono text-xs text-amber-950 mt-2 font-bold">Batas waktu pembayaran: {{ $order->invoice->due_at->timezone('Asia/Jakarta')->format('d M Y, H:i') }} WIB</p>
                         @endif
                     </div>
                 @endif
@@ -209,13 +189,14 @@
 
             {{-- Action Buttons --}}
             <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <a href="{{ route('dashboard.index', $isPaid ? ['payment_success' => 1, 'order_id' => $order->id] : []) }}" class="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-black hover:bg-neutral-800 text-white text-sm font-bold transition-colors">
+                <a href="{{ route('dashboard.index', $isPaid ? ['payment_success' => 1, 'order_id' => $order->id] : []) }}"
+                   class="w-full sm:w-auto rounded-none px-7 py-3.5 bg-electric hover:bg-electricHover text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors">
                     Buka Dashboard
                 </a>
                 @if($order->invoice)
                     <a href="{{ route('dashboard.invoice.print', $order->invoice->id) }}"
                        @click.prevent="$dispatch('open-invoice-modal', { url: '{{ route('dashboard.invoice.print', $order->invoice->id) }}' })"
-                       class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-900 text-sm font-semibold transition-colors cursor-pointer">
+                       class="w-full sm:w-auto rounded-none px-6 py-3.5 bg-white border border-ink hover:bg-creamDark text-ink font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
                         Cetak Invoice
                     </a>
                 @endif

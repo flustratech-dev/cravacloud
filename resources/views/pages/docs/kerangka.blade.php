@@ -36,36 +36,35 @@
 }"
 @keydown.window.prevent.cmd.k="docsSearchOpen = true; $nextTick(() => $refs.searchInput.focus())"
 @keydown.window.prevent.ctrl.k="docsSearchOpen = true; $nextTick(() => $refs.searchInput.focus())"
-class="min-h-screen bg-slate-50 selection:bg-slate-900 selection:text-white">
+class="min-h-screen bg-cream text-ink selection:bg-electric selection:text-white">
 
-    <!-- Top Sub-Header Bar (Enterprise Documentation Banner) -->
-    <div class="bg-white border-b border-slate-200 sticky top-16 z-30 shadow-xs">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+    <!-- Sub-Header Docs Utility Bar -->
+    <div class="bg-creamDark/90 backdrop-blur-md border-b border-hairline sticky top-20 z-30">
+        <div class="max-w-[1380px] mx-auto px-5 sm:px-10 lg:px-14 h-14 flex items-center justify-between gap-4">
             <div class="flex items-center space-x-3">
-                <div class="flex items-center space-x-2">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Dokumentasi Teknis</span>
-                    <span class="text-slate-300">/</span>
-                    <span class="text-xs font-semibold text-slate-900 font-mono-code">v1.4 Enterprise</span>
+                <div class="flex items-center space-x-2 font-mono text-xs uppercase tracking-wider">
+                    <span class="font-bold text-muted">Dokumentasi Teknis</span>
+                    <span class="text-hairline">/</span>
+                    <span class="font-bold text-electric">v1.4 Enterprise</span>
                 </div>
-                <a href="{{ route('status') }}" class="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100">
-                    Cek Status Layanan &rarr;
+                <a href="{{ route('status') }}" class="hidden sm:inline-flex items-center px-2.5 py-0.5 border border-hairline bg-white hover:border-electric font-mono text-[10px] font-bold uppercase text-ink transition-colors">
+                    Cek Status Layanan →
                 </a>
             </div>
 
-            <!-- Quick Search Input Trigger -->
             <div class="flex items-center space-x-3">
                 <button @click="docsSearchOpen = true; $nextTick(() => $refs.searchInput.focus())"
                         type="button"
-                        class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-800 text-xs transition-colors shadow-2xs group">
-                    <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <span class="hidden sm:inline">Cari dokumentasi atau endpoint API...</span>
-                    <span class="sm:hidden">Cari...</span>
-                    <kbd class="hidden sm:inline-flex items-center gap-0.5 font-mono-code text-[10px] font-semibold bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-600 shadow-2xs">Ctrl K</kbd>
+                        class="flex items-center gap-2.5 px-3.5 py-1.5 border border-ink bg-white hover:border-electric text-ink font-mono text-xs transition-colors cursor-pointer group">
+                    <svg class="w-3.5 h-3.5 text-muted group-hover:text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <span class="hidden sm:inline text-muted">Cari topik / API...</span>
+                    <span class="sm:hidden text-muted">Cari...</span>
+                    <kbd class="hidden sm:inline-flex items-center font-mono text-[10px] font-bold bg-creamDark px-1.5 py-0.5 border border-hairline text-ink">Ctrl K</kbd>
                 </button>
 
-                <a href="{{ route('dashboard.index') }}" class="hidden md:inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-black px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                <a href="{{ route('dashboard.index') }}" class="hidden md:inline-flex items-center gap-1.5 font-mono text-xs font-bold uppercase tracking-wider text-ink hover:text-electric px-2 py-1.5 transition-colors">
                     <span>Client Portal</span>
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <span>→</span>
                 </a>
             </div>
         </div>
@@ -73,73 +72,67 @@ class="min-h-screen bg-slate-50 selection:bg-slate-900 selection:text-white">
 
     <!-- Search Modal (Cmd+K / Ctrl+K) -->
     <div x-show="docsSearchOpen"
-         x-transition:enter="transition ease-out duration-150"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-100"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-start justify-center pt-20 px-4"
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto bg-ink/75 backdrop-blur-xs flex items-start justify-center pt-20 px-4"
          style="display: none;"
          @keydown.escape.window="docsSearchOpen = false">
 
         <div @click.away="docsSearchOpen = false"
-             class="bg-white rounded-xl border border-slate-200 shadow-2xl max-w-2xl w-full overflow-hidden">
-            <div class="p-4 border-b border-slate-200 flex items-center gap-3">
-                <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+             class="bg-cream border-2 border-ink shadow-2xl max-w-2xl w-full overflow-hidden rounded-none">
+            <div class="p-4 bg-white border-b border-ink flex items-center gap-3">
+                <svg class="w-5 h-5 text-electric shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 <input x-ref="searchInput"
                        x-model="searchQuery"
                        type="text"
                        placeholder="Ketik topik, perintah SSH, spesifikasi, atau endpoint API..."
-                       class="w-full text-sm text-slate-900 placeholder-slate-400 bg-transparent focus:outline-none">
-                <button @click="docsSearchOpen = false" class="text-xs font-semibold text-slate-400 hover:text-slate-600 px-2 py-1 rounded bg-slate-100">ESC</button>
+                       class="w-full text-xs sm:text-sm font-mono text-ink placeholder:text-muted/60 bg-transparent focus:outline-none">
+                <button type="button" @click="docsSearchOpen = false" class="font-mono text-xs font-bold text-ink hover:bg-ink hover:text-white px-2 py-1 border border-hairline cursor-pointer">ESC</button>
             </div>
 
-            <div class="max-h-96 overflow-y-auto p-2 divide-y divide-slate-100">
+            <div class="max-h-96 overflow-y-auto divide-y divide-hairline bg-cream">
                 <template x-for="item in filteredSections" :key="item.id">
-                    <button @click="buka(item)"
-                            class="w-full text-left p-3 hover:bg-slate-50 rounded-lg flex items-center justify-between group transition-colors">
+                    <button type="button" @click="buka(item)"
+                            class="w-full text-left p-3.5 hover:bg-white flex items-center justify-between group transition-colors cursor-pointer">
                         <div>
-                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block font-mono-code" x-text="item.category"></span>
-                            <span class="text-sm font-semibold text-slate-900 group-hover:text-black" x-text="item.title"></span>
+                            <span class="font-mono text-[10px] font-bold text-electric uppercase tracking-wider block" x-text="item.category"></span>
+                            <span class="font-display text-sm font-bold text-ink" x-text="item.title"></span>
                         </div>
-                        <svg class="w-4 h-4 text-slate-300 group-hover:text-slate-700 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        <span class="font-mono text-xs text-muted group-hover:text-electric">→</span>
                     </button>
                 </template>
-                <div x-show="filteredSections.length === 0" class="p-8 text-center text-xs text-slate-400">
+                <div x-show="filteredSections.length === 0" class="p-8 text-center font-mono text-xs text-muted">
                     Tidak ada topik dokumentasi yang cocok dengan kata kunci tersebut.
                 </div>
             </div>
 
-            <div class="px-4 py-2.5 bg-slate-50 border-t border-slate-200 text-[11px] text-slate-500 flex items-center justify-between">
+            <div class="px-4 py-2.5 bg-creamDark border-t border-hairline font-mono text-[11px] text-muted flex items-center justify-between">
                 <span>Navigasi cepat dokumentasi CravaCloud</span>
-                <span class="font-mono-code text-[10px]">Gunakan panah & enter untuk membuka</span>
+                <span class="text-[10px]">Klik topik atau ESC untuk tutup</span>
             </div>
         </div>
     </div>
 
-    <!-- Tata letak tiga kolom: navigasi, isi dokumentasi, daftar isi halaman -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <!-- 3-Column Documentation Grid -->
+    <div class="max-w-[1380px] mx-auto px-5 sm:px-10 lg:px-14 py-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
 
-            <!-- KIRI: navigasi antar kelompok dokumentasi -->
-            <aside class="lg:col-span-3 sticky top-32 max-h-[calc(100vh-9rem)] overflow-y-auto pr-2 space-y-6 text-xs">
-
+            <!-- LEFT: Navigation Tree -->
+            <aside class="lg:col-span-3 lg:sticky lg:top-36 lg:max-h-[calc(100vh-10rem)] lg:overflow-y-auto pr-2 space-y-6 text-xs">
                 @foreach (\App\Support\KatalogDokumentasi::kelompok() as $slugKelompok => $kelompok)
                     @php($iniKelompokAktif = ($kelompokAktif ?? null) === $slugKelompok)
-                    <div>
-                        <div class="flex items-center gap-2 font-bold uppercase tracking-wider text-slate-400 mb-2 px-3">
-                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $kelompok['ikon'] }}"/></svg>
+                    <div class="border-b border-hairline pb-4 last:border-b-0">
+                        <div class="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-widest {{ $iniKelompokAktif ? 'text-electric' : 'text-muted' }} mb-2.5">
+                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $kelompok['ikon'] }}"/></svg>
                             <span>{{ $kelompok['navigasi'] }}</span>
                         </div>
-                        <ul class="space-y-0.5">
+                        <ul class="space-y-0.5 font-mono text-[11px]">
                             @foreach ($kelompok['seksi'] as $idSeksi => $judulSeksi)
                                 <li>
                                     <a href="{{ route('docs.kelompok', $slugKelompok) }}#{{ $idSeksi }}"
                                        @class([
-                                           'block px-3 py-2 rounded-lg transition-colors',
-                                           'text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium' => ! $iniKelompokAktif,
-                                           'text-slate-900 font-semibold hover:bg-slate-200/70' => $iniKelompokAktif,
+                                           'block px-2.5 py-1.5 border-l-2 transition-colors',
+                                           'border-transparent text-muted hover:text-ink hover:border-ink hover:bg-white' => ! $iniKelompokAktif,
+                                           'border-electric text-ink font-semibold bg-white' => $iniKelompokAktif,
                                        ])>
                                         {{ $judulSeksi }}
                                     </a>
@@ -149,61 +142,56 @@ class="min-h-screen bg-slate-50 selection:bg-slate-900 selection:text-white">
                     </div>
                 @endforeach
 
-                <!-- Tiket dukungan -->
-                <div class="p-4 rounded-xl border border-slate-200 bg-white">
-                    <p class="font-bold text-slate-900 text-xs mb-1">Butuh Bantuan Teknis?</p>
-                    <p class="text-slate-500 text-[11px] leading-relaxed mb-3">Tim CravaCloud membantu kendala server Anda pada jam kerja.</p>
-                    <a href="{{ route('dashboard.support') }}" class="block text-center py-2 px-3 rounded-lg bg-slate-900 text-white font-bold text-[11px] hover:bg-black transition-colors">
-                        Buka Tiket Dukungan
+                <div class="p-5 border border-ink bg-white space-y-2.5">
+                    <p class="font-display font-bold text-ink text-sm uppercase">Butuh Bantuan Teknis?</p>
+                    <p class="text-muted text-xs leading-relaxed">Tim CravaCloud membantu kendala server Anda lewat tiket support resmi.</p>
+                    <a href="{{ route('dashboard.support') }}" class="flex items-center justify-between py-2.5 px-3 bg-electric hover:bg-electricHover text-white font-mono font-bold text-[11px] uppercase tracking-wider transition-colors">
+                        <span>Buka Tiket Dukungan</span>
+                        <span>↗</span>
                     </a>
                 </div>
-
             </aside>
 
-            <!-- TENGAH: isi dokumentasi -->
-            <main class="lg:col-span-6 space-y-16">
-
+            <!-- CENTER: Main Content -->
+            <main class="lg:col-span-6 space-y-12 bg-white border border-hairline p-6 sm:p-9">
                 @yield('dokumentasi')
 
-                <div class="pt-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="pt-8 border-t border-hairline flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                        <span class="text-xs font-semibold text-slate-900 block">CravaCloud Engineering Knowledge Base</span>
-                        <span class="text-[11px] text-slate-400">Terakhir diperbarui: September 2026 &bull; Rilis Produksi v1.4</span>
+                        <span class="font-display text-xs font-bold uppercase text-ink block">CravaCloud Engineering Knowledge Base</span>
+                        <span class="font-mono text-[11px] text-muted">Diperbarui 2026 • Rilis Produksi v1.4</span>
                     </div>
-                    <button @click="window.scrollTo({ top: 0, behavior: 'smooth' })"
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:text-black hover:bg-white transition-colors">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
-                        <span>Kembali ke Atas</span>
+                    <button type="button" @click="window.scrollTo({ top: 0, behavior: 'smooth' })"
+                            class="inline-flex items-center gap-2 px-3.5 py-2 border border-ink bg-cream hover:bg-ink hover:text-white font-mono text-xs font-bold uppercase text-ink transition-colors cursor-pointer">
+                        <span>↑ Kembali ke Atas</span>
                     </button>
                 </div>
-
             </main>
 
-            <!-- KANAN: daftar isi halaman yang sedang dibuka -->
-            <aside class="lg:col-span-3 sticky top-32 hidden lg:block space-y-6 text-xs">
+            <!-- RIGHT: On This Page -->
+            <aside class="lg:col-span-3 lg:sticky lg:top-36 hidden lg:block space-y-6 text-xs">
                 @isset($kelompokAktif)
-                    <div class="p-5 rounded-xl border border-slate-200 bg-white">
-                        <p class="font-bold text-slate-900 uppercase tracking-wider text-[11px] mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
-                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
-                            <span>Di Halaman Ini</span>
+                    <div class="p-5 border border-hairline bg-white">
+                        <p class="font-mono font-bold text-ink uppercase tracking-widest text-[10px] mb-3 pb-2 border-b border-hairline">
+                            // DI HALAMAN INI
                         </p>
-                        <nav class="space-y-1.5 text-slate-600 font-medium">
+                        <nav class="space-y-1.5 font-mono text-[11px] text-muted">
                             @foreach (\App\Support\KatalogDokumentasi::ambil($kelompokAktif)['seksi'] as $idSeksi => $judulSeksi)
-                                <a href="#{{ $idSeksi }}" class="block hover:text-slate-900 transition-colors py-0.5">{{ $judulSeksi }}</a>
+                                <a href="#{{ $idSeksi }}" class="block hover:text-electric transition-colors py-0.5">{{ $judulSeksi }}</a>
                             @endforeach
                         </nav>
                     </div>
                 @endisset
 
-                <div class="p-4 rounded-xl border border-slate-200 bg-white">
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Shortcut Keyboard</span>
-                    <div class="flex items-center justify-between text-slate-700 py-1">
+                <div class="p-5 border border-hairline bg-white font-mono">
+                    <span class="text-[10px] font-bold text-electric uppercase tracking-widest block mb-3">Shortcut Keyboard</span>
+                    <div class="flex items-center justify-between text-ink py-1.5 border-b border-hairline text-[11px]">
                         <span>Pencarian Cepat</span>
-                        <kbd class="font-mono-code text-[10px] bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded font-bold text-slate-800">Ctrl + K</kbd>
+                        <kbd class="text-[10px] bg-creamDark border border-hairline px-1.5 py-0.5 font-bold">Ctrl + K</kbd>
                     </div>
-                    <div class="flex items-center justify-between text-slate-700 py-1">
+                    <div class="flex items-center justify-between text-ink py-1.5 text-[11px]">
                         <span>Tutup Modal</span>
-                        <kbd class="font-mono-code text-[10px] bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded font-bold text-slate-800">ESC</kbd>
+                        <kbd class="text-[10px] bg-creamDark border border-hairline px-1.5 py-0.5 font-bold">ESC</kbd>
                     </div>
                 </div>
             </aside>

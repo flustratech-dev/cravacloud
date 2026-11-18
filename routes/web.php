@@ -58,15 +58,9 @@ Route::redirect('/kontak', '/#kontak')->name('contact');
 // bagi pengunjung berfungsi, bagi mesin pencari tidak ada halaman di sana sama
 // sekali. Alasan lengkapnya di App\Support\KatalogProduk.
 Route::get('/vps', ProdukController::class)->defaults('slug', 'vps')->name('packages.vps');
-Route::get('/ai', ProdukController::class)->defaults('slug', 'ai')->name('packages.ai');
-Route::get('/database', ProdukController::class)->defaults('slug', 'database')->name('packages.db');
 
 // Alamat lama tetap dijawab supaya tautan yang sudah tersebar tidak mati.
 Route::redirect('/tambah-vps', '/vps');
-Route::redirect('/ai-agent', '/ai');
-Route::redirect('/tambah-ai-agent', '/ai');
-Route::redirect('/db', '/database');
-Route::redirect('/tambah-database', '/database');
 
 // Public Legal Pages
 Route::view('/terms', 'pages.terms')->name('terms');
@@ -116,8 +110,6 @@ Route::get('/sitemap.xml', function () {
     $urls = [
         ['loc' => $baseUrl.'/', 'changefreq' => 'daily', 'priority' => '1.0', 'lastmod' => $diubah('landing')],
         ['loc' => $baseUrl.'/vps', 'changefreq' => 'weekly', 'priority' => '0.9', 'lastmod' => $diubah('pages.produk')],
-        ['loc' => $baseUrl.'/ai', 'changefreq' => 'weekly', 'priority' => '0.9', 'lastmod' => $diubah('pages.produk')],
-        ['loc' => $baseUrl.'/database', 'changefreq' => 'weekly', 'priority' => '0.9', 'lastmod' => $diubah('pages.produk')],
         ['loc' => $baseUrl.'/docs', 'changefreq' => 'weekly', 'priority' => '0.9', 'lastmod' => $diubah('pages.docs.index')],
         ['loc' => $baseUrl.'/status', 'changefreq' => 'hourly', 'priority' => '0.8', 'lastmod' => $diubah('pages.status')],
         ['loc' => $baseUrl.'/terms', 'changefreq' => 'monthly', 'priority' => '0.3', 'lastmod' => $diubah('pages.terms')],

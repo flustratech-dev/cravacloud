@@ -37,7 +37,8 @@ class LegalPagesTest extends TestCase
 
         $response->assertSee('Ketentuan Layanan (Terms of Service)');
         $response->assertSee('Acceptable Use Policy');
-        $response->assertSee('Created by cravacloud.');
+        $response->assertSee('Product By');
+        $response->assertSee('https://flustra.id');
         $response->assertSee('Kredensial Root');
         $response->assertSee('PASAL 1');
         $response->assertSee('Zero Tolerance Enforcement');

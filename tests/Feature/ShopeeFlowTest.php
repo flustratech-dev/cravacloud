@@ -34,7 +34,7 @@ class ShopeeFlowTest extends TestCase
     public function test_admin_can_process_shopee_order_with_windows_os(): void
     {
         $admin = User::where('email', 'admin@gmail.com')->first();
-        $spec = VpsSpec::where('name', 'Standard')->first();
+        $spec = VpsSpec::where('name', 'Starter S')->first();
 
         $response = $this->actingAs($admin)->post('/admin/shopee/process', [
             'shopee_order_id' => '240915SHPWIN99',
@@ -42,7 +42,7 @@ class ShopeeFlowTest extends TestCase
             'customer_email' => 'winbuyer@test.id',
             'customer_phone' => '081234567890',
             'vps_spec_id' => $spec->id,
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'control_panel' => 'none',
             'datacenter_location' => 'singapore',
             'os' => 'windows2022',
@@ -64,7 +64,7 @@ class ShopeeFlowTest extends TestCase
     public function test_admin_can_auto_provision_shopee_order(): void
     {
         $admin = User::where('email', 'admin@gmail.com')->first();
-        $spec = VpsSpec::where('name', 'Student Basic')->first();
+        $spec = VpsSpec::where('name', 'Starter XS')->first();
 
         $response = $this->actingAs($admin)->post('/admin/shopee/process', [
             'shopee_order_id' => '240915AUTOPROV1',
@@ -72,7 +72,7 @@ class ShopeeFlowTest extends TestCase
             'customer_email' => 'autoprov@test.id',
             'customer_phone' => '081299998888',
             'vps_spec_id' => $spec->id,
-            'provider' => 'cloudeka',
+            'provider' => 'cravacloud',
             'control_panel' => 'coolify',
             'datacenter_location' => 'indonesia',
             'os' => 'ubuntu2404',
@@ -106,7 +106,7 @@ class ShopeeFlowTest extends TestCase
             'customer_id' => $admin->id,
             'vps_spec_id' => $spec->id,
             'control_panel' => 'none',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
             'billing_cycle' => 'monthly',
@@ -120,7 +120,7 @@ class ShopeeFlowTest extends TestCase
             'customer_id' => $admin->id,
             'vps_spec_id' => $spec->id,
             'control_panel' => 'none',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
             'billing_cycle' => 'monthly',

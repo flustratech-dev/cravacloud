@@ -1,21 +1,43 @@
-@extends('layouts.auth', ['title' => 'Verifikasi Email'])
+@extends('layouts.auth', ['title' => 'CravaCloud Verifikasi Email'])
 
 @section('content')
-<div class="min-h-screen flex flex-col items-center justify-center py-10 px-4">
-    <div class="w-full max-w-md px-6">
-        <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm text-center">
-            <img src="{{ asset('images/logo.png') }}" alt="CravaCloud" class="h-12 w-auto mx-auto mb-5">
-            <h1 class="text-2xl font-bold">Verifikasi email Anda</h1>
-            <p class="text-sm text-slate-500 mt-3">Kami sudah mengirim link verifikasi ke <strong>{{ auth()->user()->email }}</strong>. Verifikasi email untuk mengamankan akun.</p>
-            @if(session('success'))<div class="mt-5 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
-            <form method="POST" action="{{ route('verification.send') }}" class="mt-6">@csrf<button class="w-full rounded-lg bg-black px-4 py-2.5 text-sm font-bold text-white">Kirim ulang email verifikasi</button></form>
-            <a href="{{ route('dashboard.index') }}" class="inline-block mt-5 text-sm text-slate-600 underline">Lanjut ke dashboard</a>
-        </div>
-
-        <!-- Copyright -->
-        <p class="mt-6 text-center text-xs text-slate-400 font-normal">
-            &copy; 2026 CravaCloud. All rights reserved. Created by cravacloud.
-        </p>
+<div class="min-h-screen flex flex-col justify-between py-8 px-5 sm:px-10">
+    <div class="max-w-md w-full mx-auto flex items-center justify-between border-b border-hairline pb-4">
+        <a href="{{ route('home') }}" class="inline-flex items-center space-x-2.5">
+            <img src="{{ asset('images/logo.svg') }}" onerror="this.src='{{ asset('images/logo.png') }}'" alt="CravaCloud" class="h-7 w-7 object-contain">
+            <span class="font-display font-extrabold text-lg tracking-tighter text-ink uppercase">CRAVACLOUD</span>
+        </a>
+        <a href="{{ route('dashboard.index') }}" class="font-mono text-xs uppercase text-ink hover:text-electric font-semibold">Dashboard →</a>
     </div>
+
+    <div class="w-full max-w-md mx-auto my-8">
+        <div class="bg-white border-2 border-ink p-7 sm:p-9 shadow-sm">
+            <span class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-electric block">● EMAIL VERIFICATION</span>
+            <h1 class="mt-2 font-display font-bold text-2xl text-ink uppercase">Verifikasi Email Anda</h1>
+            <p class="mt-2 text-xs font-mono text-muted leading-relaxed">
+                Kami telah mengirim tautan verifikasi ke <strong class="text-ink">{{ auth()->user()->email }}</strong>. Silakan periksa kotak masuk untuk mengamankan akun.
+            </p>
+
+            @if(session('success'))
+                <x-ui.alert type="success" class="mt-4">{{ session('success') }}</x-ui.alert>
+            @endif
+
+            <form method="POST" action="{{ route('verification.send') }}" class="mt-6">
+                @csrf
+                <button type="submit" class="w-full bg-electric hover:bg-electricHover text-white font-mono text-xs font-bold uppercase py-3.5 px-5 flex items-center justify-between transition-colors cursor-pointer">
+                    <span>Kirim Ulang Email Verifikasi</span>
+                    <span>↗</span>
+                </button>
+            </form>
+
+            <a href="{{ route('dashboard.index') }}" class="block text-center mt-5 font-mono text-xs text-ink underline hover:text-electric">
+                Lanjut ke Dashboard
+            </a>
+        </div>
+    </div>
+
+    <p class="text-center font-mono text-[11px] text-muted">
+        © {{ date('Y') }} CravaCloud Indonesia. Created by cravacloud.
+    </p>
 </div>
 @endsection

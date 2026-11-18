@@ -16,14 +16,14 @@
 }">
 
     @php
-        $inputClass = 'w-full px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-black';
-        $labelClass = 'block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1';
+        $inputClass = 'w-full px-3 py-2 border border-hairline text-xs text-ink bg-white focus:outline-none focus:border-electric';
+        $labelClass = 'block font-mono text-[10px] font-bold text-muted uppercase tracking-widest mb-1.5';
     @endphp
 
     @if($errors->any())
-        <div class="bg-white p-5 rounded-lg border border-red-200">
-            <span class="text-xs font-semibold text-red-600 uppercase tracking-wider block mb-2">Periksa Kembali Isian Anda</span>
-            <ul class="list-disc list-inside space-y-1 text-xs text-red-700">
+        <div class="bg-white p-5 border-2 border-ink">
+            <span class="font-mono text-[10px] font-bold text-ink uppercase tracking-widest block mb-2">Periksa Kembali Isian Anda</span>
+            <ul class="list-disc list-inside space-y-1 text-xs text-ink">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -31,49 +31,49 @@
         </div>
     @endif
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-5 rounded-lg border border-slate-200">
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">Template Aktif</span>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-hairline border border-hairline">
+        <div class="bg-white p-5">
+            <span class="font-mono text-[10px] font-bold text-muted uppercase tracking-widest block mb-1">Template Aktif</span>
             <div class="flex items-baseline gap-2">
-                <span class="text-2xl font-extrabold text-emerald-600 font-mono-code">{{ $activeCount }}</span>
-                <span class="text-xs text-emerald-600 font-medium">Siap Dipakai</span>
+                <span class="font-display text-2xl font-bold text-electric">{{ $activeCount }}</span>
+                <span class="font-mono text-[11px] text-electric font-bold">Siap Dipakai</span>
             </div>
         </div>
-        <div class="bg-white p-5 rounded-lg border border-slate-200">
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">Total Template</span>
+        <div class="bg-white p-5">
+            <span class="font-mono text-[10px] font-bold text-muted uppercase tracking-widest block mb-1">Total Template</span>
             <div class="flex items-baseline gap-2">
-                <span class="text-2xl font-extrabold text-slate-900 font-mono-code">{{ $totalCount }}</span>
-                <span class="text-xs text-slate-500">Terdaftar</span>
+                <span class="font-display text-2xl font-bold text-ink">{{ $totalCount }}</span>
+                <span class="font-mono text-[11px] text-muted">Terdaftar</span>
             </div>
         </div>
     </div>
 
     <!-- Catatan pemisahan template -->
-    <div class="bg-white p-5 rounded-lg border border-amber-200">
+    <div class="bg-white p-5 border border-ink">
         <div class="flex items-start gap-3">
-            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
+            <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-ink text-cream shrink-0 mt-0.5">
                 Penting
             </span>
             <div>
-                <div class="text-sm font-bold text-slate-900">Jangan Gabungkan Dua Template Ini</div>
-                <p class="text-xs text-slate-600 mt-0.5 leading-relaxed">
-                    Template <strong>Suspensi Karena Pelanggaran</strong> hanya untuk pelanggan yang terbukti melanggar.
-                    Template <strong>Insiden Infrastruktur</strong> dipakai untuk broadcast massal dan tidak boleh menuduh
+                <div class="font-display text-sm font-bold text-ink">Jangan Gabungkan Dua Template Ini</div>
+                <p class="text-xs text-muted mt-1 leading-relaxed">
+                    Template <strong class="text-ink">Suspensi Karena Pelanggaran</strong> hanya untuk pelanggan yang terbukti melanggar.
+                    Template <strong class="text-ink">Insiden Infrastruktur</strong> dipakai untuk broadcast massal dan tidak boleh menuduh
                     penerima melanggar, karena mayoritas penerimanya tidak bersalah.
                 </p>
             </div>
         </div>
     </div>
 
-    <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-100">
-            <h3 class="font-bold text-slate-900 text-base">Daftar Template</h3>
-            <p class="text-xs text-slate-500">Subjek dan isi dapat diubah tanpa deploy ulang.</p>
+    <div class="bg-white border border-hairline overflow-hidden">
+        <div class="px-5 py-4 border-b border-hairline">
+            <h3 class="font-display font-bold text-ink text-base">Daftar Template</h3>
+            <p class="text-xs text-muted mt-0.5">Subjek dan isi dapat diubah tanpa deploy ulang.</p>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
-                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider border-y border-slate-200">
+                <thead class="bg-creamDark/60 text-muted font-mono text-[10px] font-bold uppercase tracking-widest border-y border-hairline">
                     <tr>
                         <th class="px-5 py-3.5">Template</th>
                         <th class="px-5 py-3.5">Subjek</th>
@@ -82,23 +82,23 @@
                         <th class="px-5 py-3.5 text-right">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody class="divide-y divide-hairline">
                     @forelse($templates as $template)
-                        <tr class="hover:bg-slate-50/80 transition-colors">
+                        <tr class="hover:bg-creamDark/30 transition-colors">
                             <td class="px-5 py-3.5">
-                                <span class="font-bold text-slate-900 text-sm block">{{ $template->name }}</span>
-                                <span class="text-[11px] text-slate-400 font-mono-code">{{ $template->code }}</span>
+                                <span class="font-bold text-ink text-sm block">{{ $template->name }}</span>
+                                <span class="text-[11px] text-muted font-mono">{{ $template->code }}</span>
                                 @if($template->description)
-                                    <span class="text-[11px] text-slate-500 italic block mt-0.5">{{ Str::limit($template->description, 90) }}</span>
+                                    <span class="text-[11px] text-muted italic block mt-0.5">{{ Str::limit($template->description, 90) }}</span>
                                 @endif
                             </td>
-                            <td class="px-5 py-3.5 text-slate-700">{{ Str::limit($template->subject, 50) }}</td>
+                            <td class="px-5 py-3.5 text-ink">{{ Str::limit($template->subject, 50) }}</td>
                             <td class="px-5 py-3.5">
                                 <div class="flex flex-wrap gap-1">
                                     {{-- Kurung kurawal dirangkai satu per satu agar Blade
                                          tidak menganggapnya sebagai ekspresi. --}}
                                     @foreach($template->variables ?? [] as $variable)
-                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 font-mono-code">
+                                        <span class="px-1.5 py-0.5 text-[10px] font-bold bg-creamDark text-ink border border-hairline font-mono">
                                             {{ '{' . '{' . $variable . '}' . '}' }}
                                         </span>
                                     @endforeach
@@ -106,26 +106,22 @@
                             </td>
                             <td class="px-5 py-3.5 text-center">
                                 @if($template->is_active)
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>Aktif
-                                    </span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-electric text-white">Aktif</span>
                                 @else
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold bg-slate-50 text-slate-700 border border-slate-200">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Nonaktif
-                                    </span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-creamDark border border-hairline text-muted">Nonaktif</span>
                                 @endif
                             </td>
                             <td class="px-5 py-3.5 text-right">
                                 <button @click='openEdit(@json($template))'
-                                        class="px-2.5 py-1 rounded text-[11px] font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200">
+                                        class="px-3 py-1 font-mono text-[10px] font-bold uppercase bg-white hover:border-ink text-ink border border-hairline cursor-pointer">
                                     Sunting
                                 </button>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-5 py-10 text-center text-slate-500 text-sm">
-                                Belum ada template. Jalankan <span class="font-mono-code">php artisan db:seed</span> untuk memuat template bawaan.
+                            <td colspan="5" class="px-5 py-10 text-center font-mono text-xs text-muted">
+                                Belum ada template. Jalankan <span class="font-mono text-ink font-semibold">php artisan db:seed</span> untuk memuat template bawaan.
                             </td>
                         </tr>
                     @endforelse
@@ -135,26 +131,20 @@
     </div>
 
     <!-- Modal Sunting Template -->
-    <div x-show="editModalOpen"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+    <div x-show="editModalOpen" x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto bg-ink/50 flex items-center justify-center p-4"
          style="display: none;" @keydown.escape.window="editModalOpen = false">
 
         <div @click.away="editModalOpen = false"
-             class="bg-white rounded-lg border border-slate-200 shadow-xl max-w-2xl w-full overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+             class="bg-white border border-ink shadow-xl max-w-2xl w-full overflow-hidden">
+            <div class="px-6 py-4 border-b border-hairline flex items-center justify-between bg-creamDark/40">
                 <div>
-                    <h3 class="font-bold text-slate-900 text-base">Sunting Template Surel</h3>
-                    <p class="text-xs text-slate-500">
-                        Kode <span class="font-mono-code font-semibold text-slate-800" x-text="editData.code"></span> tidak dapat diubah
+                    <h3 class="font-display font-bold text-ink text-base">Sunting Template Surel</h3>
+                    <p class="text-xs text-muted">
+                        Kode <span class="font-mono font-bold text-ink" x-text="editData.code"></span> tidak dapat diubah
                     </p>
                 </div>
-                <button @click="editModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
+                <button @click="editModalOpen = false" class="text-muted hover:text-ink p-1 font-mono text-base cursor-pointer">&times;</button>
             </div>
 
             <form :action="'/admin/templates/' + editData.id" method="POST" class="p-6 space-y-4">
@@ -174,11 +164,11 @@
                 <div>
                     <label class="{{ $labelClass }}">Isi Surel</label>
                     <textarea name="body" x-model="editData.body" rows="12" required maxlength="5000"
-                              class="{{ $inputClass }} font-mono-code text-xs"></textarea>
-                    <div class="mt-2 flex flex-wrap gap-1">
-                        <span class="text-[11px] text-slate-500 mr-1">Placeholder tersedia:</span>
+                              class="{{ $inputClass }} font-mono"></textarea>
+                    <div class="mt-2 flex flex-wrap gap-1 items-center">
+                        <span class="font-mono text-[10px] text-muted mr-1">Placeholder tersedia:</span>
                         <template x-for="v in editData.variables" :key="v">
-                            <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 font-mono-code"
+                            <span class="px-1.5 py-0.5 text-[10px] font-bold bg-creamDark text-ink border border-hairline font-mono"
                                   x-text="'{' + '{' + v + '}' + '}'"></span>
                         </template>
                     </div>
@@ -186,17 +176,17 @@
 
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" name="is_active" value="1" x-model="editData.is_active"
-                           class="w-4 h-4 rounded border-slate-300 text-black focus:ring-black">
-                    <span class="text-sm text-slate-700">Template aktif dan dapat dipakai sistem</span>
+                           class="w-4 h-4 border-ink accent-electric">
+                    <span class="text-xs text-ink">Template aktif dan dapat dipakai sistem</span>
                 </label>
 
-                <div class="flex items-center justify-end gap-2 pt-2">
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-hairline">
                     <button type="button" @click="editModalOpen = false"
-                            class="px-4 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200 transition-colors">
+                            class="px-4 py-2 bg-white hover:border-ink text-ink font-mono text-xs font-bold uppercase border border-hairline transition-colors cursor-pointer">
                         Batal
                     </button>
                     <button type="submit"
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-black hover:bg-neutral-800 text-white text-xs font-bold transition-colors">
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-electric hover:bg-electricHover text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
                         Simpan Template
                     </button>
                 </div>

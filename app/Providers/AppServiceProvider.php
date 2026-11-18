@@ -129,8 +129,8 @@ class AppServiceProvider extends ServiceProvider
                     : asset('images/logo.png'),
                 'favicon' => $settings->get('brand_favicon_path')
                     ? asset('storage/' . $settings->get('brand_favicon_path'))
-                    : asset('images/logo.png'),
-                'accent' => $settings->get('brand_accent_color', '#4A6FA5'),
+                    : asset('images/favicon-96x96.png'),
+                'accent' => $settings->get('brand_accent_color', '#001AFF'),
                 'support_email' => \App\Support\MailIdentity::contactEmail(),
                 'support_whatsapp' => $settings->get('support_whatsapp', ''),
             ]);
@@ -139,8 +139,8 @@ class AppServiceProvider extends ServiceProvider
                 'name' => config('app.name', 'CravaCloud'),
                 'tagline' => '',
                 'logo' => asset('images/logo.png'),
-                'favicon' => asset('images/logo.png'),
-                'accent' => '#4A6FA5',
+                'favicon' => asset('images/favicon-96x96.png'),
+                'accent' => '#001AFF',
                 'support_email' => \App\Support\MailIdentity::contactEmail(),
                 'support_whatsapp' => '',
             ]);

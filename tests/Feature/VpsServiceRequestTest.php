@@ -64,7 +64,7 @@ class VpsServiceRequestTest extends TestCase
             'organization_id' => $org->id,
             'vps_spec_id' => $spec->id,
             'control_panel' => 'coolify',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'hostname' => 'srv-' . $username,
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
@@ -87,7 +87,7 @@ class VpsServiceRequestTest extends TestCase
             'ram' => 4,
             'disk' => 60,
             'control_panel' => 'coolify',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'initial_root_password' => 'PasswordAwal#123',
             'expires_at' => now()->addDays(20),
         ], $vpsAttributes));

@@ -57,7 +57,7 @@ class SettingsController extends Controller
             'brand_logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp,svg', 'max:1024'],
             'brand_favicon' => ['nullable', 'image', 'mimes:png,ico,webp', 'max:256'],
         ], [
-            'brand_accent_color.regex' => 'Warna aksen harus berformat heksadesimal, contoh #4A6FA5.',
+            'brand_accent_color.regex' => 'Warna aksen harus berformat heksadesimal, contoh #001AFF.',
             'brand_logo.max' => 'Ukuran logo maksimal 1 MB.',
             'brand_favicon.max' => 'Ukuran favicon maksimal 256 KB.',
         ]);

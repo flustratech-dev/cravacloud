@@ -59,141 +59,140 @@
         return this.currentOrder.control_panel && this.currentOrder.control_panel !== 'none';
     }
 }">
-    <!-- Top Filter Tabs (No lines under title) -->
+    <!-- Top Filter Tabs -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
-        <div class="flex items-center gap-2 overflow-x-auto text-xs font-medium">
-            <a href="{{ route('admin.orders') }}" 
-               class="px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap {{ !request('status') && !request('channel') ? 'bg-black text-white font-bold' : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50' }}">
+        <div class="flex flex-wrap items-center gap-1.5 font-mono text-xs">
+            <a href="{{ route('admin.orders') }}"
+               class="px-3.5 py-2 transition-colors whitespace-nowrap {{ !request('status') && !request('channel') ? 'bg-electric text-white font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
                 Semua Order
             </a>
 
-            <a href="{{ route('admin.orders') }}?status=needs_provision" 
-               class="px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 {{ request('status') === 'needs_provision' ? 'bg-black text-white font-bold' : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50' }}">
+            <a href="{{ route('admin.orders') }}?status=needs_provision"
+               class="px-3.5 py-2 transition-colors whitespace-nowrap flex items-center gap-1.5 {{ request('status') === 'needs_provision' ? 'bg-electric text-white font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
                 <span>Perlu Provisioning</span>
                 @php $pendingProvisionCount = $needsProvisionCount ?? \App\Models\Order::whereIn('status', ['paid', 'provisioning'])->whereDoesntHave('vpsInstance')->count(); @endphp
                 @if($pendingProvisionCount > 0)
-                    <span class="px-1.5 py-0.2 rounded text-[10px] font-bold {{ request('status') === 'needs_provision' ? 'bg-amber-400 text-black' : 'bg-amber-100 text-amber-900 border border-amber-300' }}">
+                    <span class="px-1.5 py-0.5 text-[10px] font-bold {{ request('status') === 'needs_provision' ? 'bg-white text-electric' : 'bg-ink text-cream' }}">
                         {{ $pendingProvisionCount }}
                     </span>
                 @endif
             </a>
 
-            <a href="{{ route('admin.orders') }}?status=active" 
-               class="px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap {{ request('status') === 'active' ? 'bg-black text-white font-bold' : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50' }}">
+            <a href="{{ route('admin.orders') }}?status=active"
+               class="px-3.5 py-2 transition-colors whitespace-nowrap {{ request('status') === 'active' ? 'bg-electric text-white font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
                 Aktif Running
             </a>
 
-            <a href="{{ route('admin.orders') }}?status=pending" 
-               class="px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap {{ request('status') === 'pending' ? 'bg-black text-white font-bold' : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50' }}">
+            <a href="{{ route('admin.orders') }}?status=pending"
+               class="px-3.5 py-2 transition-colors whitespace-nowrap {{ request('status') === 'pending' ? 'bg-electric text-white font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
                 Menunggu Pembayaran
             </a>
 
-            <a href="{{ route('admin.orders') }}?channel=shopee" 
-               class="px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 {{ request('channel') === 'shopee' ? 'bg-black text-white font-bold' : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50' }}">
+            <a href="{{ route('admin.orders') }}?channel=shopee"
+               class="px-3.5 py-2 transition-colors whitespace-nowrap flex items-center gap-1 {{ request('channel') === 'shopee' ? 'bg-electric text-white font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
                 <span>Shopee Orders</span>
             </a>
 
-            <a href="{{ route('admin.orders') }}?channel=website" 
-               class="px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap {{ request('channel') === 'website' ? 'bg-black text-white font-bold' : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50' }}">
+            <a href="{{ route('admin.orders') }}?channel=website"
+               class="px-3.5 py-2 transition-colors whitespace-nowrap {{ request('channel') === 'website' ? 'bg-electric text-white font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
                 Website Direct
             </a>
         </div>
 
-        <a href="{{ route('admin.shopee') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-black hover:bg-neutral-800 text-white font-bold text-xs transition-colors self-start sm:self-auto shrink-0">
+        <a href="{{ route('admin.shopee') }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-ink hover:bg-electric text-white font-mono font-bold text-xs uppercase tracking-wider transition-colors self-start sm:self-auto shrink-0">
             <span>+ Order Shopee Baru</span>
         </a>
     </div>
 
-    <!-- Orders Table (No lines under headings) -->
-    <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+    <!-- Orders Table -->
+    <div class="bg-white border border-hairline overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
-                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider">
+                <thead class="bg-creamDark/60 text-muted font-mono text-[10px] font-bold uppercase tracking-widest border-b border-hairline">
                     <tr>
                         <th class="px-5 py-3">ID Order</th>
                         <th class="px-5 py-3">Pelanggan</th>
                         <th class="px-5 py-3">Channel</th>
-                        <th class="px-5 py-3">Paket & Panel</th>
-                        <th class="px-5 py-3">Lokasi & OS</th>
+                        <th class="px-5 py-3">Paket &amp; Panel</th>
+                        <th class="px-5 py-3">Lokasi &amp; OS</th>
                         <th class="px-5 py-3">Status</th>
                         <th class="px-5 py-3">Nominal</th>
                         <th class="px-5 py-3 text-right">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody class="divide-y divide-hairline">
                     @forelse($orders as $order)
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-5 py-3.5 font-mono-code font-bold text-slate-900">
+                        <tr class="hover:bg-creamDark/30 transition-colors">
+                            <td class="px-5 py-3.5 font-mono font-bold text-ink">
                                 #ORD-{{ $order->id }}
                                 @if($order->shopee_order_id)
-                                    <span class="block text-[11px] text-slate-500 font-mono-code font-normal">{{ $order->shopee_order_id }}</span>
+                                    <span class="block text-[11px] text-muted font-mono font-normal">{{ $order->shopee_order_id }}</span>
                                 @endif
                             </td>
                             <td class="px-5 py-3.5">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-7 h-7 rounded-full bg-slate-200 text-slate-800 flex items-center justify-center font-bold text-xs">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-7 h-7 bg-ink text-cream font-mono flex items-center justify-center font-bold text-xs shrink-0">
                                         {{ strtoupper(substr($order->customer->full_name ?? 'U', 0, 1)) }}
                                     </div>
                                     <div>
-                                        <span class="font-bold text-slate-900 block">{{ $order->customer->full_name ?? 'Pelanggan' }}</span>
-                                        <span class="text-slate-500 font-mono-code text-[11px]">&#64;{{ $order->customer->username ?? 'user' }}</span>
+                                        <span class="font-bold text-ink block">{{ $order->customer->full_name ?? 'Pelanggan' }}</span>
+                                        <span class="text-muted font-mono text-[11px]">&#64;{{ $order->customer->username ?? 'user' }}</span>
                                         @if($order->customer->phone)
-                                            <span class="text-[10px] text-slate-400 block font-mono-code">{{ $order->customer->phone }}</span>
+                                            <span class="text-[10px] text-muted block font-mono">{{ $order->customer->phone }}</span>
                                         @endif
                                     </div>
                                 </div>
                             </td>
                             <td class="px-5 py-3.5">
-                                <span class="px-2 py-0.5 rounded text-[11px] font-semibold border border-slate-300 bg-slate-50 text-slate-900">
+                                <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase border border-hairline bg-creamDark/60 text-ink">
                                     {{ ucfirst($order->channel) }}
                                 </span>
                             </td>
                             <td class="px-5 py-3.5">
                                 <div class="flex items-center gap-1.5 flex-wrap">
-                                    <span class="font-semibold text-slate-900">{{ $order->vpsSpec->name ?? 'Standard' }}</span>
+                                    <span class="font-semibold text-ink">{{ $order->vpsSpec->name ?? 'Standard' }}</span>
                                     @if($order->isAiPackage())
-                                        <span class="px-1.5 py-0.2 rounded text-[10px] font-bold uppercase bg-blue-100 text-blue-800 border border-blue-200">
+                                        <span class="px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-creamDark text-ink border border-hairline">
                                             AI Combo
                                         </span>
                                     @endif
                                     @if($order->hostname)
-                                        <span class="text-[10px] font-mono-code px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold" title="VPS Name">
+                                        <span class="text-[10px] font-mono px-1.5 py-0.5 bg-creamDark/60 text-ink font-semibold border border-hairline" title="VPS Name">
                                             {{ $order->hostname }}
                                         </span>
                                     @endif
                                 </div>
-                                <span class="text-[11px] text-slate-500 font-medium block">{{ $order->control_panel_label }}</span>
+                                <span class="text-[11px] text-muted font-medium block mt-0.5">{{ $order->control_panel_label }}</span>
                             </td>
-                            <td class="px-5 py-3.5 text-slate-700">
-                                <span class="block font-medium">{{ $order->provider_label }} · {{ ucfirst($order->datacenter_location) }}</span>
-                                <span class="text-[11px] text-slate-500">{{ $order->os_label }}</span>
+                            <td class="px-5 py-3.5 text-ink">
+                                <span class="block font-medium">{{ $order->provider_label }} &middot; {{ ucfirst($order->datacenter_location) }}</span>
+                                <span class="text-[11px] text-muted">{{ $order->os_label }}</span>
                             </td>
                             <td class="px-5 py-3.5">
                                 @if($order->status === 'paid')
-                                    <span class="px-2.5 py-1 rounded text-[11px] font-bold uppercase border border-emerald-300 bg-emerald-50 text-emerald-800 flex items-center gap-1 w-fit">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                        Paid · Siap Setup
+                                    <span class="px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-electric text-white inline-flex items-center gap-1 w-fit">
+                                        Paid &middot; Siap Setup
                                     </span>
                                 @elseif($order->status === 'provisioning')
-                                    <span class="px-2.5 py-1 rounded text-[11px] font-bold uppercase border border-amber-300 bg-amber-50 text-amber-800 flex items-center gap-1 w-fit">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                    <span class="px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase border border-ink bg-creamDark text-ink inline-flex items-center gap-1 w-fit">
+                                        <span class="w-1.5 h-1.5 bg-electric animate-pulse"></span>
                                         Provisioning
                                     </span>
                                 @elseif($order->status === 'active')
-                                    <span class="px-2.5 py-1 rounded text-[11px] font-bold uppercase border border-slate-300 bg-slate-100 text-slate-800 w-fit">
+                                    <span class="px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-ink text-cream w-fit inline-block">
                                         Active
                                     </span>
                                 @elseif($order->status === 'pending')
-                                    <span class="px-2.5 py-1 rounded text-[11px] font-semibold uppercase border border-amber-200 bg-amber-50 text-amber-700 w-fit">
+                                    <span class="px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase border border-hairline bg-creamDark text-ink w-fit inline-block">
                                         Menunggu Bayar
                                     </span>
                                 @else
-                                    <span class="px-2.5 py-0.5 rounded text-[11px] font-semibold uppercase border border-slate-300 bg-slate-50 text-slate-900 w-fit">
+                                    <span class="px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase border border-hairline bg-white text-muted w-fit inline-block">
                                         {{ $order->status }}
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-5 py-3.5 font-mono-code font-bold text-slate-900">
+                            <td class="px-5 py-3.5 font-mono font-bold text-ink">
                                 Rp {{ number_format($order->amount, 0, ',', '.') }}
                             </td>
                             <td class="px-5 py-3.5 text-right">
@@ -201,24 +200,24 @@
                                     @if(in_array($order->status, ['paid', 'provisioning', 'failed']) && !$order->vpsInstance)
                                         <button type="button"
                                                 onclick="openProvisionModal({{ $order->id }})"
-                                                @click.stop="openProvision({{ $order->id }})" 
-                                                class="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-2xs flex items-center gap-1 cursor-pointer">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                                @click.stop="openProvision({{ $order->id }})"
+                                                class="px-3 py-1.5 bg-electric hover:bg-electricHover text-white font-mono font-bold text-[10px] uppercase tracking-wider transition-colors flex items-center gap-1 cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                             <span>Setup VPS</span>
                                         </button>
-                                        <a href="{{ route('admin.orders.history', $order->id) }}" class="px-2 py-1.5 rounded border border-slate-300 hover:bg-slate-50 text-slate-600 text-xs font-medium" title="Riwayat Order">
+                                        <a href="{{ route('admin.orders.history', $order->id) }}" class="px-2.5 py-1.5 border border-hairline hover:border-ink text-ink font-mono text-[10px] font-bold uppercase" title="Riwayat Order">
                                             Audit
                                         </a>
                                     @elseif($order->status === 'pending')
                                         <form action="{{ route('admin.orders.mark-paid', $order->id) }}" method="POST" data-confirm="Tandai order ini sudah dibayar manual?">
                                             @csrf
-                                            <button type="submit" class="px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 text-xs font-semibold" title="Mark Paid Manual">
+                                            <button type="submit" class="px-2.5 py-1.5 bg-electric hover:bg-electricHover text-white font-mono text-[10px] font-bold uppercase cursor-pointer" title="Mark Paid Manual">
                                                 Mark Paid
                                             </button>
                                         </form>
                                         <form action="{{ route('admin.orders.cancel', $order->id) }}" method="POST" data-confirm="Batalkan order ini?">
                                             @csrf
-                                            <button type="submit" class="px-2.5 py-1 rounded border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs">
+                                            <button type="submit" class="px-2.5 py-1.5 border border-hairline hover:border-ink text-ink font-mono text-[10px] font-bold uppercase cursor-pointer">
                                                 Batal
                                             </button>
                                         </form>
@@ -226,11 +225,11 @@
                                          @if($order->invoice)
                                              <a href="{{ route('dashboard.invoice.print', $order->invoice->id) }}"
                                                 @click.prevent="$dispatch('open-invoice-modal', { url: '{{ route('dashboard.invoice.print', $order->invoice->id) }}' })"
-                                                class="px-2.5 py-1.5 rounded border border-slate-300 hover:bg-slate-50 text-slate-800 font-medium text-xs cursor-pointer">
+                                                class="px-2.5 py-1.5 border border-hairline hover:border-ink text-ink font-mono font-bold text-[10px] uppercase cursor-pointer">
                                                  Faktur PDF
                                              </a>
                                          @endif
-                                        <a href="{{ route('admin.orders.history', $order->id) }}" class="px-2 py-1.5 rounded border border-slate-300 hover:bg-slate-50 text-slate-600 text-xs font-medium" title="Riwayat Order">
+                                        <a href="{{ route('admin.orders.history', $order->id) }}" class="px-2.5 py-1.5 border border-hairline hover:border-ink text-ink font-mono text-[10px] font-bold uppercase" title="Riwayat Order">
                                             Audit
                                         </a>
                                     @endif
@@ -239,7 +238,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-5 py-12 text-center text-slate-400">
+                            <td colspan="8" class="px-5 py-12 text-center font-mono text-xs text-muted">
                                 Tidak ada data pesanan pada kriteria yang dipilih.
                             </td>
                         </tr>
@@ -249,7 +248,7 @@
         </div>
 
         @if($orders->hasPages())
-            <div class="p-4 border-t border-slate-100">
+            <div class="p-4 border-t border-hairline">
                 {{ $orders->links() }}
             </div>
         @endif
@@ -257,63 +256,63 @@
 
     <!-- Provisioning Modal (Hybrid Alpine + Native Fallback) -->
     <div id="adminProvisionModal"
-         x-show="provisionModal" 
+         x-show="provisionModal"
          x-cloak
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs" 
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50"
          style="display: none;"
          onclick="if(event.target === this) closeProvisionModal()"
          @click.self="provisionModal = false"
          @keydown.escape.window="provisionModal = false">
-        <div class="bg-white rounded-lg border border-slate-200 p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-xl" 
+        <div class="bg-white border border-ink p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-xl"
              @click.stop
              onclick="event.stopPropagation()">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+            <div class="flex items-center justify-between pb-3 border-b border-hairline mb-4">
                 <div>
-                    <h3 class="text-base font-bold text-slate-900">Setup &amp; Aktivasi Server VPS</h3>
-                    <p class="text-xs text-slate-500">
-                        Input kredensial server untuk order <strong id="modalOrderNumber" class="text-slate-900" x-text="currentOrder ? '#ORD-' + currentOrder.id : ''"></strong>
+                    <h3 class="font-display text-base font-bold text-ink">Setup &amp; Aktivasi Server VPS</h3>
+                    <p class="text-xs text-muted">
+                        Input kredensial server untuk order <strong id="modalOrderNumber" class="font-mono text-ink" x-text="currentOrder ? '#ORD-' + currentOrder.id : ''"></strong>
                     </p>
                 </div>
-                <button type="button" onclick="closeProvisionModal()" @click="provisionModal = false" class="text-slate-400 hover:text-black text-lg font-bold cursor-pointer">&times;</button>
+                <button type="button" onclick="closeProvisionModal()" @click="provisionModal = false" class="text-muted hover:text-ink text-lg font-mono font-bold cursor-pointer">&times;</button>
             </div>
 
             <!-- Detail Pembeli & Pesanan (Terkunci Sesuai Pesanan Pelanggan) -->
-            <div id="modalOrderDetailsCard" x-show="currentOrder" class="mb-4 p-4 bg-slate-50 rounded-lg border border-slate-200 text-xs space-y-2.5">
-                <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                    <span class="font-bold text-slate-900 uppercase tracking-wider text-[10px]">Spesifikasi &amp; Kredensial Pelanggan</span>
-                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-white text-slate-700 border border-slate-200">Terkunci</span>
+            <div id="modalOrderDetailsCard" x-show="currentOrder" class="mb-4 p-4 bg-creamDark/40 border border-hairline text-xs space-y-2.5">
+                <div class="flex items-center justify-between pb-2 border-b border-hairline">
+                    <span class="font-mono font-bold text-ink uppercase tracking-widest text-[10px]">Spesifikasi &amp; Kredensial Pelanggan</span>
+                    <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-white text-ink border border-hairline">Terkunci</span>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <span class="text-slate-500 block text-[11px]">Server Hostname:</span>
-                        <span id="modalHostname" class="font-bold font-mono-code text-slate-900 bg-white px-2 py-1 rounded border border-slate-200 block truncate" x-text="currentOrder?.hostname || '-'"></span>
+                        <span class="text-muted block text-[11px]">Server Hostname:</span>
+                        <span id="modalHostname" class="font-bold font-mono text-ink bg-white px-2 py-1 border border-hairline block truncate" x-text="currentOrder?.hostname || '-'"></span>
                     </div>
                     <div>
-                        <span class="text-slate-500 block text-[11px]">Distribusi OS:</span>
-                        <span id="modalOs" class="font-semibold text-slate-900 bg-white px-2 py-1 rounded border border-slate-200 block truncate" x-text="currentOrder?.os_label || currentOrder?.os || '-'"></span>
+                        <span class="text-muted block text-[11px]">Distribusi OS:</span>
+                        <span id="modalOs" class="font-semibold text-ink bg-white px-2 py-1 border border-hairline block truncate" x-text="currentOrder?.os_label || currentOrder?.os || '-'"></span>
                     </div>
                 </div>
 
-                <div class="p-2.5 bg-blue-50/60 rounded-lg border border-blue-200 text-slate-700 text-xs flex items-center gap-2">
-                    <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <span class="text-[11px] text-blue-900 leading-tight">Root Password server digenerate upstream dan wajib diinput manual oleh Admin pada form di bawah.</span>
+                <div class="p-2.5 bg-white border border-electric text-ink text-xs flex items-center gap-2">
+                    <svg class="w-4 h-4 text-electric shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span class="text-[11px] text-ink leading-tight">Root Password server digenerate upstream dan wajib diinput manual oleh Admin pada form di bawah.</span>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 text-[11px]">
                     <div>
-                        <span class="text-slate-500">Provider &amp; Datacenter:</span>
-                        <span id="modalProviderDatacenter" class="font-medium text-slate-800 block" x-text="(currentOrder?.provider || '') + ' · ' + (currentOrder?.datacenter || '')"></span>
+                        <span class="text-muted">Lokasi Datacenter:</span>
+                        <span id="modalProviderDatacenter" class="font-medium text-ink block" x-text="currentOrder?.datacenter || '-'"></span>
                     </div>
                     <div>
-                        <span class="text-slate-500">Control Panel / Stack:</span>
-                        <span id="modalStack" class="font-medium text-slate-800 block" x-text="currentOrder?.stack || 'Tanpa Panel'"></span>
+                        <span class="text-muted">Control Panel / Stack:</span>
+                        <span id="modalStack" class="font-medium text-ink block" x-text="currentOrder?.stack || 'Tanpa Panel'"></span>
                     </div>
                 </div>
 
-                <div class="flex justify-between items-center text-[11px] pt-1.5 border-t border-slate-200/80">
-                    <span class="text-slate-500">Pelanggan: <strong id="modalCustomer" class="text-slate-800" x-text="currentOrder?.customer?.name || '-'"></strong> (<span class="font-mono-code" x-text="currentOrder?.customer?.phone || '-'"></span>)</span>
-                    <span id="modalAmount" class="font-bold text-emerald-600 font-mono-code" x-text="'Lunas · Rp ' + (currentOrder?.amount || '')"></span>
+                <div class="flex justify-between items-center text-[11px] pt-1.5 border-t border-hairline">
+                    <span class="text-muted">Pelanggan: <strong id="modalCustomer" class="text-ink" x-text="currentOrder?.customer?.name || '-'"></strong> (<span class="font-mono" x-text="currentOrder?.customer?.phone || '-'"></span>)</span>
+                    <span id="modalAmount" class="font-bold text-electric font-mono" x-text="'Lunas · Rp ' + (currentOrder?.amount || '')"></span>
                 </div>
             </div>
 
@@ -322,67 +321,66 @@
                 @csrf
 
                 <div>
-                    <label class="block font-bold text-slate-800 mb-1">Public IPv4 Node <span class="text-rose-600">*</span></label>
+                    <label class="block font-mono text-[10px] font-bold uppercase tracking-widest text-ink mb-1">Public IPv4 Node <span class="text-electric">*</span></label>
                     <input id="modalPublicIp" type="text" name="public_ip" required x-model="publicIp" placeholder="Contoh: 103.150.xxx.xxx"
-                           class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono-code focus:outline-none focus:ring-1 focus:ring-black">
-                    <p class="text-[11px] text-slate-400 mt-0.5">Alamat IP publik yang dialokasikan dari provider datacenter.</p>
+                           class="w-full px-3 py-2 border border-hairline font-mono bg-white text-ink focus:outline-none focus:border-electric">
+                    <p class="text-[11px] text-muted mt-0.5">Alamat IP publik yang dialokasikan dari provider datacenter.</p>
                 </div>
 
                 <div>
-                    <label class="block font-bold text-slate-800 mb-1">Username SSH</label>
+                    <label class="block font-mono text-[10px] font-bold uppercase tracking-widest text-ink mb-1">Username SSH</label>
                     <input type="text" name="ssh_username" value="root" maxlength="32" pattern="[A-Za-z_][A-Za-z0-9._\-]{0,31}" autocomplete="off" spellcheck="false"
-                           class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono-code focus:outline-none focus:ring-1 focus:ring-black">
-                    <p class="text-[11px] text-slate-400 mt-0.5">Default <code>root</code>. Ganti bila supplier memberi user lain (mis. <code>ubuntu</code>).</p>
+                           class="w-full px-3 py-2 border border-hairline font-mono bg-white text-ink focus:outline-none focus:border-electric">
+                    <p class="text-[11px] text-muted mt-0.5">Default <code class="font-mono">root</code>. Ganti bila supplier memberi user lain (mis. <code class="font-mono">ubuntu</code>).</p>
                 </div>
 
                 <div>
-                    <label class="block font-bold text-slate-800 mb-1">Password SSH Server <span class="text-rose-600">*</span></label>
+                    <label class="block font-mono text-[10px] font-bold uppercase tracking-widest text-ink mb-1">Password SSH Server <span class="text-electric">*</span></label>
                     <div class="relative">
                         <input id="modalRootPassword" :type="showRootPassword ? 'text' : 'password'" name="root_password" required minlength="8" x-model="rootPassword" placeholder="Masukkan password root dari retail (min 8 karakter)"
-                               class="w-full px-3 py-2 pr-20 rounded-lg border border-slate-300 font-mono-code focus:outline-none focus:ring-1 focus:ring-black">
-                        <button type="button" @click="showRootPassword = !showRootPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-xs text-slate-500 hover:text-slate-800 cursor-pointer font-medium">
+                               class="w-full px-3 py-2 pr-20 border border-hairline font-mono bg-white text-ink focus:outline-none focus:border-electric">
+                        <button type="button" @click="showRootPassword = !showRootPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center font-mono text-[11px] text-muted hover:text-ink cursor-pointer font-bold">
                             <span x-text="showRootPassword ? 'Sembunyikan' : 'Lihat'">Sembunyikan</span>
                         </button>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Password root server yang digenerate otomatis oleh provider retail upstream.</p>
+                    <p class="text-[11px] text-muted mt-0.5">Password root server yang digenerate otomatis oleh provider retail upstream.</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-medium text-slate-700 mb-1">SSH Port</label>
+                        <label class="block font-mono text-[10px] font-bold uppercase tracking-widest text-muted mb-1">SSH Port</label>
                         <input id="modalSshPort" type="number" name="ssh_port" x-model="sshPort" placeholder="22" value="22"
-                               class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono-code focus:outline-none focus:ring-1 focus:ring-black">
+                               class="w-full px-3 py-2 border border-hairline font-mono bg-white text-ink focus:outline-none focus:border-electric">
                     </div>
                     <div>
-                        <label class="block font-medium text-slate-700 mb-1">Private VPC IP (Opsional)</label>
+                        <label class="block font-mono text-[10px] font-bold uppercase tracking-widest text-muted mb-1">Private VPC IP (Opsional)</label>
                         <input id="modalPrivateIp" type="text" name="private_ip" x-model="privateIp" placeholder="Contoh: 10.0.1.xxx"
-                               class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono-code focus:outline-none">
+                               class="w-full px-3 py-2 border border-hairline font-mono bg-white text-ink focus:outline-none focus:border-electric">
                     </div>
                 </div>
 
-                <!-- Input App URL: HANYA MUNCUL JIKA ADA PANEL / STACK DAN WAJIB DIISI -->
-                <div id="modalPanelWrapper" x-show="hasPanel()" class="transition-all bg-amber-50/60 p-3.5 rounded-lg border border-amber-200 space-y-1.5">
+                <!-- Input App URL -->
+                <div id="modalPanelWrapper" x-show="hasPanel()" class="transition-all bg-creamDark/50 p-3.5 border border-ink space-y-1.5">
                     <div class="flex items-center justify-between">
-                        <label class="block font-bold text-slate-900">
+                        <label class="block font-mono text-[10px] font-bold uppercase tracking-widest text-ink">
                             <span>App URL / Web Panel Link</span>
-                            <span class="text-rose-600">*</span>
+                            <span class="text-electric">*</span>
                         </label>
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-200 text-amber-900">Wajib Diisi</span>
+                        <span class="font-mono text-[10px] font-bold uppercase px-2 py-0.5 bg-ink text-cream">Wajib Diisi</span>
                     </div>
                     <input id="modalAppUrl" type="text" name="app_url" x-model="appUrl" :required="hasPanel()" :disabled="!hasPanel()"
                            placeholder="Contoh: https://103.150.xxx.xxx:8000 atau https://panel.domain.com"
-                           class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-mono-code focus:outline-none focus:ring-1 focus:ring-black text-xs">
-                    <p class="text-[11px] text-amber-800 leading-tight">
-                        Pesanan ini memilih stack <strong class="text-slate-900" x-text="currentOrder?.stack"></strong>. Wajib cantumkan URL web panel agar pelanggan dapat langsung mengaksesnya dari dashboard.
+                           class="w-full px-3 py-2 border border-hairline bg-white font-mono focus:outline-none focus:border-electric text-xs">
+                    <p class="text-[11px] text-muted leading-tight">
+                        Pesanan ini memilih stack <strong class="text-ink" x-text="currentOrder?.stack"></strong>. Wajib cantumkan URL web panel agar pelanggan dapat langsung mengaksesnya dari dashboard.
                     </p>
                 </div>
 
-                <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
-                    <button type="button" onclick="closeProvisionModal()" @click="provisionModal = false" class="px-4 py-2 rounded-lg text-slate-700 hover:bg-slate-100 font-medium cursor-pointer">
+                <div class="pt-4 border-t border-hairline flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeProvisionModal()" @click="provisionModal = false" class="px-4 py-2 border border-hairline bg-white hover:border-ink text-ink font-mono text-xs font-bold uppercase cursor-pointer">
                         Batal
                     </button>
-                    <button type="submit" class="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <button type="submit" class="px-5 py-2.5 bg-electric hover:bg-electricHover text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 cursor-pointer">
                         <span>Aktifkan VPS &amp; Kirim Kredensial</span>
                     </button>
                 </div>
@@ -407,12 +405,12 @@ window.openProvisionModal = function(orderId) {
 
     var osElem = document.getElementById('modalOs');
     if (osElem) osElem.textContent = order.os_label || order.os || '-';
-    
+
     var pwInput = document.getElementById('modalRootPassword');
     if (pwInput) pwInput.value = '';
 
     var pdElem = document.getElementById('modalProviderDatacenter');
-    if (pdElem) pdElem.textContent = (order.provider || '') + ' · ' + (order.datacenter || '');
+    if (pdElem) pdElem.textContent = order.datacenter || '-';
 
     var stackElem = document.getElementById('modalStack');
     if (stackElem) stackElem.textContent = order.stack || 'Tanpa Panel';

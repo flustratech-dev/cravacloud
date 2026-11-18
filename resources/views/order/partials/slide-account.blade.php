@@ -1,306 +1,312 @@
-<div class="border border-slate-200 rounded-2xl p-5 sm:p-7 bg-white shadow-xs">
-    {{-- Header Slide 2 --}}
-    <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
-        <div class="flex items-center gap-3">
-            <span class="w-7 h-7 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center">2</span>
-            <div>
-                <h2 class="font-bold text-slate-900 text-base sm:text-lg">Informasi Akun</h2>
-            </div>
+<div class="border border-hairline bg-white p-5 sm:p-8 space-y-6">
+    <div class="border-b border-hairline pb-4 flex items-center justify-between gap-4">
+        <div>
+            <span class="font-mono text-[10px] uppercase tracking-widest text-electric font-bold block mb-1"
+                  x-text="isDirectCheckout ? 'LANGKAH 01 // IDENTITAS AKUN' : 'LANGKAH 02 // IDENTITAS AKUN'"></span>
+            <h2 class="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">Informasi Akun &amp; Kontak Server</h2>
         </div>
-        <template x-if="isLoggedIn">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Sudah Masuk
-            </span>
-        </template>
+        <span class="w-8 h-8 bg-electric text-white font-mono text-xs font-bold flex items-center justify-center shrink-0"
+              x-text="isDirectCheckout ? '01' : '02'"></span>
     </div>
 
-    {{-- KONDISI 1: User Sudah Login (Baik dari awal maupun via Quick Login) --}}
-    <div x-show="isLoggedIn" class="space-y-6" style="display: none;">
-        <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 sm:p-6 space-y-4">
-            <div class="flex items-center justify-between flex-wrap gap-3">
-                <div class="flex items-center gap-3.5">
-                    <div class="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center font-bold text-lg shadow-xs"
-                         x-text="currentUser.full_name ? currentUser.full_name.charAt(0).toUpperCase() : 'U'">
-                    </div>
+    {{-- Authenticated User Card --}}
+    <template x-if="isLoggedIn">
+        <div class="space-y-4">
+            <div class="p-4 sm:p-5 bg-creamDark/60 border border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-start gap-3">
+                    <span class="w-9 h-9 bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="square" stroke-linejoin="miter" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </span>
                     <div>
-                        <div class="flex items-center gap-2">
-                            <h3 class="font-bold text-slate-900 text-base" x-text="currentUser.full_name || 'Pengguna CravaCloud'"></h3>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-black text-white">Akun Aktif</span>
+                        <span class="font-mono text-[10px] uppercase tracking-wider font-bold text-emerald-700 block">Terautentikasi</span>
+                        <div class="font-display font-bold text-base text-ink mt-0.5">
+                            <span x-text="currentUser.full_name || currentUser.email"></span>
                         </div>
-                        <p class="text-xs text-slate-500 mt-0.5" x-text="currentUser.email"></p>
+                        <div class="font-mono text-xs text-muted mt-0.5" x-text="currentUser.email"></div>
                     </div>
                 </div>
-
-                <a href="{{ route('logout') }}" 
-                   onclick="event.preventDefault(); document.getElementById('checkout-logout-form').submit();"
-                   class="text-xs text-rose-600 hover:text-rose-700 font-semibold px-3 py-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 transition-colors">
-                    Keluar / Ganti Akun
-                </a>
+                <button type="button"
+                        @click="document.getElementById('checkout-logout-form').submit()"
+                        class="rounded-none bg-white border border-ink hover:bg-creamDark px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-ink transition-colors cursor-pointer shrink-0">
+                    Ganti Akun
+                </button>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nomor WhatsApp / HP</label>
-                    <input type="text" x-model="currentUser.phone" name="logged_in_phone"
-                           class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm bg-white focus:border-black focus:ring-1 focus:ring-black">
+            <div class="p-4 bg-white border border-hairline space-y-2.5">
+                <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block">
+                    Nomor WhatsApp (Notifikasi Provisioning &amp; Invoice)
+                </label>
+                <div class="flex items-center">
+                    <span class="px-3.5 py-2.5 bg-creamDark border border-r-0 border-hairline text-xs font-mono font-bold text-ink select-none">+62</span>
+                    <input type="text"
+                           x-model="currentUser.phone"
+                           placeholder="812xxxx (Aktif WhatsApp)"
+                           class="flex-1 rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric transition-colors">
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Hostname / VPS Name</label>
-                    <input type="text" :value="vpsName || '-'" readonly
-                           class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono-code bg-slate-100 text-slate-600 focus:outline-none">
-                </div>
+                <p class="font-mono text-[11px] text-muted">Nomor ini digunakan untuk pengiriman notifikasi akses SSH &amp; peringatan masa aktif server.</p>
             </div>
+
+            <template x-if="isDirectCheckout">
+                <div class="p-4 bg-white border border-hairline space-y-2.5">
+                    <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block">
+                        Hostname / Nama Instance Layanan
+                    </label>
+                    <input type="text"
+                           x-model="vpsName"
+                           placeholder="contoh: cv-ai-agent-01"
+                           class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric transition-colors">
+                    <p class="font-mono text-[11px] text-muted">Identitas server Anda di panel manajemen. Hanya huruf, angka, dan tanda hubung (`-`).</p>
+                </div>
+            </template>
         </div>
-    </div>
+    </template>
 
-    {{-- KONDISI 2: User Belum Login (Tamu / Guest) --}}
-    <div x-show="!isLoggedIn" class="space-y-6">
-
-        {{-- Segmented Tab Switcher (Buat Akun Baru vs Sudah Punya Akun) --}}
-        <div class="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 w-full">
-            <button type="button" 
-                    @click="authTab = 'register'" 
-                    :class="authTab === 'register' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'"
-                    class="flex-1 py-2.5 rounded-lg text-xs sm:text-sm transition-all flex items-center justify-center gap-2">
-                <svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-                </svg>
-                <span>1. Buat Akun Baru</span>
-            </button>
-            <button type="button" 
-                    @click="authTab = 'login'" 
-                    :class="authTab === 'login' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'"
-                    class="flex-1 py-2.5 rounded-lg text-xs sm:text-sm transition-all flex items-center justify-center gap-2">
-                <svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                </svg>
-                <span>2. Sudah Punya Akun (Masuk)</span>
-            </button>
-        </div>
-
-        {{-- TAB 1: FORM PENDAFTARAN AKUN BARU --}}
-        <div x-show="authTab === 'register'" class="space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {{-- Nama Lengkap --}}
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Nama Lengkap <span class="text-rose-600">*</span>
+    {{-- Guest Flow: Register vs Quick Login --}}
+    <template x-if="!isLoggedIn">
+        <div class="space-y-6">
+            {{-- Direct Checkout Hostname Input --}}
+            <template x-if="isDirectCheckout">
+                <div class="p-4 bg-creamDark/40 border border-hairline space-y-2">
+                    <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block">
+                        Hostname / Nama Instance Layanan <span class="text-red-600">*</span>
                     </label>
-                    <input type="text" x-model="registerFullName"
-                           class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-black focus:ring-1 focus:ring-black">
-                </div>
-
-                {{-- Username (Opsional / Otomatis) --}}
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Username <span class="text-slate-400 font-normal">(opsional)</span>
-                    </label>
-                    <input type="text" x-model="registerUsername"
-                           class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono-code focus:border-black focus:ring-1 focus:ring-black">
-                </div>
-
-                {{-- Email Aktif --}}
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Alamat Email Aktif <span class="text-rose-600">*</span>
-                    </label>
-                    <input type="email" x-model="registerEmail"
-                           class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-black focus:ring-1 focus:ring-black">
-                </div>
-
-                {{-- Nomor WhatsApp / HP --}}
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Nomor WhatsApp / HP
-                    </label>
-                    <input type="text" x-model="registerPhone"
-                           class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-black focus:ring-1 focus:ring-black">
-                </div>
-
-                {{-- Password Akun --}}
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="text-xs font-semibold text-slate-700 flex items-center gap-1">
-                            <span>Password Akun</span>
-                            <span class="text-rose-600">*</span>
-                        </label>
-                        <span class="text-[11px] text-slate-400">Min. 8 karakter</span>
-                    </div>
-                    <div class="relative">
-                        <input :type="showRegisterPassword ? 'text' : 'password'" 
-                               x-model="registerPassword" 
-                               class="w-full pl-3 pr-10 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-black focus:ring-1 focus:ring-black">
-                        <button type="button" 
-                                @click="showRegisterPassword = !showRegisterPassword" 
-                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
-                                tabindex="-1">
-                            <svg x-show="!showRegisterPassword" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                            </svg>
-                            <svg x-show="showRegisterPassword" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none;">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                {{-- Konfirmasi Password --}}
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="text-xs font-semibold text-slate-700 flex items-center gap-1">
-                            <span>Konfirmasi Password</span>
-                            <span class="text-rose-600">*</span>
-                        </label>
-                        <template x-if="registerPasswordConfirmation">
-                            <span class="text-[11px] font-semibold" 
-                                  :class="registerPassword === registerPasswordConfirmation ? 'text-emerald-600' : 'text-rose-600'" 
-                                  x-text="registerPassword === registerPasswordConfirmation ? '✓ Cocok' : '✗ Beda'"></span>
-                        </template>
-                    </div>
-                    <div class="relative">
-                        <input :type="showRegisterConfirmPassword ? 'text' : 'password'" 
-                               x-model="registerPasswordConfirmation" 
-                               class="w-full pl-3 pr-10 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-black focus:ring-1 focus:ring-black">
-                        <button type="button" 
-                                @click="showRegisterConfirmPassword = !showRegisterConfirmPassword" 
-                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
-                                tabindex="-1">
-                            <svg x-show="!showRegisterConfirmPassword" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                            </svg>
-                            <svg x-show="showRegisterConfirmPassword" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none;">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Divider atau opsi Google --}}
-            <div class="pt-1">
-                <div class="relative my-3">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-slate-200"></div>
-                    </div>
-                    <div class="relative flex justify-center text-xs uppercase tracking-wider">
-                        <span class="bg-white px-2.5 text-slate-400 font-medium text-[11px]">atau</span>
-                    </div>
-                </div>
-
-                <a href="{{ route('auth.google') }}?redirect={{ urlencode(request()->fullUrl()) }}" 
-                   @click="saveDraft()"
-                   class="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-800 text-xs sm:text-sm font-semibold border border-slate-300 rounded-lg shadow-2xs transition-all">
-                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
-                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.24v3.15C3.26 21.4 7.34 24 12 24z"/>
-                        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.24C.45 8.15 0 9.92 0 12s.45 3.85 1.24 5.42l4.04-3.15z"/>
-                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.6 1.24 6.58l4.04 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-                    </svg>
-                    <span>Masuk dengan Akun Google</span>
-                </a>
-            </div>
-        </div>
-
-        {{-- TAB 2: FORM MASUK (QUICK LOGIN INLINE) --}}
-        <div x-show="authTab === 'login'" class="space-y-4" style="display: none;">
-            {{-- Error Message Alert --}}
-            <template x-if="loginError">
-                <div class="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
-                    <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    <span x-text="loginError"></span>
+                    <input type="text"
+                           x-model="vpsName"
+                           placeholder="contoh: cv-ai-agent-01"
+                           class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric transition-colors">
+                    <p class="font-mono text-[11px] text-muted">Identitas unik instance server Anda (huruf, angka, atau tanda `-`).</p>
                 </div>
             </template>
 
-            <div class="space-y-4 max-w-lg mx-auto bg-slate-50 p-5 rounded-xl border border-slate-200">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Email atau Username Terdaftar <span class="text-rose-600">*</span>
-                    </label>
-                    <input type="text" x-model="loginIdentifier" @keydown.enter="performQuickLogin()"
-                           class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm bg-white focus:border-black focus:ring-1 focus:ring-black">
-                </div>
+            {{-- Segmented Auth Tabs --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-px bg-hairline border border-hairline">
+                <button type="button"
+                        @click="authTab = 'register'"
+                        :class="authTab === 'register' ? 'bg-electric text-white' : 'bg-white text-muted hover:text-ink hover:bg-creamDark/40'"
+                        class="py-3 px-4 font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer text-center">
+                    1. Buat Akun Baru
+                </button>
+                <button type="button"
+                        @click="authTab = 'login'"
+                        :class="authTab === 'login' ? 'bg-electric text-white' : 'bg-white text-muted hover:text-ink hover:bg-creamDark/40'"
+                        class="py-3 px-4 font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer text-center">
+                    2. Sudah Punya Akun (Masuk)
+                </button>
+            </div>
 
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="text-xs font-semibold text-slate-700 flex items-center gap-1">
-                            <span>Password Akun</span>
-                            <span class="text-rose-600">*</span>
+            {{-- TAB A: REGISTRASI AKUN BARU --}}
+            <div x-show="authTab === 'register'" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="space-y-5">
+                <p class="text-xs text-muted border-l-2 border-electric pl-3">
+                    Daftar cepat saat checkout. Akun Anda akan otomatis dibuat begitu pembayaran diproses.
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block mb-1.5">
+                            Nama Lengkap <span class="text-red-600">*</span>
                         </label>
-                        <a href="{{ route('password.request') }}" target="_blank" class="text-[11px] text-slate-500 hover:text-black hover:underline">
-                            Lupa password?
-                        </a>
+                        <input type="text"
+                               x-model="registerFullName"
+                               placeholder="Nama Lengkap Anda"
+                               class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink focus:outline-none focus:border-electric transition-colors">
                     </div>
-                    <div class="relative">
-                        <input :type="showLoginPassword ? 'text' : 'password'" 
-                               x-model="loginPassword" 
-                               @keydown.enter="performQuickLogin()"
-                               class="w-full pl-3 pr-10 py-2.5 rounded-lg border border-slate-200 text-sm bg-white focus:border-black focus:ring-1 focus:ring-black">
-                        <button type="button" 
-                                @click="showLoginPassword = !showLoginPassword" 
-                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
-                                tabindex="-1">
-                            <svg x-show="!showLoginPassword" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                            </svg>
-                            <svg x-show="showLoginPassword" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none;">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>
-                            </svg>
-                        </button>
+
+                    <div>
+                        <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block mb-1.5">
+                            Username <span class="text-muted font-normal">(opsional)</span>
+                        </label>
+                        <input type="text"
+                               x-model="registerUsername"
+                               placeholder="contoh: ryan_dev"
+                               class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric transition-colors">
+                    </div>
+
+                    <div>
+                        <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block mb-1.5">
+                            Alamat Email <span class="text-red-600">*</span>
+                        </label>
+                        <input type="email"
+                               x-model="registerEmail"
+                               placeholder="email@domain.com"
+                               class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric transition-colors">
+                    </div>
+
+                    <div>
+                        <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block mb-1.5">
+                            Nomor WhatsApp <span class="text-muted font-normal">(Notifikasi Server)</span>
+                        </label>
+                        <input type="text"
+                               x-model="registerPhone"
+                               placeholder="0812xxxx"
+                               class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric transition-colors">
+                    </div>
+
+                    <div>
+                        <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block mb-1.5">
+                            Password Akun (min 8 karakter) <span class="text-red-600">*</span>
+                        </label>
+                        <div class="relative">
+                            <input :type="showRegisterPassword ? 'text' : 'password'"
+                                   x-model="registerPassword"
+                                   placeholder="Minimal 8 karakter"
+                                   class="w-full rounded-none px-3.5 py-2.5 pr-11 text-base sm:text-sm bg-white border border-hairline text-ink focus:outline-none focus:border-electric transition-colors">
+                            <button type="button"
+                                    @click="showRegisterPassword = !showRegisterPassword"
+                                    class="absolute right-0 top-0 bottom-0 px-3 text-muted hover:text-ink transition-colors cursor-pointer"
+                                    tabindex="-1"
+                                    aria-label="Lihat/Sembunyikan Password">
+                                <svg x-show="!showRegisterPassword" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="square" stroke-linejoin="miter" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="square" stroke-linejoin="miter" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                <svg x-show="showRegisterPassword" class="w-4 h-4 text-electric" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="square" stroke-linejoin="miter" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block mb-1.5">
+                            Konfirmasi Password <span class="text-red-600">*</span>
+                        </label>
+                        <div class="relative">
+                            <input :type="showRegisterConfirmPassword ? 'text' : 'password'"
+                                   x-model="registerPasswordConfirmation"
+                                   placeholder="Ulangi password"
+                                   class="w-full rounded-none px-3.5 py-2.5 pr-11 text-base sm:text-sm bg-white border border-hairline text-ink focus:outline-none focus:border-electric transition-colors">
+                            <button type="button"
+                                    @click="showRegisterConfirmPassword = !showRegisterConfirmPassword"
+                                    class="absolute right-0 top-0 bottom-0 px-3 text-muted hover:text-ink transition-colors cursor-pointer"
+                                    tabindex="-1"
+                                    aria-label="Lihat/Sembunyikan Konfirmasi Password">
+                                <svg x-show="!showRegisterConfirmPassword" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="square" stroke-linejoin="miter" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="square" stroke-linejoin="miter" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                <svg x-show="showRegisterConfirmPassword" class="w-4 h-4 text-electric" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="square" stroke-linejoin="miter" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <p x-show="registerPassword && registerPasswordConfirmation"
+                           x-text="registerPassword === registerPasswordConfirmation ? 'Password cocok' : 'Konfirmasi password tidak cocok'"
+                           :class="registerPassword === registerPasswordConfirmation ? 'text-emerald-700' : 'text-red-600'"
+                           class="font-mono text-[11px] mt-1.5 font-semibold"></p>
                     </div>
                 </div>
 
-                {{-- Submit Button Quick Login --}}
-                <div class="pt-2">
-                    <button type="button" 
-                            @click="performQuickLogin()" 
+                <div class="p-4 bg-creamDark/40 border border-hairline font-mono text-[11px] text-ink/80">
+                    Password root server VPS tetap dapat diatur dan dilihat kapan saja secara aman dari Dashboard setelah pembayaran selesai.
+                </div>
+
+                @if(config('services.google.client_id'))
+                    <div class="relative flex items-center py-2">
+                        <div class="flex-grow border-t border-hairline"></div>
+                        <span class="flex-shrink mx-4 font-mono text-[10px] uppercase tracking-widest text-muted font-bold">atau lanjutkan instan</span>
+                        <div class="flex-grow border-t border-hairline"></div>
+                    </div>
+
+                    <div>
+                        <a href="{{ route('auth.google', ['intended' => url()->current()]) }}"
+                           @click="saveDraft()"
+                           class="w-full rounded-none px-4 py-3 border border-ink bg-white hover:bg-creamDark text-ink font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-3 transition-colors cursor-pointer">
+                            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"/>
+                                <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"/>
+                                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"/>
+                            </svg>
+                            <span>Masuk dengan Akun Google</span>
+                        </a>
+                        <p class="text-center font-mono text-[10px] text-muted mt-2">Konfigurasi pesanan Anda tersimpan otomatis selama proses autentikasi.</p>
+                    </div>
+                @endif
+            </div>
+
+            {{-- TAB B: LOGIN AKUN YANG SUDAH ADA --}}
+            <div x-show="authTab === 'login'" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="space-y-5">
+                <p class="text-xs text-muted border-l-2 border-electric pl-3">
+                    Masuk ke akun CravaCloud Anda tanpa meninggalkan halaman checkout ini.
+                </p>
+
+                <div class="p-5 sm:p-6 bg-creamDark/40 border border-hairline space-y-4">
+                    <div>
+                        <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block mb-1.5">
+                            Email atau Username <span class="text-red-600">*</span>
+                        </label>
+                        <input type="text"
+                               x-model="loginIdentifier"
+                               @keydown.enter.prevent="performQuickLogin()"
+                               placeholder="email@domain.com atau username"
+                               class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric transition-colors">
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink">
+                                Password Akun <span class="text-red-600">*</span>
+                            </label>
+                            <a href="{{ route('password.request') }}" target="_blank" class="font-mono text-[11px] text-electric hover:underline">Lupa password?</a>
+                        </div>
+                        <div class="relative">
+                            <input :type="showLoginPassword ? 'text' : 'password'"
+                                   x-model="loginPassword"
+                                   @keydown.enter.prevent="performQuickLogin()"
+                                   placeholder="Masukkan password akun Anda"
+                                   class="w-full rounded-none px-3.5 py-2.5 pr-11 text-base sm:text-sm bg-white border border-hairline text-ink focus:outline-none focus:border-electric transition-colors">
+                            <button type="button"
+                                    @click="showLoginPassword = !showLoginPassword"
+                                    class="absolute right-0 top-0 bottom-0 px-3 text-muted hover:text-ink transition-colors cursor-pointer"
+                                    tabindex="-1"
+                                    aria-label="Lihat/Sembunyikan Password">
+                                <svg x-show="!showLoginPassword" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="square" stroke-linejoin="miter" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="square" stroke-linejoin="miter" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                <svg x-show="showLoginPassword" class="w-4 h-4 text-electric" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="square" stroke-linejoin="miter" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div x-show="loginError" x-cloak class="p-3 bg-red-50 border border-red-400 text-xs font-medium text-red-700" x-text="loginError"></div>
+
+                    <button type="button"
+                            @click="performQuickLogin()"
                             :disabled="isLoggingIn"
-                            class="w-full py-2.5 px-4 rounded-lg bg-black hover:bg-neutral-800 text-white text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xs">
-                        <svg x-show="isLoggingIn" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                            class="w-full rounded-none px-4 py-3 bg-ink hover:bg-electric text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
+                        <svg x-show="isLoggingIn" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <svg x-show="!isLoggingIn" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                        </svg>
-                        <span x-text="isLoggingIn ? 'Memverifikasi...' : 'Masuk ke Akun Saya'"></span>
+                        <span x-text="isLoggingIn ? 'Memverifikasi...' : 'Masuk &amp; Lanjutkan Checkout'"></span>
                     </button>
                 </div>
 
-                {{-- Google Auth Link --}}
-                <div class="pt-1">
-                    <div class="relative my-2.5">
-                        <div class="absolute inset-0 flex items-center">
-                            <div class="w-full border-t border-slate-200"></div>
-                        </div>
-                        <div class="relative flex justify-center text-xs uppercase tracking-wider">
-                            <span class="bg-slate-50 px-2 text-slate-400 font-medium text-[10px]">atau</span>
-                        </div>
+                @if(config('services.google.client_id'))
+                    <div>
+                        <a href="{{ route('auth.google', ['intended' => url()->current()]) }}"
+                           @click="saveDraft()"
+                           class="w-full rounded-none px-4 py-3 border border-ink bg-white hover:bg-creamDark text-ink font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-3 transition-colors cursor-pointer">
+                            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"/>
+                                <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"/>
+                                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"/>
+                            </svg>
+                            <span>Masuk dengan Akun Google</span>
+                        </a>
                     </div>
-
-                    <a href="{{ route('auth.google') }}?redirect={{ urlencode(request()->fullUrl()) }}" 
-                       @click="saveDraft()"
-                       class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white hover:bg-slate-100 text-slate-800 text-xs font-semibold border border-slate-300 rounded-lg shadow-2xs transition-all">
-                        <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
-                            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
-                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.24v3.15C3.26 21.4 7.34 24 12 24z"/>
-                            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.24C.45 8.15 0 9.92 0 12s.45 3.85 1.24 5.42l4.04-3.15z"/>
-                            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.6 1.24 6.58l4.04 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-                        </svg>
-                        <span>Masuk dengan Akun Google</span>
-                    </a>
-                </div>
+                @endif
             </div>
         </div>
-    </div>
+    </template>
 </div>
 
-{{-- Hidden logout form if user wants to switch account on checkout --}}
 <form id="checkout-logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
     @csrf
 </form>

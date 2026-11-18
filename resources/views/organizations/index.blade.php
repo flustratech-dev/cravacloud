@@ -1,33 +1,37 @@
-@extends('layouts.dashboard', ['title' => 'Organisasi', 'headerTitle' => 'Organisasi & Workspace', 'backUrl' => route('dashboard.index'), 'backLabel' => 'Kembali ke Dashboard'])
+@extends('layouts.dashboard', ['title' => 'Organisasi', 'headerTitle' => 'Organisasi & Workspace'])
 
 @section('content')
 <div class="max-w-5xl space-y-6">
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-hairline pb-4">
         <div>
-            <h2 class="text-xl font-bold text-slate-900">Organisasi Anda</h2>
-            <p class="text-sm text-slate-500 mt-1">Pisahkan resource, anggota, dan billing antar workspace.</p>
+            <h2 class="font-display text-xl font-bold text-ink">Organisasi Anda</h2>
+            <p class="text-xs text-muted mt-1">Pisahkan resource server, anggota tim, dan billing antar workspace.</p>
         </div>
-        <a href="{{ route('organizations.create') }}" class="rounded-lg bg-black hover:bg-neutral-800 transition-colors px-4 py-2.5 text-sm font-bold text-white">+ Buat organisasi</a>
+        <a href="{{ route('organizations.create') }}"
+           class="rounded-none bg-electric hover:bg-electricHover transition-colors px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white self-start sm:self-auto">
+            + Buat organisasi
+        </a>
     </div>
 
     <div class="grid md:grid-cols-2 gap-4">
         @forelse($orgs as $org)
-            <a href="{{ route('organizations.show', $org->id) }}" class="bg-white border {{ $currentOrgId === $org->id ? 'border-black ring-1 ring-black' : 'border-slate-200' }} rounded-lg p-5 hover:border-slate-400 transition-all block">
+            <a href="{{ route('organizations.show', $org->id) }}"
+               class="bg-white border {{ $currentOrgId === $org->id ? 'border-2 border-electric' : 'border-hairline hover:border-ink' }} p-5 transition-colors block">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="font-bold text-slate-900">{{ $org->name }}</p>
-                        <p class="text-xs text-slate-500 mt-1">{{ ucfirst($org->type) }} · {{ $org->members->count() }} member</p>
+                        <p class="font-display font-bold text-ink text-base">{{ $org->name }}</p>
+                        <p class="font-mono text-[11px] text-muted mt-1 uppercase">{{ $org->type }} · {{ $org->members->count() }} member</p>
                     </div>
                     @if($currentOrgId === $org->id)
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                        <span class="px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-emerald-100 text-emerald-900 border border-emerald-400 shrink-0">
                             Aktif
                         </span>
                     @endif
                 </div>
-                <p class="text-xs text-slate-500 mt-4">{{ $org->billing_email ?: 'Billing email belum diatur' }}</p>
+                <p class="font-mono text-xs text-muted mt-4 pt-3 border-t border-hairline">{{ $org->billing_email ?: 'Billing email belum diatur' }}</p>
             </a>
         @empty
-            <div class="bg-white border border-slate-200 rounded-lg p-8 text-center text-sm text-slate-500 md:col-span-2">
+            <div class="bg-white border border-hairline p-8 text-center font-mono text-xs text-muted md:col-span-2">
                 Belum ada organisasi.
             </div>
         @endforelse

@@ -21,33 +21,11 @@ class AiComboPackagesTest extends TestCase
         $this->seed(DatabaseSeeder::class);
     }
 
-    public function test_landing_page_renders_ai_packages_with_clean_cards_and_no_comparison_table(): void
+    public function test_retired_ai_product_routes_return_not_found(): void
     {
-        $response = $this->get('/');
-        $response->assertStatus(200);
-
-        // Section exists
-        $response->assertSee('id="ai-packages"', false);
-        $response->assertSee('CravaCloud AI Combo Packages');
-
-        // All 4 AI package names are present
-        $response->assertSee('Terminal Coding Agent');
-        $response->assertSee('Cloud AI Workstation');
-        $response->assertSee('Hermes Autonomous Hub');
-        $response->assertSee('Enterprise Private AI &amp; RAG', false);
-
-        // Specs are listed as bullet points
-        $response->assertSee('vCPU High Performance');
-        $response->assertSee('RAM DDR4/DDR5');
-        $response->assertSee('NVMe SSD');
-        $response->assertDontSee('RAID-10');
-
-        // Cleaned up marketing tags must NOT appear
-        $response->assertDontSee('Zero Setup • Siap Pakai dalam Hitungan Menit');
-        $response->assertDontSee('Ringkasan Tabel Paket AI Combo');
-        $response->assertDontSee('🎯 Cocok Untuk:');
-        $response->assertDontSee('💡 Solusi yang Didapat:');
-        $response->assertDontSee('Flat bulanan • Siap pakai tanpa setup');
+        $this->get('/ai')->assertStatus(404);
+        $this->get('/ai-agent')->assertStatus(404);
+        $this->get('/tambah-ai-agent')->assertStatus(404);
     }
 
     public function test_checkout_ai_package_stores_order_with_defaults(): void
@@ -96,8 +74,12 @@ class AiComboPackagesTest extends TestCase
 
         // Button "+ Tambah VPS" points to /#pricing
         $response->assertSee('#pricing');
-        // Button "+ Tambah AI Agent" points to /#ai-packages
-        $response->assertSee('#ai-packages');
+        // Removed ecosystem & AI nav links must not appear in Client Console
+        $response->assertDontSee('Tambah AI Agent');
+        $response->assertDontSee('Ekosistem');
+        $response->assertDontSee('wa.cravacloud.id');
+        $response->assertDontSee('build.cravacloud.id');
+        $response->assertDontSee('/ai');
     }
 
     public function test_dashboard_renders_ai_instance_with_app_link(): void
@@ -121,7 +103,7 @@ class AiComboPackagesTest extends TestCase
             'organization_id' => $org->id,
             'vps_spec_id' => $aiSpec->id,
             'control_panel' => $aiSpec->default_stack,
-            'provider' => 'cloudeka',
+            'provider' => 'cravacloud',
             'hostname' => 'cv-ai-workstation-test',
             'datacenter_location' => 'indonesia',
             'os' => 'ubuntu2404',
@@ -140,7 +122,7 @@ class AiComboPackagesTest extends TestCase
             'public_ip' => '103.150.100.20',
             'control_panel' => $aiSpec->default_stack,
             'os' => 'Ubuntu 24.04 LTS',
-            'provider' => 'cloudeka',
+            'provider' => 'cravacloud',
             'status' => 'running',
             'cpu' => $aiSpec->cpu,
             'ram' => $aiSpec->ram,

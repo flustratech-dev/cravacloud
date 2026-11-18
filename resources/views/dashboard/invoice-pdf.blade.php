@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Invoice {{ $invoice->invoice_number }} — CravaCloud Enterprise</title>
+    <title>CravaCloud Enterprise Invoice {{ $invoice->invoice_number }}</title>
     <style>
         @page {
             margin: 18mm 18mm 18mm 18mm;

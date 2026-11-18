@@ -60,7 +60,7 @@ class DisplayTimeAndClaimsTest extends TestCase
             'organization_id' => $customer->current_organization_id,
             'vps_spec_id' => $spec->id,
             'control_panel' => 'coolify',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'hostname' => 'srv-wib',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
@@ -83,7 +83,7 @@ class DisplayTimeAndClaimsTest extends TestCase
             'ram' => 4,
             'disk' => 60,
             'control_panel' => 'coolify',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'expires_at' => now()->addDays(20),
         ]);
 
@@ -189,9 +189,17 @@ class DisplayTimeAndClaimsTest extends TestCase
             $response->assertDontSee($claim, false);
         }
 
-        // Jam layanan di landing mengikuti pengaturan admin (sama dengan dashboard).
-        $response->assertSee(app(SettingsService::class)->get('support_hours'));
-        $response->assertSee('Tencent Cloud');
+        // Footer tidak lagi menampilkan WhatsApp CS / Jam Layanan; header memuat menu datar dan credit Flustra.
+        $response->assertDontSee('WhatsApp CS:');
+        $response->assertDontSee('Jam Layanan:');
+        $response->assertDontSee(app(SettingsService::class)->get('support_hours'));
+        $response->assertSee('Product By');
+        $response->assertSee('https://flustra.id');
+        foreach (['Beranda', 'Katalog VPS', 'Dokumentasi', 'Status Sistem', 'Syarat &amp; Ketentuan', 'Privasi', 'Kebijakan Refund'] as $navLabel) {
+            $response->assertSee($navLabel, false);
+        }
+        $response->assertDontSee('Tencent Cloud');
+        $response->assertDontSee('Cloudeka');
     }
 
     public function test_package_features_do_not_promise_work_the_team_does_not_do(): void

@@ -48,7 +48,7 @@ class MidtransIntegrationTest extends TestCase
             'organization_id' => $customer->current_organization_id,
             'vps_spec_id' => $spec->id,
             'control_panel' => 'coolify',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'hostname' => 'vps-midtrans-test',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
@@ -92,7 +92,7 @@ class MidtransIntegrationTest extends TestCase
             'organization_id' => $customer->current_organization_id,
             'vps_spec_id' => $spec->id,
             'control_panel' => 'dokploy',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'hostname' => 'vps-webhook-prefixed',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
@@ -155,7 +155,7 @@ class MidtransIntegrationTest extends TestCase
             'organization_id' => $customer->current_organization_id,
             'vps_spec_id' => $spec->id,
             'control_panel' => 'none',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'hostname' => 'vps-midtrans-page',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
@@ -183,15 +183,9 @@ class MidtransIntegrationTest extends TestCase
     public function test_checkout_with_midtrans_snap_returns_snap_token_and_redirect_url(): void
     {
         $customer = $this->customer();
-        $spec = VpsSpec::where('is_active', true)->get()->first(fn ($s) => $s->isProviderAllowed('tencent'));
-        $provider = 'tencent';
+        $spec = VpsSpec::where('is_active', true)->first();
+        $provider = 'cravacloud';
         $location = 'singapore';
-
-        if (!$spec) {
-            $spec = VpsSpec::where('is_active', true)->first();
-            $provider = $spec->defaultProvider();
-            $location = 'indonesia';
-        }
 
         $gw = PaymentGateway::where('code', 'midtrans')->first();
         $gw->update([
@@ -239,15 +233,9 @@ class MidtransIntegrationTest extends TestCase
     public function test_checkout_with_mandiri_va_and_other_va_returns_snap_token(): void
     {
         $customer = $this->customer();
-        $spec = VpsSpec::where('is_active', true)->get()->first(fn ($s) => $s->isProviderAllowed('tencent'));
-        $provider = 'tencent';
+        $spec = VpsSpec::where('is_active', true)->first();
+        $provider = 'cravacloud';
         $location = 'singapore';
-
-        if (!$spec) {
-            $spec = VpsSpec::where('is_active', true)->first();
-            $provider = $spec->defaultProvider();
-            $location = 'indonesia';
-        }
 
         $gw = PaymentGateway::where('code', 'midtrans')->first();
         $gw->update([

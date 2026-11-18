@@ -67,7 +67,7 @@ class PaymentVerificationTest extends TestCase
         $order = Order::create([
             'customer_id' => $this->customer->id,
             'vps_spec_id' => $this->spec->id,
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
             'control_panel' => 'none',
@@ -94,7 +94,7 @@ class PaymentVerificationTest extends TestCase
         $order = Order::create([
             'customer_id' => $this->customer->id,
             'vps_spec_id' => $this->spec->id,
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
             'control_panel' => 'none',
@@ -144,7 +144,7 @@ class PaymentVerificationTest extends TestCase
         $order = Order::create([
             'customer_id' => $this->customer->id,
             'vps_spec_id' => $this->spec->id,
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
             'control_panel' => 'none',
@@ -179,7 +179,7 @@ class PaymentVerificationTest extends TestCase
         $order = Order::create([
             'customer_id' => $this->customer->id,
             'vps_spec_id' => $this->spec->id,
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
             'control_panel' => 'none',

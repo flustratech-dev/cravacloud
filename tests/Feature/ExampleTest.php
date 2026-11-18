@@ -45,7 +45,7 @@ class ExampleTest extends TestCase
             'organization_id' => $org->id,
             'vps_spec_id' => $spec->id,
             'control_panel' => 'coolify',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'hostname' => 'vps-testuser',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
@@ -69,7 +69,7 @@ class ExampleTest extends TestCase
             'ram' => $spec->ram,
             'disk' => $spec->disk,
             'control_panel' => 'coolify',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'uptime_percent' => 99.98,
         ]);
 
@@ -92,15 +92,22 @@ class ExampleTest extends TestCase
         $response = $this->get('/');
         $response->assertStatus(200);
         $response->assertSee('CravaCloud');
-        $response->assertSee('Student Basic');
-        $response->assertSee('Mahasiswa Basic');
-        $response->assertSee('Standard');
-        $response->assertSee('Premium');
-        $response->assertSee('210.000');
-        $response->assertSee('90.000');
-        $response->assertSee('Startup');
-        $response->assertSee('Business');
-        $response->assertSee('590.000');
+        $response->assertSee('Starter XS');
+        $response->assertSee('Starter S');
+        $response->assertSee('Starter M');
+        $response->assertSee('Starter L');
+        $response->assertSee('115.000');
+        $response->assertSee('165.000');
+        $response->assertSee('Enterprise Pro');
+        $response->assertSee('Enterprise Extreme');
+        $response->assertSee('975.000');
+        $response->assertSee('Pilih Paket');
+        $response->assertDontSee('Deploy Server');
+        $response->assertDontSee('DEPLOY CRAVACLOUD VPS');
+
+        $starterXs = VpsSpec::where('name', 'Starter XS')->first();
+        $this->assertNotNull($starterXs);
+        $response->assertSee(route('checkout', $starterXs->id));
     }
 
     public function test_order_page_returns_successful_response(): void
@@ -110,22 +117,22 @@ class ExampleTest extends TestCase
         $response->assertSee('Ringkasan Pesanan');
         $response->assertSee('Coolify');
 
-        $businessSpec = VpsSpec::where('name', 'Business')->first();
-        $this->assertNotNull($businessSpec);
+        $enterpriseSpec = VpsSpec::where('name', 'Enterprise Pro')->first();
+        $this->assertNotNull($enterpriseSpec);
 
-        $responseBusiness = $this->get('/checkout/'.$businessSpec->id);
-        $responseBusiness->assertStatus(200);
-        $responseBusiness->assertSee('Business');
+        $responseEnterprise = $this->get('/checkout/'.$enterpriseSpec->id);
+        $responseEnterprise->assertStatus(200);
+        $responseEnterprise->assertSee('Enterprise Pro');
     }
 
     public function test_self_serve_order_flow_as_guest(): void
     {
-        $spec = VpsSpec::where('name', 'Standard')->first();
+        $spec = VpsSpec::where('name', 'Starter S')->first();
 
         $response = $this->post('/checkout', [
             'vps_spec_id' => $spec->id,
             'control_panel' => 'coolify',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
             'hostname' => 'my-new-guest-server',
@@ -316,7 +323,7 @@ class ExampleTest extends TestCase
             'organization_id' => $customer->current_organization_id,
             'vps_spec_id' => 1,
             'control_panel' => 'coolify',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'hostname' => 'vps-new-order',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
@@ -371,7 +378,7 @@ class ExampleTest extends TestCase
             'organization_id' => $customer->current_organization_id,
             'vps_spec_id' => 1,
             'control_panel' => 'coolify',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'hostname' => 'vps-webhook-test',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
@@ -447,13 +454,13 @@ class ExampleTest extends TestCase
 
         $order = Order::where('shopee_order_id', 'SHOPEE-BIZ-2026')->first();
         $this->assertNotNull($order);
-        $this->assertEquals('Business', $order->vpsSpec->name);
-        $this->assertEquals('cloudeka', $order->provider);
-        $this->assertEquals('indonesia', $order->datacenter_location);
-        $this->assertEquals(8, $order->vpsSpec->cpu);
-        $this->assertEquals(16, $order->vpsSpec->ram);
-        $this->assertEquals(80, $order->vpsSpec->disk);
-        $this->assertEquals(590000, (int) $order->vpsSpec->sell_price);
+        $this->assertEquals('Enterprise Pro', $order->vpsSpec->name);
+        $this->assertEquals('cravacloud', $order->provider);
+        $this->assertEquals('singapore', $order->datacenter_location);
+        $this->assertEquals(4, $order->vpsSpec->cpu);
+        $this->assertEquals(8, $order->vpsSpec->ram);
+        $this->assertEquals(180, $order->vpsSpec->disk);
+        $this->assertEquals(975000, (int) $order->vpsSpec->sell_price);
     }
 
     public function test_api_contracts_shopee_process_order_mahasiswa_basic(): void
@@ -463,7 +470,7 @@ class ExampleTest extends TestCase
         $response = $this->withHeader('X-Admin-Key', $adminKey)
             ->postJson('/api/admin/shopee/process-order', [
                 'shopee_order_id' => 'SHOPEE-MHS-2026',
-                'customer_name' => 'Mahasiswa Test Shopee',
+                'customer_name' => 'Starter Test Shopee',
                 'customer_email' => 'mhs.shopee@test.id',
                 'package' => 'mahasiswa basic',
                 'control_panel' => 'docker',
@@ -476,52 +483,79 @@ class ExampleTest extends TestCase
 
         $order = Order::where('shopee_order_id', 'SHOPEE-MHS-2026')->first();
         $this->assertNotNull($order);
-        $this->assertEquals('Mahasiswa Basic', $order->vpsSpec->name);
-        $this->assertEquals('tencent', $order->provider);
+        $this->assertEquals('Starter XS', $order->vpsSpec->name);
         $this->assertEquals(2, $order->vpsSpec->cpu);
         $this->assertEquals(2, $order->vpsSpec->ram);
         $this->assertEquals(40, $order->vpsSpec->disk);
-        $this->assertEquals(90000, (int) $order->vpsSpec->sell_price);
+        $this->assertEquals(115000, (int) $order->vpsSpec->sell_price);
     }
 
-    public function test_startup_plan_order_fails_with_tencent_provider(): void
+    public function test_starter_plan_checkout_succeeds_without_provider_in_indonesia_and_singapore(): void
     {
-        $startupSpec = VpsSpec::where('name', 'Startup')->first();
+        $starterXs = VpsSpec::where('name', 'Starter XS')->first();
+        $starterS = VpsSpec::where('name', 'Starter S')->first();
 
-        $response = $this->post('/checkout', [
-            'vps_spec_id' => $startupSpec->id,
-            'control_panel' => 'n8n',
-            'provider' => 'tencent',
+        $resId = $this->post('/checkout', [
+            'vps_spec_id' => $starterXs->id,
+            'control_panel' => 'none',
             'datacenter_location' => 'indonesia',
             'os' => 'ubuntu2404',
-            'hostname' => 'startup-test-server',
+            'hostname' => 'starter-xs-id',
             'root_password' => 'SecurePass@123',
             'terms_accepted' => 1,
             'payment_method' => 'qris',
-            'full_name' => 'Startup Customer Fail',
-            'email' => 'startup.fail@customer.id',
-            'phone' => '081233445566',
+            'full_name' => 'Starter XS Indonesia',
+            'email' => 'starter.xs.id@customer.id',
+            'phone' => '081233445588',
             'password' => 'SecurePass@123',
         ]);
 
-        $response->assertSessionHasErrors('provider');
-    }
+        $orderId = Order::whereHas('customer', fn ($q) => $q->where('email', 'starter.xs.id@customer.id'))->first();
+        $this->assertNotNull($orderId);
+        $this->assertEquals('cravacloud', $orderId->provider);
+        $this->assertEquals('indonesia', $orderId->datacenter_location);
+        $resId->assertSessionDoesntHaveErrors();
+        $resId->assertRedirect(route('order.payment', $orderId->id));
 
-    public function test_business_plan_order_succeeds_with_cloudeka_provider(): void
-    {
-        $businessSpec = VpsSpec::where('name', 'Business')->first();
+        auth()->logout();
+        session()->flush();
 
-        $response = $this->post('/checkout', [
-            'vps_spec_id' => $businessSpec->id,
-            'control_panel' => 'ollama',
-            'provider' => 'cloudeka',
-            'datacenter_location' => 'indonesia',
-            'os' => 'ubuntu2404',
-            'hostname' => 'business-server',
+        $resSg = $this->post('/checkout', [
+            'vps_spec_id' => $starterS->id,
+            'control_panel' => 'coolify',
+            'datacenter_location' => 'singapore',
+            'os' => 'debian12',
+            'hostname' => 'starter-s-sg',
             'root_password' => 'SecurePass@123',
             'terms_accepted' => 1,
             'payment_method' => 'qris',
-            'full_name' => 'Business Customer Success',
+            'full_name' => 'Starter S Singapore',
+            'email' => 'starter.s.sg@customer.id',
+            'phone' => '081233445599',
+            'password' => 'SecurePass@123',
+        ]);
+
+        $orderSg = Order::whereHas('customer', fn ($q) => $q->where('email', 'starter.s.sg@customer.id'))->first();
+        $this->assertNotNull($orderSg);
+        $this->assertEquals('cravacloud', $orderSg->provider);
+        $this->assertEquals('singapore', $orderSg->datacenter_location);
+        $resSg->assertRedirect(route('order.payment', $orderSg->id));
+    }
+
+    public function test_enterprise_plan_checkout_succeeds_with_cravacloud_provider(): void
+    {
+        $spec = VpsSpec::where('name', 'Enterprise Pro')->first();
+
+        $response = $this->post('/checkout', [
+            'vps_spec_id' => $spec->id,
+            'control_panel' => 'ollama',
+            'datacenter_location' => 'indonesia',
+            'os' => 'ubuntu2404',
+            'hostname' => 'enterprise-pro-srv',
+            'root_password' => 'SecurePass@123',
+            'terms_accepted' => 1,
+            'payment_method' => 'qris',
+            'full_name' => 'Enterprise Pro Customer',
             'email' => 'biz.success@customer.id',
             'phone' => '081233445577',
             'password' => 'SecurePass@123',
@@ -529,175 +563,22 @@ class ExampleTest extends TestCase
 
         $order = Order::whereHas('customer', fn ($q) => $q->where('email', 'biz.success@customer.id'))->first();
         $this->assertNotNull($order);
-        $this->assertEquals('cloudeka', $order->provider);
+        $this->assertEquals('cravacloud', $order->provider);
         $this->assertEquals('indonesia', $order->datacenter_location);
-        $this->assertEquals($businessSpec->id, $order->vps_spec_id);
+        $this->assertEquals($spec->id, $order->vps_spec_id);
         $response->assertRedirect(route('order.payment', $order->id));
     }
 
-    public function test_student_basic_fails_with_tencent_provider(): void
+    public function test_public_and_checkout_pages_contain_zero_tencent_or_cloudeka_references(): void
     {
-        $spec = VpsSpec::where('name', 'Student Basic')->first();
+        $starterXs = VpsSpec::where('name', 'Starter XS')->first();
 
-        $response = $this->post('/checkout', [
-            'vps_spec_id' => $spec->id,
-            'control_panel' => 'none',
-            'provider' => 'tencent',
-            'datacenter_location' => 'indonesia',
-            'os' => 'ubuntu2404',
-            'hostname' => 'student-fail-server',
-            'root_password' => 'SecurePass@123',
-            'terms_accepted' => 1,
-            'payment_method' => 'qris',
-            'full_name' => 'Student Fail',
-            'email' => 'student.fail@customer.id',
-            'phone' => '081233445588',
-            'password' => 'SecurePass@123',
-        ]);
-
-        $response->assertSessionHasErrors('provider');
-    }
-
-    public function test_student_basic_succeeds_with_cloudeka_provider(): void
-    {
-        $spec = VpsSpec::where('name', 'Student Basic')->first();
-
-        $response = $this->post('/checkout', [
-            'vps_spec_id' => $spec->id,
-            'control_panel' => 'none',
-            'provider' => 'cloudeka',
-            'datacenter_location' => 'indonesia',
-            'os' => 'ubuntu2404',
-            'hostname' => 'student-ok-server',
-            'root_password' => 'SecurePass@123',
-            'terms_accepted' => 1,
-            'payment_method' => 'qris',
-            'full_name' => 'Student OK',
-            'email' => 'student.ok@customer.id',
-            'phone' => '081233445599',
-            'password' => 'SecurePass@123',
-        ]);
-
-        $order = Order::whereHas('customer', fn ($q) => $q->where('email', 'student.ok@customer.id'))->first();
-        $this->assertNotNull($order);
-        $this->assertEquals('cloudeka', $order->provider);
-        $this->assertEquals('indonesia', $order->datacenter_location);
-        $response->assertRedirect(route('order.payment', $order->id));
-    }
-
-    public function test_mahasiswa_basic_fails_with_cloudeka_provider(): void
-    {
-        $spec = VpsSpec::where('name', 'Mahasiswa Basic')->first();
-
-        $response = $this->post('/checkout', [
-            'vps_spec_id' => $spec->id,
-            'control_panel' => 'none',
-            'provider' => 'cloudeka',
-            'datacenter_location' => 'indonesia',
-            'os' => 'ubuntu2404',
-            'hostname' => 'mhs-fail-server',
-            'root_password' => 'SecurePass@123',
-            'terms_accepted' => 1,
-            'payment_method' => 'qris',
-            'full_name' => 'Mahasiswa Fail',
-            'email' => 'mhs.fail@customer.id',
-            'phone' => '081233445511',
-            'password' => 'SecurePass@123',
-        ]);
-
-        $response->assertSessionHasErrors('provider');
-    }
-
-    public function test_mahasiswa_basic_succeeds_with_tencent_provider(): void
-    {
-        $spec = VpsSpec::where('name', 'Mahasiswa Basic')->first();
-
-        $response = $this->post('/checkout', [
-            'vps_spec_id' => $spec->id,
-            'control_panel' => 'coolify',
-            'provider' => 'tencent',
-            'datacenter_location' => 'singapore',
-            'os' => 'ubuntu2404',
-            'hostname' => 'mhs-ok-server',
-            'root_password' => 'SecurePass@123',
-            'terms_accepted' => 1,
-            'payment_method' => 'qris',
-            'full_name' => 'Mahasiswa OK',
-            'email' => 'mhs.ok@customer.id',
-            'phone' => '081233445522',
-            'password' => 'SecurePass@123',
-        ]);
-
-        $order = Order::whereHas('customer', fn ($q) => $q->where('email', 'mhs.ok@customer.id'))->first();
-        $this->assertNotNull($order);
-        $this->assertEquals('tencent', $order->provider);
-        $this->assertEquals('singapore', $order->datacenter_location);
-        $response->assertRedirect(route('order.payment', $order->id));
-    }
-
-    public function test_standard_and_premium_fail_with_cloudeka(): void
-    {
-        $std = VpsSpec::where('name', 'Standard')->first();
-        $prem = VpsSpec::where('name', 'Premium')->first();
-
-        $res1 = $this->post('/checkout', [
-            'vps_spec_id' => $std->id,
-            'control_panel' => 'none',
-            'provider' => 'cloudeka',
-            'datacenter_location' => 'indonesia',
-            'os' => 'ubuntu2404',
-            'hostname' => 'std-fail',
-            'root_password' => 'SecurePass@123',
-            'terms_accepted' => 1,
-            'payment_method' => 'qris',
-            'full_name' => 'Std Fail',
-            'email' => 'std.fail@test.com',
-            'phone' => '081299887711',
-            'password' => 'SecurePass@123',
-        ]);
-        $res1->assertSessionHasErrors('provider');
-
-        $res2 = $this->post('/checkout', [
-            'vps_spec_id' => $prem->id,
-            'control_panel' => 'none',
-            'provider' => 'cloudeka',
-            'datacenter_location' => 'indonesia',
-            'os' => 'ubuntu2404',
-            'hostname' => 'prem-fail',
-            'root_password' => 'SecurePass@123',
-            'terms_accepted' => 1,
-            'payment_method' => 'qris',
-            'full_name' => 'Prem Fail',
-            'email' => 'prem.fail@test.com',
-            'phone' => '081299887722',
-            'password' => 'SecurePass@123',
-        ]);
-        $res2->assertSessionHasErrors('provider');
-    }
-
-    public function test_standard_and_premium_succeed_with_tencent(): void
-    {
-        $prem = VpsSpec::where('name', 'Premium')->first();
-
-        $res = $this->post('/checkout', [
-            'vps_spec_id' => $prem->id,
-            'control_panel' => 'none',
-            'provider' => 'tencent',
-            'datacenter_location' => 'singapore',
-            'os' => 'ubuntu2404',
-            'hostname' => 'prem-ok',
-            'root_password' => 'SecurePass@123',
-            'terms_accepted' => 1,
-            'payment_method' => 'qris',
-            'full_name' => 'Prem OK',
-            'email' => 'prem.ok@test.com',
-            'phone' => '081299887733',
-            'password' => 'SecurePass@123',
-        ]);
-        $res->assertSessionDoesntHaveErrors();
-        $order = Order::whereHas('customer', fn ($q) => $q->where('email', 'prem.ok@test.com'))->first();
-        $this->assertNotNull($order);
-        $this->assertEquals('tencent', $order->provider);
+        foreach (['/', '/vps', '/checkout', '/checkout/' . $starterXs->id, '/docs'] as $url) {
+            $html = $this->get($url)->assertOk()->getContent();
+            $this->assertStringNotContainsStringIgnoringCase('tencent', $html, "Found tencent in {$url}");
+            $this->assertStringNotContainsStringIgnoringCase('cloudeka', $html, "Found cloudeka in {$url}");
+            $this->assertStringNotContainsStringIgnoringCase('lintasarta', $html, "Found lintasarta in {$url}");
+        }
     }
 
     public function test_api_contracts_vps_status(): void
@@ -722,9 +603,9 @@ class ExampleTest extends TestCase
         $indexRes = $this->actingAs($admin)->get('/admin/packages');
         $indexRes->assertStatus(200);
         $indexRes->assertSee('Katalog Spesifikasi Cloud VPS');
-        $indexRes->assertSee('Student Basic');
-        $indexRes->assertSee('Startup');
-        $indexRes->assertSee('Business');
+        $indexRes->assertSee('Starter XS');
+        $indexRes->assertSee('Starter L');
+        $indexRes->assertSee('Enterprise Pro');
 
         // 2. Store new custom package
         $storeRes = $this->actingAs($admin)->post('/admin/packages', [
@@ -758,7 +639,7 @@ class ExampleTest extends TestCase
         $this->assertDatabaseHas('vps_specs', ['name' => 'Custom Developer Node v2', 'cpu' => 8]);
 
         // 4. Core plans protection against deletion
-        $corePlan = VpsSpec::where('name', 'Startup')->first();
+        $corePlan = VpsSpec::where('name', 'Starter L')->first();
         $this->assertNotNull($corePlan);
         $delCoreRes = $this->actingAs($admin)->delete('/admin/packages/'.$corePlan->id);
         $delCoreRes->assertSessionHas('error');

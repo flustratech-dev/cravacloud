@@ -51,7 +51,13 @@ class AdminController extends Controller
         $orders_web = Order::where('channel', 'website')->count();
         $orders_shopee = Order::where('channel', 'shopee')->count();
 
-        $specs = VpsSpec::withCount('orders')->get();
+        $specs = VpsSpec::withCount('orders')
+            ->where(function ($q) {
+                $q->where('is_active', true)->orHas('orders');
+            })
+            ->orderByRaw("CASE category WHEN 'vps' THEN 0 WHEN 'ai_combo' THEN 1 ELSE 2 END")
+            ->orderBy('sell_price')
+            ->get();
 
         return view('admin.index', compact(
             'pending_orders',
@@ -703,7 +709,7 @@ class AdminController extends Controller
         }
 
         $recentShopeeOrders = $query->paginate(15)->withQueryString();
-        $operatingSystems = Order::operatingSystems();
+        $operatingSystems = Order::osLabels();
         $providerLabels = Order::providerLabels();
         $stackLabels = Order::stackLabels();
 
@@ -724,7 +730,7 @@ class AdminController extends Controller
             'customer_email' => 'required|email|max:255',
             'customer_phone' => 'nullable|string|max:25',
             'vps_spec_id' => 'required|exists:vps_specs,id',
-            'provider' => 'nullable|string|in:tencent,cloudeka',
+            'provider' => 'nullable|string|max:50',
             'control_panel' => 'required|string',
             'datacenter_location' => 'required|in:singapore,indonesia',
             'os' => 'required|string',
@@ -747,13 +753,8 @@ class AdminController extends Controller
         }
 
         $spec = VpsSpec::findOrFail($validated['vps_spec_id']);
-        $requestedProvider = $validated['provider'] ?? null;
-        $provider = ($requestedProvider && $spec->isProviderAllowed($requestedProvider))
-            ? $requestedProvider
-            : $spec->defaultProvider();
-        $datacenterLocation = ($provider === 'cloudeka')
-            ? 'indonesia'
-            : ($validated['datacenter_location'] ?? 'singapore');
+        $provider = Order::DEFAULT_PROVIDER;
+        $datacenterLocation = $validated['datacenter_location'] ?? 'indonesia';
 
         $isDb = $spec->isDatabasePackage() || $validated['control_panel'] === 'managed_database';
         $dbEngine = $validated['db_engine'] ?? ($isDb ? 'postgres' : null);
@@ -1041,7 +1042,7 @@ class AdminController extends Controller
 
         $osDisplay = Order::osLabels()[$validated['os']] ?? $validated['os'];
         $stackDisplay = Order::stackLabels()[$validated['control_panel']] ?? strtoupper($validated['control_panel']);
-        $providerDisplay = Order::providerLabels()[$provider] ?? strtoupper($provider);
+        $providerDisplay = Order::customerProviderLabel($provider);
         $dcDisplay = ($datacenterLocation === 'singapore') ? 'Singapore (Tier-3 Gateway)' : 'Indonesia (Cyber Jakarta)';
 
         return back()->with('shopee_credentials', [
@@ -1712,6 +1713,14 @@ class AdminController extends Controller
             ->get();
 
         $corePlanNames = [
+            'Starter XS',
+            'Starter S',
+            'Starter M',
+            'Starter L',
+            'Enterprise Pro',
+            'Enterprise Max',
+            'Enterprise Ultra',
+            'Enterprise Extreme',
             'Student Basic',
             'Mahasiswa Basic',
             'Standard',
@@ -1754,8 +1763,8 @@ class AdminController extends Controller
             'solution' => 'nullable|string|max:1000',
             'default_stack' => 'nullable|string|max:50',
             'allowed_providers' => 'nullable|array',
-            'allowed_providers.*' => 'in:tencent,cloudeka',
-            'default_provider' => 'nullable|string|in:tencent,cloudeka',
+            'allowed_providers.*' => 'string|max:50',
+            'default_provider' => 'nullable|string|max:50',
             'features' => 'nullable',
             'cpu' => 'required|integer|min:1|max:128',
             'ram' => 'required|integer|min:1|max:1024',
@@ -1779,13 +1788,9 @@ class AdminController extends Controller
             $validated['features'] = array_values(array_filter(array_map('trim', explode("\n", $validated['features']))));
         }
 
-        // Format allowed providers & default provider
-        if (empty($validated['allowed_providers'])) {
-            $validated['allowed_providers'] = ['tencent'];
-        }
-        if (empty($validated['default_provider']) || !in_array($validated['default_provider'], $validated['allowed_providers'], true)) {
-            $validated['default_provider'] = $validated['allowed_providers'][0];
-        }
+        // Provider tunggal CravaCloud
+        $validated['allowed_providers'] = ['cravacloud'];
+        $validated['default_provider'] = 'cravacloud';
 
         VpsSpec::create($validated);
         \Illuminate\Support\Facades\Cache::forget('landing.specs');
@@ -1819,8 +1824,8 @@ class AdminController extends Controller
             'solution' => 'nullable|string|max:1000',
             'default_stack' => 'nullable|string|max:50',
             'allowed_providers' => 'nullable|array',
-            'allowed_providers.*' => 'in:tencent,cloudeka',
-            'default_provider' => 'nullable|string|in:tencent,cloudeka',
+            'allowed_providers.*' => 'string|max:50',
+            'default_provider' => 'nullable|string|max:50',
             'features' => 'nullable',
             'cpu' => 'required|integer|min:1|max:128',
             'ram' => 'required|integer|min:1|max:1024',
@@ -1869,6 +1874,14 @@ class AdminController extends Controller
 
         // Proteksi paket inti utama, AI combo & Managed DB
         $corePlanNames = [
+            'starter xs',
+            'starter s',
+            'starter m',
+            'starter l',
+            'enterprise pro',
+            'enterprise max',
+            'enterprise ultra',
+            'enterprise extreme',
             'student basic',
             'mahasiswa basic',
             'standard',

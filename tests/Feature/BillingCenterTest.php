@@ -64,7 +64,7 @@ class BillingCenterTest extends TestCase
             'organization_id' => $customer->current_organization_id,
             'vps_spec_id' => VpsSpec::first()->id,
             'control_panel' => 'none',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'hostname' => 'bl-' . uniqid(),
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',

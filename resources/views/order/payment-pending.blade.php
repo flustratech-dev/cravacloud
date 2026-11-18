@@ -1,46 +1,46 @@
-@extends('layouts.app', ['title' => 'Menunggu Konfirmasi Pembayaran — CravaCloud'])
+@extends('layouts.app', ['title' => 'CravaCloud Menunggu Konfirmasi Pembayaran', 'robots' => 'noindex, follow'])
 
 @section('content')
-<div class="py-12 bg-slate-50 min-h-screen" x-data="paymentPending()">
+<div class="py-12 sm:py-16 bg-cream min-h-screen" x-data="paymentPending()">
     <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-8">
+        <div class="bg-white border-2 border-ink p-6 sm:p-10">
             {{-- Header --}}
-            <div class="text-center mb-8">
-                <div class="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-10 h-10 text-amber-600 animate-spin" fill="none" viewBox="0 0 24 24">
+            <div class="text-center border-b border-hairline pb-6 mb-6">
+                <div class="w-16 h-16 bg-amber-100 border border-amber-500 flex items-center justify-center mx-auto mb-5">
+                    <svg class="w-8 h-8 text-amber-700 animate-spin" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                 </div>
-                <h1 class="text-2xl font-bold text-slate-900 mb-2">Menunggu Konfirmasi Pembayaran</h1>
-                <p class="text-sm text-slate-600">
-                    Sistem sedang menunggu notifikasi dari payment gateway.
-                    Halaman ini akan otomatis diperbarui setiap 5 detik.
+                <span class="font-mono text-[10px] uppercase tracking-widest text-electric font-bold block mb-1">SINKRONISASI PAYMENT GATEWAY</span>
+                <h1 class="font-display text-2xl sm:text-3xl font-bold text-ink tracking-tight mb-2">Menunggu Konfirmasi Pembayaran</h1>
+                <p class="text-xs sm:text-sm text-muted max-w-md mx-auto">
+                    Sistem sedang menunggu notifikasi webhook dari payment gateway. Halaman ini otomatis diperbarui setiap 5 detik.
                 </p>
             </div>
 
-            {{-- Order info --}}
-            <div class="bg-slate-50 rounded-lg p-4 space-y-3 text-sm mb-6">
-                <div class="flex justify-between">
-                    <span class="text-slate-500">Invoice</span>
-                    <span class="font-mono-code font-semibold text-slate-900">
+            {{-- Order Info --}}
+            <div class="bg-creamDark/50 border border-hairline p-5 space-y-3 text-xs mb-6 font-mono">
+                <div class="flex justify-between gap-2">
+                    <span class="text-muted uppercase">Invoice</span>
+                    <span class="font-bold text-ink">
                         {{ $order->invoice->invoice_number ?? 'INV-' . $order->id }}
                     </span>
                 </div>
-                <div class="flex justify-between">
-                    <span class="text-slate-500">Paket</span>
-                    <span class="font-semibold text-slate-900">{{ $order->vpsSpec->name }}</span>
+                <div class="flex justify-between gap-2">
+                    <span class="text-muted uppercase">Paket</span>
+                    <span class="font-display font-bold text-ink">{{ $order->vpsSpec->name }}</span>
                 </div>
-                <div class="flex justify-between">
-                    <span class="text-slate-500">Total Tagihan</span>
-                    <span class="font-bold text-slate-900 font-mono-code">
+                <div class="flex justify-between gap-2">
+                    <span class="text-muted uppercase">Total Tagihan</span>
+                    <span class="font-bold text-electric text-sm">
                         Rp {{ number_format($order->amount, 0, ',', '.') }}
                     </span>
                 </div>
-                <div class="flex justify-between items-center border-t border-slate-200 pt-3">
-                    <span class="text-slate-500">Status</span>
-                    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold"
+                <div class="flex justify-between items-center border-t border-hairline pt-3">
+                    <span class="text-muted uppercase">Status</span>
+                    <span class="inline-flex items-center gap-2 px-3 py-1 font-mono text-[11px] font-bold uppercase"
                           :class="statusClass">
                         <span class="w-2 h-2 rounded-full animate-pulse" :class="statusDot"></span>
                         <span x-text="statusLabel">Menunggu Pembayaran</span>
@@ -49,34 +49,34 @@
             </div>
 
             {{-- Info block --}}
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 mb-6">
-                <p class="font-semibold mb-1">Status Pembayaran Otomatis:</p>
-                <p class="text-blue-700 text-xs leading-relaxed">
-                    Sistem secara berkala memverifikasi pembayaran Anda langsung ke payment gateway resmi Midtrans. Begitu pembayaran selesai di aplikasi Anda, halaman ini akan otomatis dialihkan ke halaman konfirmasi pesanan lunas.
+            <div class="bg-creamDark/40 border-l-4 border-electric p-4 text-xs mb-6">
+                <p class="font-display font-bold text-ink mb-1">Status Pembayaran Otomatis</p>
+                <p class="text-muted leading-relaxed">
+                    Sistem secara berkala memverifikasi pembayaran Anda langsung ke payment gateway resmi Midtrans. Begitu pembayaran selesai di aplikasi Anda, halaman ini otomatis mengalihkan Anda ke halaman pesanan aktif.
                 </p>
             </div>
 
             {{-- Actions --}}
             <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
                 <button type="button" @click="poll(true)" :disabled="isChecking"
-                   class="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-black hover:bg-neutral-800 text-white font-semibold text-sm text-center transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-50">
+                        class="w-full sm:w-auto rounded-none px-6 py-3 bg-electric hover:bg-electricHover text-white font-mono text-xs font-bold uppercase tracking-wider text-center transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
                     <svg x-show="isChecking" class="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     <span x-text="isChecking ? 'Memeriksa ke Gateway...' : 'Cek Status Pembayaran Sekarang'"></span>
                 </button>
                 @if(!empty($snapToken))
                     <button type="button" @click="reopenPayment()"
-                       class="w-full sm:w-auto px-5 py-2.5 rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-semibold text-sm text-center transition-colors">
+                            class="w-full sm:w-auto rounded-none px-5 py-3 border border-electric text-electric hover:bg-electric hover:text-white font-mono font-bold text-xs uppercase tracking-wider text-center transition-colors cursor-pointer">
                         Buka Ulang Jendela Pembayaran
                     </button>
                 @endif
                 <a href="{{ route('dashboard.index') }}"
-                   class="w-full sm:w-auto px-5 py-2.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-sm text-center transition-colors">
+                   class="w-full sm:w-auto rounded-none px-5 py-3 border border-ink hover:bg-creamDark text-ink font-mono font-bold text-xs uppercase tracking-wider text-center transition-colors">
                     Lihat Dashboard
                 </a>
             </div>
 
-            <p class="text-center text-xs text-slate-400 mt-6">
-                Terakhir diperiksa: <span x-text="lastChecked">--</span>
+            <p class="text-center font-mono text-[11px] text-muted mt-6">
+                Terakhir diperiksa: <span class="text-ink font-bold" x-text="lastChecked">--</span>
             </p>
         </div>
     </div>
@@ -91,8 +91,8 @@ function paymentPending() {
         lastChecked: '--',
         currentStatus: '{{ $order->status }}',
         statusLabel: 'Menunggu Pembayaran',
-        statusClass: 'bg-amber-100 text-amber-800',
-        statusDot: 'bg-amber-500',
+        statusClass: 'bg-amber-100 text-amber-900 border border-amber-400',
+        statusDot: 'bg-amber-600',
         isChecking: false,
 
         init() {
@@ -142,13 +142,13 @@ function paymentPending() {
 
         updateBadge(status) {
             const map = {
-                'pending': { l: 'Menunggu Pembayaran', c: 'bg-amber-100 text-amber-800', d: 'bg-amber-500' },
-                'paid': { l: 'Lunas — Menyiapkan Server', c: 'bg-emerald-100 text-emerald-800', d: 'bg-emerald-500' },
-                'provisioning': { l: 'Sedang Provisioning', c: 'bg-cyan-100 text-cyan-800', d: 'bg-cyan-500' },
-                'active': { l: 'Aktif', c: 'bg-emerald-100 text-emerald-800', d: 'bg-emerald-500' },
-                'cancelled': { l: 'Dibatalkan', c: 'bg-rose-100 text-rose-800', d: 'bg-rose-500' },
-                'expired': { l: 'Kadaluarsa', c: 'bg-slate-200 text-slate-700', d: 'bg-slate-500' },
-                'failed': { l: 'Gagal', c: 'bg-rose-100 text-rose-800', d: 'bg-rose-500' },
+                'pending': { l: 'Menunggu Pembayaran', c: 'bg-amber-100 text-amber-900 border border-amber-400', d: 'bg-amber-600' },
+                'paid': { l: 'Lunas — Menyiapkan Server', c: 'bg-emerald-100 text-emerald-900 border border-emerald-500', d: 'bg-emerald-600' },
+                'provisioning': { l: 'Sedang Provisioning', c: 'bg-electric text-white border border-electric', d: 'bg-white' },
+                'active': { l: 'Aktif', c: 'bg-emerald-100 text-emerald-900 border border-emerald-500', d: 'bg-emerald-600' },
+                'cancelled': { l: 'Dibatalkan', c: 'bg-red-100 text-red-900 border border-red-400', d: 'bg-red-600' },
+                'expired': { l: 'Kadaluarsa', c: 'bg-creamDark text-muted border border-hairline', d: 'bg-muted' },
+                'failed': { l: 'Gagal', c: 'bg-red-100 text-red-900 border border-red-400', d: 'bg-red-600' },
             };
             const m = map[status] || map['pending'];
             this.statusLabel = m.l;

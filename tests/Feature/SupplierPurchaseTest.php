@@ -287,7 +287,9 @@ class SupplierPurchaseTest extends TestCase
         $instance = $this->makeInstance(['provider' => 'supplier']);
 
         $this->assertSame(\App\Models\Order::NEUTRAL_PROVIDER_LABEL, $instance->provider_label);
-        $this->assertSame('Tencent Cloud', \App\Models\Order::customerProviderLabel('tencent'));
+        $this->assertSame(\App\Models\Order::NEUTRAL_PROVIDER_LABEL, \App\Models\Order::customerProviderLabel('cravacloud'));
+        $this->assertSame(\App\Models\Order::NEUTRAL_PROVIDER_LABEL, \App\Models\Order::customerProviderLabel('tencent'));
+        $this->assertSame(\App\Models\Order::NEUTRAL_PROVIDER_LABEL, \App\Models\Order::customerProviderLabel('cloudeka'));
         $this->assertSame(\App\Models\Order::NEUTRAL_PROVIDER_LABEL, \App\Models\Order::customerProviderLabel(null));
         $this->assertSame(\App\Models\Order::NEUTRAL_PROVIDER_LABEL, \App\Models\Order::customerProviderLabel('manual'));
     }

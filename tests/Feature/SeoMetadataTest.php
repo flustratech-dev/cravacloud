@@ -19,7 +19,7 @@ class SeoMetadataTest extends TestCase
         $response->assertStatus(200);
 
         // Standard Meta
-        $response->assertSee('<title>CravaCloud — Cloud VPS NVMe KVM Indonesia Mulai Rp 80rb/bln</title>', false);
+        $response->assertSee('<title>CravaCloud VPS NVMe KVM Indonesia Mulai Rp 115rb/bln</title>', false);
         $response->assertSee('name="description"', false);
         // <meta name="keywords"> sengaja tidak ada lagi — tidak dipakai mesin pencari mana pun.
         $response->assertDontSee('name="keywords"', false);
@@ -221,6 +221,7 @@ class SeoMetadataTest extends TestCase
         // Google Search mengabaikan favicon yang tidak persegi atau lebih kecil
         // dari 48px, lalu menggantinya dengan ikon bawaan di hasil pencarian.
         $this->assertFileExists(public_path('favicon.ico'));
+        $this->assertFileExists(public_path('favicon.svg'));
 
         foreach ([48, 96, 192] as $size) {
             $path = public_path("images/favicon-{$size}x{$size}.png");
@@ -232,11 +233,26 @@ class SeoMetadataTest extends TestCase
             $this->assertSame(0, $size % 48, "Ukuran {$size}px harus kelipatan 48.");
         }
 
-        // 512px tidak ikut aturan kelipatan 48: ia bukan favicon melainkan logo
-        // untuk webmanifest dan Organization.logo, yang butuh sisi panjang.
-        [$width, $height] = getimagesize(public_path('images/favicon-512x512.png'));
-        $this->assertSame(512, $width);
-        $this->assertSame(512, $height);
+        // Semua ukuran standar browser, tile Windows, & iOS/Android juga tersedia persegi.
+        foreach ([16, 32, 144, 152, 384, 512] as $size) {
+            $path = public_path("images/favicon-{$size}x{$size}.png");
+            $this->assertFileExists($path);
+            [$width, $height] = getimagesize($path);
+            $this->assertSame($size, $width);
+            $this->assertSame($size, $height);
+        }
+
+        $applePath = public_path('images/apple-touch-icon.png');
+        $this->assertFileExists($applePath);
+        [$aw, $ah] = getimagesize($applePath);
+        $this->assertSame(180, $aw);
+        $this->assertSame(180, $ah);
+
+        // Landing HTML memuat SVG, ICO, seluruh PNG ukuran utama, Apple Touch Icon, dan WebManifest.
+        $html = $this->get(route('home'))->assertOk()->getContent();
+        foreach (['favicon.ico', 'favicon.svg', 'favicon-16x16.png', 'favicon-32x32.png', 'favicon-48x48.png', 'favicon-96x96.png', 'favicon-192x192.png', 'apple-touch-icon.png', 'site.webmanifest'] as $needle) {
+            $this->assertStringContainsString($needle, $html);
+        }
     }
 
     public function test_open_graph_image_dimensions_match_the_actual_file(): void
@@ -287,12 +303,14 @@ class SeoMetadataTest extends TestCase
      */
     public function test_product_urls_are_pages_not_redirects(): void
     {
-        foreach (['packages.vps', 'packages.ai', 'packages.db'] as $name) {
-            $response = $this->get(route($name));
+        $response = $this->get(route('packages.vps'));
 
-            $response->assertStatus(200);
-            $response->assertSee('<h1', false);
-        }
+        $response->assertStatus(200);
+        $response->assertSee('<h1', false);
+
+        // Rute produk yang dihapus harus menjawab 404.
+        $this->get('/ai')->assertStatus(404);
+        $this->get('/database')->assertStatus(404);
     }
 
     public function test_each_product_page_has_its_own_identity(): void

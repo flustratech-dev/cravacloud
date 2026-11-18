@@ -33,7 +33,7 @@ class DashboardProvisioningCardTest extends TestCase
             'customer_id' => $user->id,
             'organization_id' => $user->current_organization_id,
             'vps_spec_id' => $spec->id,
-            'provider' => 'cloudeka',
+            'provider' => 'cravacloud',
             'datacenter_location' => 'indonesia',
             'os' => 'ubuntu2404',
             'control_panel' => 'coolify',

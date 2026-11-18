@@ -1,28 +1,43 @@
-@extends('layouts.auth', ['title' => 'Lupa Password'])
+@extends('layouts.auth', ['title' => 'CravaCloud Lupa Password'])
 
 @section('content')
-<div class="min-h-screen flex flex-col items-center justify-center py-10 px-4">
-    <div class="w-full max-w-md px-6">
-        <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
-            <div class="text-center mb-7">
-                <img src="{{ asset('images/logo.png') }}" alt="CravaCloud" class="h-12 w-auto mx-auto mb-4">
-                <h1 class="text-2xl font-bold text-slate-900">Reset password</h1>
-                <p class="text-sm text-slate-500 mt-2">Masukkan email akun Anda. Jika terdaftar, kami akan mengirim link reset.</p>
-            </div>
-            @if(session('success'))<div class="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
-            @if($errors->any())<div class="mb-4 rounded-lg bg-rose-50 border border-rose-200 p-3 text-sm text-rose-800">{{ $errors->first() }}</div>@endif
-            <form method="POST" action="{{ route('password.email') }}" class="space-y-4">
-                @csrf
-                <div><label class="block text-sm font-semibold mb-1.5">Email</label><input type="email" name="email" value="{{ old('email') }}" required autofocus class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"></div>
-                <button class="w-full rounded-lg bg-black px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800">Kirim link reset</button>
-            </form>
-            <a href="{{ route('login') }}" class="block text-center mt-5 text-sm text-slate-600 underline">Kembali ke login</a>
-        </div>
-
-        <!-- Copyright -->
-        <p class="mt-6 text-center text-xs text-slate-400 font-normal">
-            &copy; 2026 CravaCloud. All rights reserved. Created by cravacloud.
-        </p>
+<div class="min-h-screen flex flex-col justify-between py-8 px-5 sm:px-10">
+    <div class="max-w-md w-full mx-auto flex items-center justify-between border-b border-hairline pb-4">
+        <a href="{{ route('home') }}" class="inline-flex items-center space-x-2.5">
+            <img src="{{ asset('images/logo.svg') }}" onerror="this.src='{{ asset('images/logo.png') }}'" alt="CravaCloud" class="h-7 w-7 object-contain">
+            <span class="font-display font-extrabold text-lg tracking-tighter text-ink uppercase">CRAVACLOUD</span>
+        </a>
+        <a href="{{ route('login') }}" class="font-mono text-xs uppercase text-ink hover:text-electric font-semibold">← Login</a>
     </div>
+
+    <div class="w-full max-w-md mx-auto my-8">
+        <div class="bg-white border-2 border-ink p-7 sm:p-9 shadow-sm">
+            <span class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-electric block">● PASSWORD RECOVERY</span>
+            <h1 class="mt-2 font-display font-bold text-2xl text-ink uppercase">Reset Password</h1>
+            <p class="mt-1.5 text-xs font-mono text-muted leading-relaxed">Masukkan email akun Anda. Jika terdaftar, kami akan mengirim link reset password.</p>
+
+            @if(session('success'))
+                <x-ui.alert type="success" class="mt-4">{{ session('success') }}</x-ui.alert>
+            @endif
+            @if($errors->any())
+                <x-ui.alert type="danger" class="mt-4">{{ $errors->first() }}</x-ui.alert>
+            @endif
+
+            <form method="POST" action="{{ route('password.email') }}" class="mt-6 space-y-4">
+                @csrf
+                <x-ui.input type="email" name="email" label="Alamat Email" value="{{ old('email') }}" required autofocus placeholder="nama@email.com" />
+                <button type="submit" class="w-full bg-electric hover:bg-electricHover text-white font-mono text-xs font-bold uppercase py-3.5 px-5 flex items-center justify-between transition-colors cursor-pointer">
+                    <span>Kirim Link Reset</span>
+                    <span>↗</span>
+                </button>
+            </form>
+
+            <a href="{{ route('login') }}" class="block text-center mt-5 font-mono text-xs text-ink underline hover:text-electric">Kembali ke halaman login</a>
+        </div>
+    </div>
+
+    <p class="text-center font-mono text-[11px] text-muted">
+        © {{ date('Y') }} CravaCloud Indonesia. Created by cravacloud.
+    </p>
 </div>
 @endsection

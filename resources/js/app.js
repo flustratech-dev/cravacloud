@@ -7,13 +7,17 @@ window.Alpine = Alpine;
 window.Swal = Swal;
 
 const defaultSwalOptions = {
-    confirmButtonColor: '#111827',
-    cancelButtonColor: '#64748b',
+    background: '#F8F6F0',
+    color: '#121212',
+    confirmButtonColor: '#001AFF',
+    cancelButtonColor: '#121212',
     confirmButtonText: 'Mengerti',
     customClass: {
-        popup: 'rounded-2xl',
-        confirmButton: 'rounded-lg px-5 py-2.5 font-semibold',
-        cancelButton: 'rounded-lg px-5 py-2.5 font-semibold',
+        popup: 'rounded-none border-2 border-[#121212] font-mono shadow-xl',
+        title: 'font-display font-bold uppercase tracking-tight text-[#121212]',
+        htmlContainer: 'text-sm text-[#686763]',
+        confirmButton: 'rounded-none px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-wider',
+        cancelButton: 'rounded-none border border-[#121212] px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-wider',
     },
 };
 
@@ -87,29 +91,4 @@ document.addEventListener('submit', (event) => {
     });
 }, true);
 
-// Global Theme Toggler
-window.toggleTheme = function() {
-    const isDark = document.documentElement.classList.toggle('dark');
-    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    window.dispatchEvent(new CustomEvent('theme-changed', { detail: { isDark } }));
-};
-
-document.addEventListener('alpine:init', () => {
-    Alpine.store('theme', {
-        dark: document.documentElement.classList.contains('dark'),
-        toggle() {
-            window.toggleTheme();
-            this.dark = document.documentElement.classList.contains('dark');
-        }
-    });
-});
-
-window.addEventListener('theme-changed', (e) => {
-    if (window.Alpine?.store('theme')) {
-        Alpine.store('theme').dark = e.detail.isDark;
-    }
-});
-
 Alpine.start();
-

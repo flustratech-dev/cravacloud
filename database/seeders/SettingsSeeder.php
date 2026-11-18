@@ -77,7 +77,7 @@ class SettingsSeeder extends Seeder
                 'label' => 'Tagline', 'is_public' => true, 'sort_order' => 2,
             ],
             'brand_accent_color' => [
-                'value' => '#4A6FA5', 'type' => 'string', 'group' => 'brand',
+                'value' => '#001AFF', 'type' => 'string', 'group' => 'brand',
                 'label' => 'Warna Aksen', 'is_public' => true, 'sort_order' => 3,
             ],
             'brand_logo_path' => [

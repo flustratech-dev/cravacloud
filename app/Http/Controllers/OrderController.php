@@ -33,7 +33,12 @@ class OrderController extends Controller
         // Tidak disembunyikan di level model karena form edit paket admin membutuhkannya.
         $specs = VpsSpec::orderBy('sell_price', 'asc')->get()
             ->each->makeHidden(['cost_price']);
-        $defaultSpec = $specs->firstWhere('is_active', true) ?? $specs->first();
+        $retiredLegacyNames = ['Student Basic', 'Standard', 'Premium', 'Startup', 'Business', 'Mahasiswa Basic'];
+        $defaultSpec = $specs->first(fn ($s) => $s->is_active
+            && !in_array($s->category, ['ai_combo', 'managed_db'], true)
+            && !in_array($s->name, $retiredLegacyNames, true))
+            ?? $specs->firstWhere('is_active', true)
+            ?? $specs->first();
         $hasExplicitSpec = !empty($spec_id) || $request->has('spec_id');
         $selectedSpecId = $spec_id ?? $request->query('spec_id', $defaultSpec->id ?? 1);
         $selectedSpec = $specs->firstWhere('id', $selectedSpecId) ?? $defaultSpec;
@@ -125,7 +130,7 @@ class OrderController extends Controller
         $validated = $request->validate([
             'vps_spec_id' => 'required|exists:vps_specs,id',
             'control_panel' => 'required|in:none,coolify,dokploy,aapanel,cloudpanel,docker,cyberpanel,hestiacp,hermes_agent,openclaw,omniroute,9router,agent_zero,n8n,ollama,anythingllm,librechat,vscode_server,gitea_forgejo,uptime_kuma,netdata_beszel,wordpress,ghost,strapi_directus,prestashop_bagisto,claude_opencode,dify_ollama,managed_database',
-            'provider' => 'required|in:tencent,cloudeka',
+            'provider' => 'nullable|string|max:50',
             'datacenter_location' => 'required|in:singapore,indonesia',
             'os' => 'required|string',
             'billing_cycle' => 'nullable|string|in:monthly',
@@ -173,20 +178,10 @@ class OrderController extends Controller
             return back()->withInput()->withErrors(['vps_spec_id' => $inactiveMessage]);
         }
 
-        if (!$spec->isProviderAllowed($validated['provider'])) {
-            $msg = in_array('cloudeka', $spec->allowedProviders(), true)
-                ? "Paket {$spec->name} hanya tersedia di provider Cloudeka by Lintasarta (Datacenter Indonesia)."
-                : "Paket {$spec->name} hanya tersedia di provider Tencent Cloud.";
-            return back()->withInput()->withErrors([
-                'provider' => $msg,
-            ]);
-        }
-
-        $providerRegions = ['tencent' => ['indonesia', 'singapore'], 'cloudeka' => ['indonesia']];
-        $providerOs = Order::operatingSystems()[$validated['provider']] ?? [];
+        $validated['provider'] = Order::DEFAULT_PROVIDER;
         validator($validated, [
-            'datacenter_location' => [Rule::in($providerRegions[$validated['provider']])],
-            'os' => [Rule::in(array_keys($providerOs))],
+            'datacenter_location' => [Rule::in(['indonesia', 'singapore'])],
+            'os' => [Rule::in(array_keys(Order::osLabels()))],
         ])->validate();
 
         $user = Auth::user();

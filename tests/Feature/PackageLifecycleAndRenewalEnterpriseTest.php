@@ -79,7 +79,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'is_active' => true,
             'is_renewable' => true,
             'category' => 'vps',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
         ]);
         $this->assertTrue($activeSpec->canNewCheckout());
         $this->assertTrue($activeSpec->canRenew());
@@ -97,7 +97,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'is_active' => false,
             'is_renewable' => true,
             'category' => 'vps',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
         ]);
         $this->assertFalse($legacySpec->canNewCheckout());
         $this->assertTrue($legacySpec->canRenew());
@@ -116,7 +116,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'is_renewable' => false,
             'replacement_spec_id' => null,
             'category' => 'vps',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
         ]);
         $this->assertFalse($eolSpec->canNewCheckout());
         $this->assertFalse($eolSpec->canRenew());
@@ -135,7 +135,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'is_renewable' => false,
             'replacement_spec_id' => $activeSpec->id,
             'category' => 'vps',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
         ]);
         $this->assertFalse($eolWithReplacementSpec->canNewCheckout());
         $this->assertTrue($eolWithReplacementSpec->canRenew()); // can renew because fallback replacement exists
@@ -162,7 +162,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'is_active' => true,
             'is_renewable' => true,
             'category' => 'vps',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
         ]);
 
         $order = Order::create([
@@ -187,7 +187,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'public_ip' => '103.150.190.44',
             'status' => 'running',
             'os' => 'ubuntu2404',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'expires_at' => now()->addDays(15),
         ]);
 
@@ -240,7 +240,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'is_active' => true,
             'is_renewable' => true,
             'category' => 'vps',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
         ]);
         $this->assertFalse($healthySpec->hasDeficitMargin());
 
@@ -256,7 +256,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'is_active' => true,
             'is_renewable' => true,
             'category' => 'vps',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
         ]);
         $this->assertTrue($deficitSpec->hasDeficitMargin());
     }
@@ -279,7 +279,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'is_active' => true,
             'is_renewable' => true,
             'category' => 'vps',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
         ]);
 
         // Order 1: Expired (> 24 hours)
@@ -370,7 +370,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'is_active' => true,
             'is_renewable' => true,
             'category' => 'vps',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
         ]);
 
         $order = Order::create([
@@ -397,7 +397,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'public_ip' => '103.150.190.55',
             'status' => 'running',
             'os' => 'ubuntu2404',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'expires_at' => $initialExpiry,
         ]);
 
@@ -459,7 +459,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'is_active' => true,
             'is_renewable' => true,
             'category' => 'vps',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
         ]);
 
         $order = Order::create([
@@ -484,7 +484,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'public_ip' => '103.150.190.66',
             'status' => 'suspended',
             'os' => 'ubuntu2404',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'expires_at' => now()->subDays(2),
         ]);
 
@@ -530,7 +530,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'is_active' => true,
             'is_renewable' => true,
             'category' => 'vps',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
         ]);
 
         $instance = VpsInstance::create([
@@ -540,7 +540,7 @@ class PackageLifecycleAndRenewalEnterpriseTest extends TestCase
             'public_ip' => '103.150.190.77',
             'status' => 'running',
             'os' => 'ubuntu2404',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'expires_at' => now()->addDays(10),
         ]);
 

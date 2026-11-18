@@ -108,35 +108,29 @@ class VpsSpec extends Model
 
     public function allowedProviders(): array
     {
-        // Jika admin secara eksplisit menyimpan allowed_providers di DB, gunakan itu
-        $raw = $this->attributes['allowed_providers'] ?? null;
-        if (!empty($raw)) {
-            $dbVal = is_string($raw) ? json_decode($raw, true) : (array) $raw;
-            if (is_array($dbVal)) {
-                $filtered = array_values(array_filter($dbVal, fn($p) => in_array($p, ['tencent', 'cloudeka'], true)));
-                if (!empty($filtered)) {
-                    return $filtered;
-                }
+        return ['cravacloud'];
+    }
+
+    public function bandwidthQuotaLabel(): string
+    {
+        $features = is_array($this->features) ? $this->features : [];
+        foreach ($features as $feat) {
+            if (is_string($feat) && str_contains(strtolower($feat), 'tb')) {
+                return $feat;
             }
         }
 
-        $name = strtolower($this->name);
-
-        if ($this->isDatabasePackage()) {
-            return ['tencent', 'cloudeka'];
-        }
-
-        if ($this->isAiPackage()) {
-            return ['cloudeka', 'tencent'];
-        }
-
-        // Student Basic, Startup, and Business can ONLY use Cloudeka
-        if (in_array($name, ['student basic', 'startup', 'business', 'ai production', 'ai production pro'], true) || str_contains($name, 'ai')) {
-            return ['cloudeka'];
-        }
-
-        // Mahasiswa Basic, Standard, and Premium can ONLY use Tencent
-        return ['tencent'];
+        return match (strtolower((string) $this->name)) {
+            'starter xs' => '0,5 TB / bulan',
+            'starter s' => '1,5 TB / bulan',
+            'starter m' => '2,5 TB / bulan',
+            'starter l' => '3,0 TB / bulan',
+            'enterprise pro' => '5,0 TB / bulan',
+            'enterprise max' => '6,0 TB / bulan',
+            'enterprise ultra' => '7,0 TB / bulan',
+            'enterprise extreme' => '8,0 TB / bulan',
+            default => number_format(max(1, (int) $this->bandwidth) / 20, 1, ',', '.') . ' TB / bulan',
+        };
     }
 
     public function isProviderAllowed(string $provider): bool
@@ -146,12 +140,7 @@ class VpsSpec extends Model
 
     public function defaultProvider(): string
     {
-        $dbDefault = $this->attributes['default_provider'] ?? null;
-        if (!empty($dbDefault) && $this->isProviderAllowed($dbDefault)) {
-            return $dbDefault;
-        }
-
-        return $this->allowedProviders()[0] ?? 'tencent';
+        return 'cravacloud';
     }
 
     public function getAllowedProvidersAttribute(): array

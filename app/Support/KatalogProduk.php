@@ -31,152 +31,47 @@ class KatalogProduk
         return [
             'vps' => [
                 'kategori' => 'vps',
-                'judul' => 'Cloud VPS NVMe KVM Indonesia — CravaCloud',
+                'judul' => 'CravaCloud Katalog VPS NVMe KVM Indonesia (Starter & Enterprise)',
                 'h1' => 'Cloud VPS NVMe KVM Indonesia',
-                'deskripsi' => 'Daftar paket Cloud VPS KVM CravaCloud dengan penyimpanan NVMe dan akses root penuh, '
-                    .'datacenter Jakarta & Singapore. Bandingkan vCPU, RAM, disk, dan harganya.',
-                'intro' => 'Setiap VPS CravaCloud berjalan di atas KVM — virtualisasi tingkat perangkat keras, '
-                    .'bukan container. Artinya Anda memegang kernel sendiri: bebas memasang modul sistem, '
-                    .'mengatur swap, dan menjalankan Docker tanpa batasan yang biasa menempel pada VPS berbasis container.',
+                'deskripsi' => 'Daftar paket Cloud VPS KVM NVMe CravaCloud Starter & Enterprise Series (2–8 vCPU, 2–32 GB RAM) di IDC DCI Jakarta. Bandingkan spesifikasi, bandwidth, dan harganya.',
+                'intro' => 'Setiap Cloud VPS CravaCloud Starter & Enterprise Series berjalan di atas virtualisasi KVM perangkat keras murni dengan RAM dedikasi tanpa overselling, storage CBS NVMe SSD hingga 26.000 IOPS di IDC DCI Indonesia Jakarta (8–15 ms), serta 1x Dedicated IPv4 dan 1-Click Application Stacks siap pakai.',
                 'sorotan' => [
                     [
-                        'judul' => 'Akses root penuh sejak menit pertama',
-                        'isi' => 'Kredensial root dan port SSH tampil di dashboard begitu server diserahterimakan. '
-                            .'Tidak ada lapisan panel yang membatasi apa yang boleh Anda pasang.',
+                        'judul' => 'Akses root penuh & 1x Dedicated IPv4',
+                        'isi' => 'Kredensial root dan port SSH langsung aktif di dashboard dengan 1 alamat IPv4 statis dedikasi di setiap node tanpa sharing antar pelanggan.',
                     ],
                     [
-                        'judul' => 'Penyimpanan NVMe, bukan SATA SSD',
-                        'isi' => 'Seluruh paket memakai penyimpanan NVMe. Bedanya paling terasa pada beban yang '
-                            .'banyak membaca-menulis berkas kecil: basis data, build, dan log aplikasi.',
+                        'judul' => 'Storage CBS NVMe SSD hingga 26.000 IOPS',
+                        'isi' => 'Seluruh paket Starter XS hingga Enterprise Extreme memakai disk CBS NVMe berkecepatan tinggi dengan RAM murni tanpa overselling.',
                     ],
                     [
-                        'judul' => 'Dua penyedia, dua lokasi',
-                        'isi' => 'Infrastruktur berjalan di Tencent Cloud dan Lintasarta Cloudeka, dengan pilihan '
-                            .'datacenter Jakarta atau Singapore. Lokasi dipilih saat memesan.',
+                        'judul' => 'Datacenter IDC DCI Indonesia Jakarta (8–15 ms)',
+                        'isi' => 'Terhubung langsung ke jaringan peering lokal IIX & OpenIXP untuk akses sangat responsif bagi pengguna dan aplikasi bisnis di Indonesia.',
                     ],
                     [
-                        'judul' => 'Panel dipasangkan, bukan dibiarkan',
-                        'isi' => 'Coolify, Dokploy, aaPanel, atau Docker polos dipasang tim sebelum server '
-                            .'diserahkan, dan alamat panelnya dicantumkan di dashboard.',
+                        'judul' => 'Bebas pusing DevOps (1-Click Application Stacks)',
+                        'isi' => 'Otomatis terinstal tanpa biaya tambahan: Coolify, Dokploy, CloudPanel, aaPanel, MySQL 8.0, PostgreSQL 16 (pgvector), Redis, n8n, Dify AI, Ollama, Hermes & OpenClaw Agent.',
                     ],
                 ],
                 'tanya' => [
                     [
                         'tanya' => 'Berapa lama server aktif setelah saya bayar?',
-                        'jawab' => 'Server disiapkan tim setelah pembayaran terkonfirmasi — bukan otomatis dalam '
-                            .'hitungan detik. Anda menerima email dan melihat status berubah menjadi Aktif di '
-                            .'dashboard begitu IP publik, port SSH, dan password root siap.',
+                        'jawab' => 'Server diproses oleh Zero-Touch Engine otomatis segera setelah pembayaran QRIS Instan atau Virtual Account terkonfirmasi (estimasi 45–75 detik). IPv4 statis, port SSH, dan kredensial root tampil langsung di Client Console.',
                     ],
                     [
-                        'tanya' => 'Apakah saya bisa ganti sistem operasi setelah aktif?',
-                        'jawab' => 'Bisa, lewat pengajuan Reinstall OS di dashboard. Perlu diingat reinstall '
-                            .'menghapus seluruh isi server, jadi cadangkan dulu data yang masih diperlukan.',
+                        'tanya' => 'Apakah saya bisa ganti sistem operasi atau panel setelah aktif?',
+                        'jawab' => 'Bisa, langsung melalui fitur Reinstall OS dari dashboard pelanggan dalam hitungan detik/menit. Pastikan mencadangkan data penting terlebih dahulu karena reinstall memformat ulang disk.',
                     ],
                     [
                         'tanya' => 'Apa yang terjadi kalau tagihan lewat jatuh tempo?',
-                        'jawab' => 'Ada masa tenggang sebelum layanan dihentikan. Rincian tahapannya ada di '
-                            .'dokumentasi Operasional Server.',
+                        'jawab' => 'Ada masa tenggang sebelum layanan dihentikan permanen. Rincian siklus penagihan dan perpanjangan tersedia di dokumentasi Operasional Server.',
                     ],
                     [
-                        'tanya' => 'Apakah VPS ini cocok untuk bot dan aplikasi yang berjalan terus-menerus?',
-                        'jawab' => 'Ya. Karena KVM memberi kernel mandiri, proses latar, systemd unit, dan '
-                            .'container berjalan seperti di server fisik.',
+                        'tanya' => 'Apakah VPS ini cocok untuk Docker, PaaS Coolify, atau AI Agent 24 jam?',
+                        'jawab' => 'Ya. Karena KVM menyediakan isolasi kernel penuh dan RAM dedikasi tanpa overselling, container Docker, Coolify, database produksi, hingga agent n8n/Dify/Hermes berjalan stabil.',
                     ],
                 ],
                 'docs' => ['mulai-cepat', 'keamanan', 'operasional'],
-            ],
-
-            'ai' => [
-                'kategori' => 'ai_combo',
-                'judul' => 'AI Combo Packages — Workstation & Coding Agent | CravaCloud',
-                'h1' => 'AI Combo Packages',
-                'deskripsi' => 'Paket AI Combo CravaCloud: mesin coding otomatis dan workstation bertenaga AI siap '
-                    .'pakai. Bandingkan spesifikasi vCPU, RAM, penyimpanan, dan harganya.',
-                'intro' => 'Mesin coding otomatis dan workstation bertenaga AI siap pakai dalam hitungan menit. '
-                    .'Paket ini berjalan di atas VPS KVM yang sama dengan paket Cloud VPS, hanya dengan alokasi '
-                    .'resource dan stack yang sudah disesuaikan untuk beban kerja AI.',
-                'sorotan' => [
-                    [
-                        'judul' => 'Stack disiapkan sebelum diserahkan',
-                        'isi' => 'Anda tidak memulai dari server kosong. Stack-nya dipasang tim lebih dulu, '
-                            .'jadi waktu Anda habis untuk bekerja, bukan untuk memasang.',
-                    ],
-                    [
-                        'judul' => 'Tetap server Anda sepenuhnya',
-                        'isi' => 'Akses root penuh tetap berlaku. Model, runtime, dan alat lain boleh diganti '
-                            .'atau ditambah sesuka Anda.',
-                    ],
-                    [
-                        'judul' => 'Resource yang lebih lega',
-                        'isi' => 'Alokasi vCPU dan RAM pada paket ini lebih besar dari paket VPS umum, karena '
-                            .'beban kerja AI menahan memori lebih lama.',
-                    ],
-                ],
-                'tanya' => [
-                    [
-                        'tanya' => 'Apa bedanya dengan paket Cloud VPS biasa?',
-                        'jawab' => 'Perangkat kerasnya sama — KVM, NVMe, akses root. Yang berbeda ukuran '
-                            .'alokasinya dan stack yang sudah terpasang saat diserahkan.',
-                    ],
-                    [
-                        'tanya' => 'Apakah ada GPU?',
-                        'jawab' => 'Paket ini berbasis CPU. Kalau kebutuhan Anda menuntut GPU, hubungi tim lebih '
-                            .'dulu sebelum memesan agar tidak salah paket.',
-                    ],
-                    [
-                        'tanya' => 'Bisakah saya menjalankan agent coding sepanjang hari?',
-                        'jawab' => 'Bisa. Tidak ada pembatasan proses latar; yang membatasi hanya resource paket '
-                            .'yang Anda pilih.',
-                    ],
-                ],
-                'docs' => ['mulai-cepat', 'control-panel', 'referensi-api'],
-            ],
-
-            'database' => [
-                'kategori' => 'managed_db',
-                'judul' => 'Managed Database PostgreSQL & MySQL Indonesia — CravaCloud',
-                'h1' => 'Managed Database',
-                'deskripsi' => 'Server database terkelola CravaCloud, terpisah dari server aplikasi. Bandingkan '
-                    .'paket PostgreSQL dan MySQL beserta alokasi vCPU, RAM, penyimpanan, dan harganya.',
-                'intro' => 'Server database khusus yang terpisah dari server aplikasi, sehingga beban aplikasi '
-                    .'tidak mengganggu database Anda. Pemisahan ini yang paling sering menyelamatkan situs saat '
-                    .'trafik naik: proses web yang melonjak tidak lagi berebut memori dengan proses database.',
-                'sorotan' => [
-                    [
-                        'judul' => 'Terpisah dari server aplikasi',
-                        'isi' => 'Database berjalan di instance sendiri. Aplikasi yang bocor memori atau build '
-                            .'yang berat tidak ikut menjatuhkan database.',
-                    ],
-                    [
-                        'judul' => 'PostgreSQL atau MySQL',
-                        'isi' => 'Mesin database dipilih saat memesan dan dipasang tim sebelum diserahkan, '
-                            .'lengkap dengan kredensial koneksinya.',
-                    ],
-                    [
-                        'judul' => 'Penyimpanan NVMe',
-                        'isi' => 'Sama seperti paket lain, penyimpanannya NVMe — yang paling terasa justru di '
-                            .'sini, karena database adalah beban baca-tulis berkas kecil yang paling padat.',
-                    ],
-                ],
-                'tanya' => [
-                    [
-                        'tanya' => 'Apakah saya tetap mendapat akses root?',
-                        'jawab' => 'Ya. "Managed" di sini berarti dipasang dan diserahkan siap pakai, bukan '
-                            .'bahwa akses Anda dibatasi.',
-                    ],
-                    [
-                        'tanya' => 'Bisakah database ini diakses dari server lain?',
-                        'jawab' => 'Bisa, dan itu memang bentuk pemakaian yang dimaksud. Pastikan firewall hanya '
-                            .'membuka port database untuk alamat yang memang perlu — langkahnya ada di '
-                            .'dokumentasi Keamanan & Hardening.',
-                    ],
-                    [
-                        'tanya' => 'Apakah ada cadangan otomatis?',
-                        'jawab' => 'Pencadangan disiapkan sesuai kesepakatan saat pemesanan. Tanyakan lebih dulu '
-                            .'kalau ini menentukan keputusan Anda.',
-                    ],
-                ],
-                'docs' => ['keamanan', 'operasional', 'infrastruktur'],
             ],
         ];
     }
@@ -201,8 +96,18 @@ class KatalogProduk
      */
     public static function paket(string $slug): Collection
     {
+        $retiredLegacyNames = [
+            'Student Basic',
+            'Standard',
+            'Premium',
+            'Startup',
+            'Business',
+            'Mahasiswa Basic',
+        ];
+
         return VpsSpec::query()
             ->where('category', self::ambil($slug)['kategori'])
+            ->whereNotIn('name', $retiredLegacyNames)
             ->orderBy('sell_price')
             ->get();
     }

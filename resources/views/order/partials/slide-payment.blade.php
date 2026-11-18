@@ -1,53 +1,55 @@
-<div class="border border-slate-200 rounded-2xl p-4 sm:p-7 bg-white shadow-xs space-y-6">
-    <div class="flex items-center gap-3">
-        <span class="w-6 h-6 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center" x-text="isDirectCheckout ? '2' : '3'"></span>
+<div class="border border-hairline bg-white p-5 sm:p-8 space-y-6">
+    <div class="border-b border-hairline pb-4 flex items-center justify-between gap-4">
         <div>
-            <h2 class="font-bold text-slate-900 text-lg">Metode Pembayaran</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Satu gerbang pembayaran instan dan aman untuk seluruh saluran pembayaran resmi.</p>
+            <span class="font-mono text-[10px] uppercase tracking-widest text-electric font-bold block mb-1"
+                  x-text="isDirectCheckout ? 'LANGKAH 02 // METODE PEMBAYARAN' : 'LANGKAH 03 // METODE PEMBAYARAN'"></span>
+            <h2 class="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">Metode Pembayaran</h2>
+            <p class="text-xs text-muted mt-1">Satu gerbang pembayaran instan dan aman untuk seluruh saluran pembayaran resmi.</p>
         </div>
+        <span class="w-8 h-8 bg-electric text-white font-mono text-xs font-bold flex items-center justify-center shrink-0"
+              x-text="isDirectCheckout ? '02' : '03'"></span>
     </div>
 
-    {{-- Kartu Utama Terpadu: Pembayaran Otomatis Online (Instan) --}}
-    <label class="block p-5 sm:p-6 rounded-2xl border-2 cursor-pointer transition-all relative text-left select-none bg-slate-50/60 shadow-xs"
-           :class="paymentMethod === 'online_payment' ? 'border-black bg-slate-50 ring-2 ring-black' : 'border-slate-200 hover:border-slate-300 bg-white'"
+    {{-- Unified Payment Gateway Card --}}
+    <label class="block p-5 sm:p-6 cursor-pointer transition-colors relative text-left select-none"
+           :class="paymentMethod === 'online_payment' ? 'border-2 border-electric bg-cream' : 'border border-hairline hover:border-ink/50 bg-white'"
            @click="selectPayment('online_payment')">
         <input type="radio" name="payment_method" value="online_payment" x-model="paymentMethod" class="sr-only">
 
         {{-- Top Badges & Selector --}}
         <div class="flex items-center justify-between gap-2 mb-4">
             <div class="flex items-center gap-2 flex-wrap">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-black text-white">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider bg-ink text-cream">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     Otomatis &amp; Instan
                 </span>
-                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                <span class="px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-400">
                     Verifikasi 24 Jam
                 </span>
             </div>
-            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0"
-                 :class="paymentMethod === 'online_payment' ? 'border-black bg-black text-white' : 'border-slate-300 bg-white'">
-                <svg x-show="paymentMethod === 'online_payment'" class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            <div class="w-5 h-5 border-2 flex items-center justify-center transition-colors shrink-0"
+                 :class="paymentMethod === 'online_payment' ? 'border-electric bg-electric text-white' : 'border-ink/40 bg-white'">
+                <svg x-show="paymentMethod === 'online_payment'" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                    <path stroke-linecap="square" stroke-linejoin="miter" d="M5 13l4 4L19 7"/>
                 </svg>
             </div>
         </div>
 
-        {{-- Header Info --}}
         <div class="mb-4">
-            <h3 class="text-base sm:text-lg font-bold text-slate-900">Pembayaran Otomatis Online (Instan)</h3>
-            <p class="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
-                Bayar mudah dan cepat tanpa perlu konfirmasi manual. Anda dapat bebas memilih metode pembayaran (QRIS semua bank/e-wallet, Virtual Account Mandiri, BNI, BRI, Permata, CIMB Niaga, Minimarket Indomaret, serta AstraPay &amp; Akulaku) langsung pada halaman checkout resmi yang aman.
+            <h3 class="font-display text-lg font-bold text-ink">Pembayaran Otomatis Online (Instan)</h3>
+            <p class="text-xs sm:text-sm text-muted mt-1 leading-relaxed">
+                Bayar mudah dan cepat tanpa konfirmasi manual. Pilih QRIS (semua e-wallet &amp; mobile banking), Virtual Account Mandiri, BNI, BRI, Permata, CIMB Niaga, Indomaret, AstraPay, atau Akulaku di checkout gateway resmi.
             </p>
         </div>
 
-        {{-- Gallery of Supported Channels / Logos --}}
-        <div class="p-3.5 sm:p-4 rounded-xl bg-white border border-slate-200/90 shadow-2xs space-y-2.5">
-            <div class="flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                <span>Saluran pembayaran yang didukung:</span>
-                <span class="text-emerald-700 font-bold text-[10px] uppercase">Terhubung Langsung</span>
+        {{-- Supported Channel Logos --}}
+        <div class="p-4 bg-white border border-hairline space-y-2.5">
+            <div class="flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-muted font-bold">
+                <span>Saluran pembayaran didukung:</span>
+                <span class="text-emerald-700">Terhubung Langsung</span>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+            <div class="flex flex-wrap items-center gap-2">
                 @php
                     $channels = [
                         ['QRIS (BCA, Livin, GoPay, OVO, ShopeePay, Dana)', 'qris.svg', 'h-5 sm:h-6'],
@@ -62,7 +64,7 @@
                     ];
                 @endphp
                 @foreach($channels as $c)
-                    <div class="h-8 sm:h-9 px-2.5 sm:px-3 bg-white border border-slate-200 rounded-lg flex items-center justify-center shadow-2xs"
+                    <div class="h-8 sm:h-9 px-2.5 sm:px-3 bg-white border border-hairline flex items-center justify-center"
                          title="{{ $c[0] }}">
                         <img src="{{ asset('images/payments/' . $c[1]) }}" alt="{{ $c[0] }}" class="{{ $c[2] }} max-w-[65px] object-contain">
                     </div>
@@ -71,79 +73,85 @@
         </div>
 
         {{-- Feature Highlights --}}
-        <div class="mt-4 pt-4 border-t border-slate-200/80 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs text-slate-600">
+        <div class="mt-4 pt-4 border-t border-hairline grid grid-cols-1 sm:grid-cols-3 gap-2.5 font-mono text-[11px] text-ink">
             <div class="flex items-center gap-2">
-                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span class="w-4 h-4 bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                </span>
                 <span>Verifikasi otomatis 24 jam</span>
             </div>
             <div class="flex items-center gap-2">
-                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span class="w-4 h-4 bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                </span>
                 <span>Tanpa upload bukti transfer</span>
             </div>
             <div class="flex items-center gap-2">
-                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span class="w-4 h-4 bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                </span>
                 <span>Server diprovisi seketika</span>
             </div>
         </div>
     </label>
 
-    {{-- Keamanan & Jaminan Transaksi --}}
-    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start gap-3">
-        <svg class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+    {{-- Security Notice --}}
+    <div class="p-4 bg-creamDark/40 border border-hairline text-xs text-muted flex items-start gap-3">
+        <svg class="w-5 h-5 text-electric shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="square" stroke-linejoin="miter" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
         </svg>
-        <div class="space-y-0.5">
-            <span class="font-bold text-slate-900 block">Standar Keamanan Transaksi &amp; Lisensi Resmi</span>
+        <div class="space-y-1">
+            <span class="font-display font-bold text-ink block">Standar Keamanan Transaksi &amp; Lisensi Resmi</span>
             <p class="leading-relaxed">
-                Seluruh transaksi dilindungi enkripsi SSL 256-bit dan diproses melalui payment gateway berlisensi resmi Bank Indonesia. Saat menekan tombol <strong>Bayar Sekarang</strong> di bawah, invoice resmi yang aman akan terbuka untuk menyelesaikan pembayaran.
+                Seluruh transaksi dilindungi enkripsi TLS 256-bit dan diproses melalui payment gateway berlisensi resmi Bank Indonesia. Saat menekan tombol <strong>Bayar Sekarang</strong>, jendela checkout resmi terbuka otomatis.
             </p>
         </div>
     </div>
 
-    {{-- Persetujuan Ketentuan Penggunaan Layanan (WAJIB) --}}
-    <div class="border border-slate-300 rounded-2xl p-5 sm:p-6 bg-slate-50 shadow-xs">
-        <div class="flex items-center gap-2 mb-3">
-            <svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0l-7.1 12.25A2 2 0 004.99 19z"/>
+    {{-- Mandatory Acceptable Use Policy & Terms Consent --}}
+    <div class="p-4 sm:p-5 bg-creamDark/60 border border-ink space-y-4">
+        <div class="flex items-start gap-2.5">
+            <svg class="w-5 h-5 text-red-700 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="square" stroke-linejoin="miter" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
-            <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Ketentuan Penggunaan Layanan</h3>
+            <div>
+                <h3 class="font-mono text-xs font-bold uppercase tracking-wider text-ink">Ketentuan Penggunaan Layanan</h3>
+                <p class="text-xs text-muted mt-1 leading-relaxed">
+                    Untuk melindungi infrastruktur bersama CravaCloud, layanan ini dilarang digunakan untuk aktivitas berikut:
+                </p>
+            </div>
         </div>
 
-        <p class="text-xs text-slate-600 leading-relaxed mb-3">
-            Layanan ini <strong>dilarang</strong> digunakan untuk: serangan siber dan DDoS, spam dan phishing,
-            penambangan kripto, konten ilegal dan judi online, pemindaian port agresif,
-            <strong>layanan VPN dan proxy</strong>, <strong>scraping dan crawling</strong>,
-            <strong>agregator torrent</strong>, serta <strong>bot dan skrip otomatis</strong> yang menyalahi
-            ketentuan pihak ketiga.
-        </p>
+        <ul class="text-xs text-ink/90 space-y-1.5 pl-4 list-disc marker:text-red-700">
+            <li>Layanan VPN publik, open proxy, exit node, atau traffic relaying tanpa izin tertulis;</li>
+            <li>Scraping, crawling, atau pengumpulan data otomatis ke target pihak ketiga;</li>
+            <li>Pemrosesan atau hosting agregator torrent, tracker, dan distribusi file ilegal;</li>
+            <li>Bot abuse, spamming email massal, crypto mining, DDoS, dan scanning port.</li>
+        </ul>
 
-        <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 mb-4">
-            <p class="text-[11px] text-amber-900 leading-relaxed">
-                Pelanggaran dapat mengakibatkan <strong>terminasi instan tanpa pengembalian dana</strong>, dan
-                berdampak pada seluruh pelanggan lain karena pembatasan dapat dikenakan di tingkat akun
-                penyedia infrastruktur hulu. Pencadangan data sepenuhnya menjadi tanggung jawab Anda.
-            </p>
+        <div class="p-3 bg-white border border-amber-500 text-xs text-amber-950 leading-relaxed">
+            Pelanggaran dapat mengakibatkan <strong>terminasi instan tanpa pengembalian dana</strong> karena dampak pada tingkat akun penyedia infrastruktur hulu. Pencadangan data sepenuhnya menjadi tanggung jawab Anda.
         </div>
 
-        <label class="flex items-start gap-3 cursor-pointer">
+        <label class="flex items-start gap-3 cursor-pointer pt-1">
             <input type="checkbox" name="terms_accepted" value="1" required
                    x-model="termsAccepted"
-                   class="w-4 h-4 mt-0.5 rounded border-slate-400 text-black focus:ring-black shrink-0">
-            <span class="text-xs text-slate-700 leading-relaxed">
+                   class="w-4 h-4 mt-0.5 rounded-none border-ink text-electric focus:ring-electric shrink-0">
+            <span class="text-xs text-ink leading-relaxed">
                 Saya telah membaca dan menyetujui
                 <a href="{{ route('terms') }}" target="_blank" rel="noopener"
-                   class="font-bold text-slate-900 underline underline-offset-2">Ketentuan Layanan</a> dan
+                   class="font-bold text-electric underline underline-offset-2">Ketentuan Layanan</a> dan
                 <a href="{{ route('refund') }}" target="_blank" rel="noopener"
-                   class="font-bold text-slate-900 underline underline-offset-2">Kebijakan Pengembalian Dana</a>
+                   class="font-bold text-electric underline underline-offset-2">Kebijakan Pengembalian Dana</a>
                 CravaCloud, termasuk seluruh larangan penggunaan di atas.
-                <span class="block mt-1 text-[11px] text-slate-500 font-mono-code">
+                <span class="block mt-1 font-mono text-[11px] text-muted">
                     Versi naskah: {{ config('legal.terms_version') }}
                 </span>
             </span>
         </label>
 
         @error('terms_accepted')
-            <p class="mt-2 text-xs font-semibold text-red-600">{{ $message }}</p>
+            <p class="font-mono text-xs font-bold text-red-700">{{ $message }}</p>
         @enderror
     </div>
 </div>

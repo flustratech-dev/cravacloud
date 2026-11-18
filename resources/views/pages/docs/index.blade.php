@@ -3,36 +3,39 @@
 @section('dokumentasi')
 
     <div class="space-y-3">
-        <div class="flex items-center gap-2">
-            <span class="px-2.5 py-0.5 rounded text-[10px] font-bold font-mono-code bg-slate-900 text-white uppercase">Knowledge Base</span>
-            <span class="text-xs font-semibold text-slate-500">CravaCloud</span>
+        <div class="flex items-center gap-2.5">
+            <x-ui.badge variant="electric">Knowledge Base</x-ui.badge>
+            <span class="font-mono text-xs font-semibold text-muted uppercase">CravaCloud</span>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+        <h1 class="font-display text-2xl sm:text-4xl font-black text-ink uppercase tracking-tight">
             Dokumentasi Teknis CravaCloud
         </h1>
-        <p class="text-slate-600 text-sm leading-relaxed">
+        <p class="text-muted text-sm leading-relaxed">
             Panduan menyiapkan, mengamankan, dan mengoperasikan VPS CravaCloud — dari server yang
             baru aktif sampai integrasi lewat API. Pilih topik di bawah, atau tekan
-            <kbd class="font-mono-code text-[10px] bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded font-bold text-slate-800">Ctrl&nbsp;+&nbsp;K</kbd>
+            <kbd class="font-mono text-[10px] bg-creamDark border border-hairline px-1.5 py-0.5 font-bold text-ink">Ctrl&nbsp;+&nbsp;K</kbd>
             untuk mencari.
         </p>
     </div>
 
-    <hr class="border-slate-200">
+    <hr class="border-hairline">
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 border-t border-l border-hairline">
         @foreach (\App\Support\KatalogDokumentasi::kelompok() as $slugKelompok => $kelompok)
             <a href="{{ route('docs.kelompok', $slugKelompok) }}"
-               class="p-5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-colors group space-y-2">
-                <div class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $kelompok['ikon'] }}"/></svg>
-                    <h2 class="font-bold text-slate-900 text-sm group-hover:text-black">{{ $kelompok['judul'] }}</h2>
+               class="p-5 bg-cream/50 hover:bg-white border-r border-b border-hairline transition-colors group space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $kelompok['ikon'] }}"/></svg>
+                        <h2 class="font-display font-bold text-ink text-sm uppercase group-hover:text-electric transition-colors">{{ $kelompok['judul'] }}</h2>
+                    </div>
+                    <span class="font-mono text-xs text-muted group-hover:text-electric">↗</span>
                 </div>
-                <p class="text-slate-500 text-[11px] leading-relaxed">{{ $kelompok['ringkas'] }}</p>
-                <ul class="text-[11px] text-slate-600 space-y-0.5 pt-1">
+                <p class="text-muted text-xs leading-relaxed">{{ $kelompok['ringkas'] }}</p>
+                <ul class="font-mono text-[11px] text-ink/80 space-y-1 pt-1">
                     @foreach ($kelompok['seksi'] as $judulSeksi)
                         <li class="flex items-start gap-1.5">
-                            <span class="text-slate-300 mt-px">&bull;</span>
+                            <span class="text-electric mt-px">›</span>
                             <span>{{ $judulSeksi }}</span>
                         </li>
                     @endforeach
@@ -41,10 +44,6 @@
         @endforeach
     </div>
 
-    {{-- Tautan lama berbentuk /docs#stack-coolify sudah tersebar di riwayat chat
-         dan bookmark pelanggan. Anchor tidak pernah dikirim ke server, jadi tidak
-         ada redirect yang bisa menanganinya — hanya halaman ini yang tahu, dan
-         hanya setelah halamannya termuat. --}}
     <script type="application/json" id="peta-seksi-dokumentasi">
         @json(\App\Support\KatalogDokumentasi::petaSeksi())
     </script>

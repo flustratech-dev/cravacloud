@@ -44,19 +44,18 @@ class LegalAndAbuseTest extends TestCase
     }
 
     /**
-     * Payload checkout minimal yang valid untuk paket Tencent.
+     * Payload checkout minimal yang valid.
      */
     protected function checkoutPayload(array $overrides = []): array
     {
         $spec = VpsSpec::where('is_active', true)
             ->where('category', 'vps')
-            ->get()
-            ->first(fn (VpsSpec $s) => $s->isProviderAllowed('tencent'));
+            ->first();
 
         return array_merge([
             'vps_spec_id' => $spec->id,
             'control_panel' => 'none',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
             'billing_cycle' => 'monthly',

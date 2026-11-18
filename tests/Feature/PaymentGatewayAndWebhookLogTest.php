@@ -88,13 +88,13 @@ class PaymentGatewayAndWebhookLogTest extends TestCase
 
     public function test_checkout_rejects_method_of_inactive_gateway(): void
     {
-        $spec = VpsSpec::where('is_active', true)->get()->first(fn ($s) => $s->isProviderAllowed('tencent'));
+        $spec = VpsSpec::where('is_active', true)->first();
 
         $this->actingAs($this->customer())
             ->postJson('/checkout', [
                 'vps_spec_id' => $spec->id,
                 'control_panel' => 'none',
-                'provider' => 'tencent',
+                'provider' => 'cravacloud',
                 'datacenter_location' => 'singapore',
                 'os' => 'ubuntu2404',
                 'hostname' => 'cv-gw-' . uniqid(),

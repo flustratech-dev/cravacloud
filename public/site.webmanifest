@@ -1,25 +1,49 @@
 {
     "name": "CravaCloud",
     "short_name": "CravaCloud",
-    "description": "Cloud VPS NVMe KVM, Managed Database, dan AI Stack dengan datacenter Jakarta & Singapore.",
+    "description": "Cloud VPS NVMe KVM Indonesia Jakarta & Singapore dengan 1-Click Application Stacks.",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#4A6FA5",
+    "background_color": "#F8F6F0",
+    "theme_color": "#001AFF",
     "lang": "id",
     "icons": [
         {
-            "src": "/images/favicon-192x192.png",
+            "src": "/images/favicon-48x48.png?v=20261119c",
+            "sizes": "48x48",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/images/favicon-96x96.png?v=20261119c",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/images/favicon-144x144.png?v=20261119c",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/images/favicon-192x192.png?v=20261119c",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "any"
         },
         {
-            "src": "/images/favicon-512x512.png",
-            "sizes": "512x512",
+            "src": "/images/favicon-384x384.png?v=20261119c",
+            "sizes": "384x384",
             "type": "image/png",
             "purpose": "any"
+        },
+        {
+            "src": "/images/favicon-512x512.png?v=20261119c",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
         }
     ]
 }

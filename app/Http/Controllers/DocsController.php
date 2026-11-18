@@ -17,7 +17,7 @@ class DocsController extends Controller
     public function index(): View
     {
         return view('pages.docs.index', [
-            'seoJudul' => 'Dokumentasi Teknis & Panduan Arsitektur Cloud — CravaCloud',
+            'seoJudul' => 'CravaCloud Dokumentasi Teknis & Panduan Arsitektur Cloud',
             'seoDeskripsi' => 'Panduan lengkap CravaCloud: provisioning VPS, akses SSH, pilihan datacenter, '
                 .'instalasi Coolify & Dokploy, pengamanan UFW & Fail2ban, sampai referensi API.',
             'remah' => [
@@ -38,7 +38,7 @@ class DocsController extends Controller
             'kelompokAktif' => $slug,
             'sebelumnya' => $posisi > 0 ? $urutan[$posisi - 1] : null,
             'berikutnya' => $urutan[$posisi + 1] ?? null,
-            'seoJudul' => $kelompok['judul'].' — Dokumentasi CravaCloud',
+            'seoJudul' => 'CravaCloud Dokumentasi '.$kelompok['judul'],
             'seoDeskripsi' => $kelompok['deskripsi'],
             'remah' => [
                 ['name' => 'Beranda', 'url' => url('/')],

@@ -9,6 +9,14 @@ class Order extends Model
 {
     use HasFactory;
 
+    public const DEFAULT_PROVIDER = 'cravacloud';
+
+    public const NEUTRAL_PROVIDER_LABEL = 'CravaCloud';
+
+    protected $attributes = [
+        'provider' => self::DEFAULT_PROVIDER,
+    ];
+
     protected static function booted(): void
     {
         static::creating(function (self $order) {
@@ -136,31 +144,32 @@ class Order extends Model
 
     public static function providerLabels(): array
     {
-        return ['tencent' => 'Tencent Cloud', 'cloudeka' => 'Cloudeka by Lintasarta'];
+        return ['cravacloud' => self::NEUTRAL_PROVIDER_LABEL];
     }
 
     public static function operatingSystems(): array
     {
         return [
-            'tencent' => [
-                'windows2012r2' => 'Windows Server 2012 R2 DataCenter 64bit EN',
-                'windows2016' => 'Windows Server 2016 DataCenter 64bit EN',
-                'windows2019' => 'Windows Server 2019 DataCenter 64bit EN',
-                'windows2022' => 'Windows Server 2022 DataCenter 64bit EN',
+            self::DEFAULT_PROVIDER => [
                 'ubuntu2404' => 'Ubuntu Server 24.04 LTS 64bit',
                 'ubuntu2204' => 'Ubuntu Server 22.04 LTS 64bit',
-                'opencloudos9' => 'OpenCloudOS 9', 'opencloudos8' => 'OpenCloudOS 8',
-                'centos76' => 'CentOS 7.6 64bit', 'centos_stream9' => 'CentOS Stream 9 64bit',
-                'debian12' => 'Debian 12.0 64bit', 'rocky94' => 'Rocky Linux 9.4 64bit',
-                'debian11' => 'Debian 11.1 64bit', 'debian10' => 'Debian 10.2 64bit',
+                'debian12' => 'Debian 12.0 Bookworm 64bit',
+                'debian11' => 'Debian 11 Bullseye 64bit',
+                'debian10' => 'Debian 10 Buster 64bit',
+                'rocky94' => 'Rocky Linux 9.4 64bit',
+                'centos_stream9' => 'CentOS Stream 9 64bit',
+                'centos76' => 'CentOS 7.6 64bit',
+                'windows2022' => 'Windows Server 2022 DataCenter 64bit EN',
+                'windows2019' => 'Windows Server 2019 DataCenter 64bit EN',
+                'windows2016' => 'Windows Server 2016 DataCenter 64bit EN',
+                'windows2012r2' => 'Windows Server 2012 R2 DataCenter 64bit EN',
             ],
-            'cloudeka' => ['ubuntu2404' => 'Ubuntu Server 24.04 LTS 64bit', 'ubuntu2204' => 'Ubuntu Server 22.04 LTS 64bit'],
         ];
     }
 
     public static function osLabels(): array
     {
-        return array_merge(...array_values(self::operatingSystems()));
+        return self::operatingSystems()[self::DEFAULT_PROVIDER];
     }
 
     /**
@@ -170,8 +179,6 @@ class Order extends Model
      * dapat berisi nama driver internal (mis. supplier/reseller), dan nama itu
      * tidak boleh sampai ke pelanggan.
      */
-    public const NEUTRAL_PROVIDER_LABEL = 'CravaCloud';
-
     public static function customerProviderLabel(?string $provider): string
     {
         return self::providerLabels()[$provider ?? ''] ?? self::NEUTRAL_PROVIDER_LABEL;
@@ -184,8 +191,7 @@ class Order extends Model
 
     public function getOsLabelAttribute(): string
     {
-        return self::operatingSystems()[$this->provider][$this->os]
-            ?? self::osLabels()[$this->os]
+        return self::osLabels()[$this->os]
             ?? (string) $this->os;
     }
 

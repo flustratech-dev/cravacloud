@@ -43,7 +43,7 @@ class LynkCheckoutTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('order.store'), [
             'vps_spec_id' => $spec->id,
-            'provider' => 'cloudeka',
+            'provider' => 'cravacloud',
             'datacenter_location' => 'indonesia',
             'os' => 'ubuntu2404',
             'control_panel' => 'none',
@@ -89,7 +89,7 @@ class LynkCheckoutTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('order.store'), [
             'vps_spec_id' => $spec->id,
-            'provider' => 'cloudeka',
+            'provider' => 'cravacloud',
             'datacenter_location' => 'indonesia',
             'os' => 'ubuntu2404',
             'control_panel' => 'none',
@@ -132,7 +132,7 @@ class LynkCheckoutTest extends TestCase
 
         $response = $this->actingAs($user)->postJson(route('order.store'), [
             'vps_spec_id' => $spec->id,
-            'provider' => 'cloudeka',
+            'provider' => 'cravacloud',
             'datacenter_location' => 'indonesia',
             'os' => 'ubuntu2404',
             'control_panel' => 'none',

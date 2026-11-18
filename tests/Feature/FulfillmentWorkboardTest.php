@@ -54,7 +54,7 @@ class FulfillmentWorkboardTest extends TestCase
             'organization_id' => $org->id,
             'vps_spec_id' => $spec->id,
             'control_panel' => 'none',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'hostname' => 'ff-' . uniqid(),
             'root_password' => 'KataSandiPelanggan#1',
             'datacenter_location' => 'singapore',

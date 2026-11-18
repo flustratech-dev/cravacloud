@@ -49,7 +49,7 @@ class AdminApiProvisionTest extends TestCase
             'organization_id' => $org->id,
             'vps_spec_id' => VpsSpec::where('category', 'vps')->first()->id,
             'control_panel' => 'none',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'hostname' => 'api-' . uniqid(),
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',

@@ -34,15 +34,13 @@ class InactivePackageFlowTest extends TestCase
         $response = $this->get('/');
         $response->assertStatus(200);
 
-        // All inactive packages must remain visible on the landing page
+        // Active/inactive VPS packages remain visible on landing page (with maintenance notice when inactive)
         $response->assertSee($vpsSpec->name);
-        $response->assertSee($aiSpec->name);
-        $response->assertSee($dbSpec->name);
-
-        // Links to checkout must still be present
         $response->assertSee(route('checkout', $vpsSpec->id));
-        $response->assertSee(route('checkout', $aiSpec->id));
-        $response->assertSee(route('checkout', $dbSpec->id));
+
+        // Retired AI & Database product routes return 404
+        $this->get('/ai')->assertStatus(404);
+        $this->get('/database')->assertStatus(404);
     }
 
     public function test_inactive_packages_remain_visible_on_product_pages_and_navbar(): void
@@ -56,10 +54,10 @@ class InactivePackageFlowTest extends TestCase
         $dbSpec = VpsSpec::where('category', 'managed_db')->first();
         $dbSpec->update(['is_active' => false]);
 
-        // Check product comparison pages
+        // Check VPS product comparison page
         $this->get('/vps')->assertStatus(200)->assertSee($vpsSpec->name);
-        $this->get('/ai')->assertStatus(200)->assertSee($aiSpec->name);
-        $this->get('/database')->assertStatus(200)->assertSee($dbSpec->name);
+        $this->get('/ai')->assertStatus(404);
+        $this->get('/database')->assertStatus(404);
     }
 
     public function test_checkout_page_renders_maintenance_warning_and_locked_state_for_inactive_package(): void
@@ -111,7 +109,7 @@ class InactivePackageFlowTest extends TestCase
         $payload = [
             'vps_spec_id' => $vpsSpec->id,
             'control_panel' => 'none',
-            'provider' => 'tencent',
+            'provider' => 'cravacloud',
             'datacenter_location' => 'singapore',
             'os' => 'ubuntu2404',
             'billing_cycle' => 'monthly',
