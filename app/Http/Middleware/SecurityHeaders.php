@@ -56,15 +56,15 @@ class SecurityHeaders
             $response->headers->set(
                 'Content-Security-Policy',
                 "default-src 'self'; " .
-                "img-src 'self' data: blob:{$devViteHttp}; " .
+                "img-src 'self' data: blob: https://*.googleusercontent.com{$devViteHttp}; " .
                 "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://app.midtrans.com https://app.sandbox.midtrans.com{$devViteHttp}; " .
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com{$devViteHttp}; " .
                 "font-src 'self' https://fonts.gstatic.com data:{$devViteHttp}; " .
-                "frame-src 'self' https://challenges.cloudflare.com https://app.midtrans.com https://app.sandbox.midtrans.com https://checkout.xendit.co https://*.xendit.co; " .
-                "connect-src 'self' https://challenges.cloudflare.com https://cloudflareinsights.com https://*.lynk.id https://lynk.id https://app.midtrans.com https://app.sandbox.midtrans.com https://checkout.xendit.co https://*.xendit.co{$devViteHttp}{$devViteWs}; " .
+                "frame-src 'self' https://challenges.cloudflare.com https://app.midtrans.com https://app.sandbox.midtrans.com; " .
+                "connect-src 'self' https://challenges.cloudflare.com https://cloudflareinsights.com https://app.midtrans.com https://app.sandbox.midtrans.com{$devViteHttp}{$devViteWs}; " .
                 "frame-ancestors 'self'; " .
                 "base-uri 'self'; " .
-                "form-action 'self' https://*.lynk.id https://lynk.id https://app.midtrans.com https://app.sandbox.midtrans.com https://checkout.xendit.co https://*.xendit.co;"
+                "form-action 'self' https://app.midtrans.com https://app.sandbox.midtrans.com;"
             );
         }
 

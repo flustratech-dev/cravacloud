@@ -63,5 +63,8 @@ class DatabaseSeeder extends Seeder
 
         // Phase 4 - registry payment gateway.
         $this->call(PaymentGatewaySeeder::class);
+
+        // Tencent integration Phase 2 - region upstream + quota pool.
+        $this->call(DatacenterRegionSeeder::class);
     }
 }

@@ -3,16 +3,12 @@
 use App\Http\Controllers\Api\AdminApiController;
 use App\Http\Controllers\Api\LinkedAccountController;
 use App\Http\Controllers\Api\LinkedAccountLookupController;
-use App\Http\Controllers\Api\LynkWebhookController;
 use App\Http\Controllers\Api\PaymentWebhookController;
 use App\Http\Middleware\VerifyLinkedAccountSignature;
 use Illuminate\Support\Facades\Route;
 
-// Payment Webhook (public - tapi di-verify dengan signature / token)
+// Midtrans Payment Webhook (public - diverifikasi dengan SHA-512 signature_key)
 Route::match(['get', 'post'], '/webhooks/payment', [PaymentWebhookController::class, 'handle'])->name('api.webhooks.payment');
-Route::match(['get', 'post'], '/webhooks/lynk', [LynkWebhookController::class, 'handle'])->name('api.webhooks.lynk');
-Route::match(['get', 'post'], '/payment/xendit/webhook', [PaymentWebhookController::class, 'handleXendit'])->name('api.payment.xendit.webhook');
-Route::match(['get', 'post'], '/webhooks/xendit', [PaymentWebhookController::class, 'handleXendit'])->name('api.webhooks.xendit');
 
 // Admin API Endpoints - PROTECTED with admin.api middleware (ApiKey or Admin Session)
 Route::prefix('admin')->middleware('admin.api')->group(function () {

@@ -2,21 +2,21 @@
 
 namespace App\Jobs\Provisioning;
 
-use App\Exceptions\InvalidStateTransitionException;
-use App\Models\Order;
 use App\Models\ProvisioningTask;
-use App\Models\VpsInstance;
-use App\Services\OrderStateMachine;
-use App\Services\VpsStateMachine;
-use Illuminate\Support\Facades\Log;
+use App\Services\Provisioning\ProvisioningFinalizer;
 
 /**
- * Provision VPS baru:
- *   Order paid → provisioning
- *   VpsInstance provisioning → running
- *   Order provisioning → active
+ * Stage 1 of the two-stage provisioning flow (D11): INFRA only.
+ *   Order paid → provisioning (orchestrator)
+ *   provider->provision(): create/adopt → RUNNING → password → firewall → TAT invoke
  *
- * Kalau semua attempt gagal → Order pindah ke `failed`, VPS ke `error`.
+ * On success:
+ *   - stack install pending → create an install_stack task + dispatch
+ *     InstallStackJob (stage 2 does the lightweight TAT polling);
+ *   - no stack → finalize immediately (ProvisioningFinalizer).
+ *
+ * Kalau semua attempt gagal → Order pindah ke `failed`, VPS ke `error`
+ * (via ProvisioningFinalizer::fail, termasuk settlement kuota).
  */
 class ProvisionVpsJob extends AbstractProvisioningJob
 {
@@ -33,7 +33,13 @@ class ProvisionVpsJob extends AbstractProvisioningJob
         }
         $task->markProgress(10, 'Memulai provisioning');
         $result = $provider->provision($instance, $task);
-        $task->markProgress(80, 'Menyimpan detail server');
+
+        // Review patch A3: skip the 80% mark when stage 2 (install) takes
+        // over at 65% — otherwise progress would regress 65% → 80% → 65%.
+        if (empty($result['stack_install_pending'])) {
+            $task->markProgress(80, 'Menyimpan detail server');
+        }
+
         return $result;
     }
 
@@ -42,108 +48,39 @@ class ProvisionVpsJob extends AbstractProvisioningJob
         $instance = $task->vpsInstance;
         if (!$instance) return;
 
-        $instance->fill([
-            'public_ip' => $output['public_ip'] ?? $instance->public_ip,
-            'private_ip' => $output['private_ip'] ?? $instance->private_ip,
-            'ssh_port' => $output['ssh_port'] ?? $instance->ssh_port,
-            'initial_root_password' => $output['root_password'] ?? $instance->initial_root_password,
-            'provider_resource_id' => $output['resource_id'] ?? $instance->provider_resource_id,
-            'provider_meta' => array_merge($instance->provider_meta ?? [], $output['meta'] ?? []),
-        ])->save();
+        $finalizer = app(ProvisioningFinalizer::class);
 
-        try {
-            app(VpsStateMachine::class)->transition($instance, 'running', [
-                'reason' => 'Provisioning selesai (job sukses).',
-                'actor_type' => 'system',
-                'metadata' => ['task_id' => $task->id, 'provider' => $task->provider],
+        // Persist infra details NOW so the dashboard shows IP/credentials
+        // while the stack install (stage 2) is still running.
+        $finalizer->applyInstanceDetails($instance, $output);
+
+        if (!empty($output['stack_install_pending'])) {
+            $installTask = ProvisioningTask::create([
+                'order_id' => $task->order_id,
+                'vps_instance_id' => $instance->id,
+                'kind' => 'install_stack',
+                'status' => 'pending',
+                'provider' => $task->provider,
+                'progress' => 65,
+                'current_step' => 'Memasang stack aplikasi',
+                'input' => [
+                    'stack' => $output['meta']['stack'] ?? ($instance->control_panel ?: 'none'),
+                    'invocation_id' => $output['invocation_id'] ?? null,
+                ],
+                'output' => array_filter([
+                    'invocation_id' => $output['invocation_id'] ?? null,
+                ]),
             ]);
-        } catch (InvalidStateTransitionException $e) {
-            Log::warning('provisioning.vps_transition_failed_on_success', [
-                'task_id' => $task->id,
-                'error' => $e->getMessage(),
-            ]);
+
+            InstallStackJob::dispatch($installTask->id);
+            return;
         }
 
-        $order = $task->order;
-        if ($order) {
-            try {
-                app(OrderStateMachine::class)->transition($order, 'active', [
-                    'reason' => 'Provisioning sukses.',
-                    'actor_type' => 'system',
-                    'metadata' => ['task_id' => $task->id, 'vps_instance_id' => $instance->id],
-                    'onLocked' => function (Order $locked) use ($instance) {
-                        $locked->starts_at = $locked->starts_at ?? $locked->activationStartsAt();
-                        $locked->expires_at = $locked->expires_at ?? $instance->expires_at;
-                        $locked->grace_period_ends_at = $locked->grace_period_ends_at ?? $instance->grace_period_ends_at;
-                        $locked->save();
-                    },
-                ]);
-            } catch (InvalidStateTransitionException $e) {
-                Log::warning('provisioning.order_transition_failed_on_success', [
-                    'task_id' => $task->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
-
-        // Kirim notifikasi kredensial server VPS ke pelanggan
-        try {
-            $customer = $instance->customer;
-            if ($customer) {
-                $customer->notify(new \App\Notifications\VpsProvisionedNotification($instance));
-            }
-        } catch (\Throwable $e) {
-            Log::error('provisioning.notify_customer_failed', [
-                'instance_id' => $instance->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        $finalizer->finalize($task, $instance, $output);
     }
 
     protected function onFailure(ProvisioningTask $task, string $error): void
     {
-        $instance = $task->vpsInstance;
-        if ($instance) {
-            try {
-                app(VpsStateMachine::class)->transition($instance, 'error', [
-                    'reason' => 'Provisioning gagal: ' . $error,
-                    'actor_type' => 'system',
-                    'metadata' => ['task_id' => $task->id],
-                ]);
-            } catch (\Throwable $e) {
-                // ignore
-            }
-        }
-
-        $order = $task->order;
-        if ($order) {
-            try {
-                app(OrderStateMachine::class)->transition($order, 'failed', [
-                    'reason' => 'Provisioning gagal setelah semua retry.',
-                    'actor_type' => 'system',
-                    'metadata' => ['task_id' => $task->id, 'error' => $error],
-                    'onLocked' => function (Order $locked) use ($error) {
-                        $locked->failure_reason = mb_substr($error, 0, 500);
-                        $locked->save();
-                    },
-                ]);
-            } catch (\Throwable $e) {
-                // ignore
-            }
-        }
-
-        // Kirim alert darurat ke admin jika provisioning otomatis gagal
-        try {
-            $adminEmails = \App\Support\MailIdentity::adminRecipients();
-            foreach ($adminEmails as $adminEmail) {
-                \Illuminate\Support\Facades\Notification::route('mail', $adminEmail)
-                    ->notify(new \App\Notifications\AdminProvisioningFailedNotification($task, $error));
-            }
-        } catch (\Throwable $e) {
-            Log::error('provisioning.notify_admin_failed', [
-                'task_id' => $task->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        app(ProvisioningFinalizer::class)->fail($task, $error);
     }
 }

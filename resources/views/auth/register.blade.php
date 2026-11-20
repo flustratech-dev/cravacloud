@@ -157,12 +157,16 @@
                         <div class="flex items-center justify-between mb-1">
                             <label for="email" class="font-mono text-[11px] font-bold uppercase tracking-wider text-muted">Alamat Email *</label>
                             @if($googleId)
-                                <span class="font-mono text-[9px] font-bold uppercase bg-emerald-100 text-emerald-900 border border-emerald-400 px-1.5 py-0.5">Google</span>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-mono text-[9px] font-bold uppercase bg-emerald-100 text-emerald-900 border border-emerald-400 px-1.5 py-0.5">Google</span>
+                                    <a href="{{ route('register', ['reset_google' => 1]) }}" class="font-mono text-[10px] text-muted hover:text-electric underline">Ganti</a>
+                                </div>
                             @endif
                         </div>
                         <input type="email" id="email" name="email" required value="{{ $prefilledEmail }}"
+                               @if($googleId) readonly @endif
                                placeholder="nama@email.com"
-                               class="w-full rounded-none px-3 py-2 bg-cream/60 border border-hairline text-xs sm:text-sm font-mono text-ink placeholder:text-muted/60 focus:outline-none focus:border-electric focus:bg-white transition-colors">
+                               class="w-full rounded-none px-3 py-2 {{ $googleId ? 'bg-creamDark/40 cursor-not-allowed' : 'bg-cream/60 focus:bg-white' }} border border-hairline text-xs sm:text-sm font-mono text-ink placeholder:text-muted/60 focus:outline-none focus:border-electric transition-colors">
                     </div>
 
                     <div>

@@ -69,8 +69,8 @@ class PaymentGatewayController extends Controller
         $wasActive = $gateway->is_active;
         $willBeActive = $request->boolean('is_active');
 
-        // Lynk adalah satu-satunya jalur pembayaran yang berjalan. Mematikannya
-        // menutup checkout lynk, jadi hanya boleh bila masih ada gateway lain aktif.
+        // Midtrans adalah satu-satunya gateway pembayaran yang berjalan. Mematikannya
+        // menutup seluruh checkout, jadi minimal satu gateway harus tetap aktif.
         if ($wasActive && !$willBeActive
             && PaymentGateway::active()->where('id', '!=', $gateway->id)->doesntExist()) {
             return back()->with('error', 'Minimal satu gateway harus tetap aktif agar pelanggan masih bisa membayar.');

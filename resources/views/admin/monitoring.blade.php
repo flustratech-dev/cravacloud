@@ -19,6 +19,76 @@
         @endforeach
     </div>
 
+    {{-- Phase 5F — admin-only upstream widgets (quota pool + deposit balance) --}}
+    <div class="grid lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white border border-hairline overflow-hidden">
+            <div class="p-5 border-b border-hairline flex items-center justify-between">
+                <h3 class="font-display font-bold text-ink text-sm uppercase tracking-wider">Kuota Upstream per Region</h3>
+                <span class="font-mono text-[10px] font-bold uppercase px-2 py-0.5 border border-hairline bg-creamDark text-muted">Guard: {{ $quotaGuardMode }}</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-creamDark/60 text-muted font-mono text-[10px] font-bold uppercase tracking-widest border-b border-hairline">
+                        <tr>
+                            <th class="px-5 py-3">Region</th>
+                            <th class="px-5 py-3">Bundle</th>
+                            <th class="px-5 py-3">Kapasitas</th>
+                            <th class="px-5 py-3">Reserved</th>
+                            <th class="px-5 py-3">Used</th>
+                            <th class="px-5 py-3">Sisa</th>
+                            <th class="px-5 py-3 w-40">Pemakaian</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-hairline">
+                        @forelse($quotaPools as $pool)
+                            @php $pct = $pool->usagePercent(); @endphp
+                            <tr class="hover:bg-creamDark/30 transition-colors">
+                                <td class="px-5 py-3 font-mono font-semibold text-ink">{{ $pool->region_code }}</td>
+                                <td class="px-5 py-3 font-mono text-muted">{{ $pool->bundle_type }}</td>
+                                <td class="px-5 py-3 font-mono text-ink">{{ $pool->capacity }}</td>
+                                <td class="px-5 py-3 font-mono text-muted">{{ $pool->reserved }}</td>
+                                <td class="px-5 py-3 font-mono text-muted">{{ $pool->used }}</td>
+                                <td class="px-5 py-3 font-mono font-bold {{ $pool->availableSlots() === 0 ? 'text-electric' : 'text-ink' }}">{{ $pool->availableSlots() }}</td>
+                                <td class="px-5 py-3">
+                                    <div class="h-2 bg-creamDark border border-hairline">
+                                        <div class="h-full {{ $pct >= 90 ? 'bg-electric' : ($pct >= 70 ? 'bg-amber-400' : 'bg-emerald-500') }}" style="width: {{ min(100, $pct) }}%"></div>
+                                    </div>
+                                    <span class="font-mono text-[10px] text-muted">{{ $pct }}%</span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="7" class="px-5 py-8 text-center font-mono text-xs text-muted">Belum ada data kuota. Jalankan sinkronisasi kuota upstream.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="bg-white border border-hairline overflow-hidden">
+            <div class="p-5 border-b border-hairline">
+                <h3 class="font-display font-bold text-ink text-sm uppercase tracking-wider">Deposit Upstream</h3>
+            </div>
+            <div class="p-5 space-y-3">
+                @if($balanceUsd === null)
+                    <p class="font-display text-2xl font-bold text-muted">—</p>
+                    <p class="text-xs text-muted">Saldo belum disinkronkan. Jalankan <span class="font-mono font-bold text-ink">tencent:check-balance</span> untuk memperbarui.</p>
+                @else
+                    <p class="font-display text-3xl font-bold {{ $balanceUsd < $balanceThreshold ? 'text-electric' : 'text-ink' }}">${{ number_format($balanceUsd, 2) }}</p>
+                    <p class="font-mono text-[11px] text-muted">USD · cache 60 detik</p>
+                    @if($balanceUsd < $balanceThreshold)
+                        <div class="border border-electric bg-electric/5 p-3">
+                            <p class="font-mono text-[11px] font-bold text-electric uppercase">Saldo rendah</p>
+                            <p class="text-xs text-muted mt-1">Di bawah ambang ${{ number_format($balanceThreshold, 2) }}. Top-up akun upstream sebelum provisioning baru.</p>
+                        </div>
+                    @else
+                        <p class="text-xs text-muted">Ambang rendah: ${{ number_format($balanceThreshold, 2) }}.</p>
+                    @endif
+                @endif
+                <p class="text-[11px] text-muted border-t border-hairline pt-3">Nilai dibaca dari cache, bukan panggilan API langsung. Verifikasi unit saldo setelah top-up pertama.</p>
+            </div>
+        </div>
+    </div>
+
     <div class="grid lg:grid-cols-2 gap-6">
         <div class="bg-white border border-hairline overflow-hidden">
             <div class="p-5 border-b border-hairline flex items-center justify-between">

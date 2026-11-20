@@ -4,13 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Order;
+use App\Models\ProvisioningTask;
 use App\Models\SupportTicket;
 use App\Models\Subscription;
 use App\Models\TicketMessage;
 use App\Models\User;
 use App\Models\VpsInstance;
+use App\Jobs\Provisioning\ReinstallVpsJob;
+use App\Services\Provisioning\VpsLifecycleDispatcher;
 use App\Services\RenewalService;
 use App\Services\SettingsService;
+use App\Services\VpsStateMachine;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -122,6 +126,14 @@ class DashboardController extends Controller
 
         $task = $vps->latestProvisioningTask;
 
+        // White-label: error mentah provider upstream (nama vendor/API) tidak
+        // boleh bocor ke pelanggan. Detail teknis tetap ada di kolom error
+        // untuk admin; pelanggan hanya melihat pesan netral.
+        $taskError = $task?->error;
+        if ($task && $task->provider !== 'manual' && $taskError) {
+            $taskError = 'Terjadi kendala teknis saat menyiapkan server. Tim kami sudah menerima notifikasi dan sedang menanganinya.';
+        }
+
         return response()->json([
             'vps_id' => $vps->id,
             'vps_status' => $vps->status,
@@ -133,7 +145,7 @@ class DashboardController extends Controller
                 'progress' => (int) $task->progress,
                 'current_step' => $task->current_step,
                 'attempts' => (int) $task->attempts,
-                'error' => $task->error,
+                'error' => $taskError,
                 'started_at' => $task->started_at?->toIso8601String(),
                 'finished_at' => $task->finished_at?->toIso8601String(),
             ] : null,
@@ -171,13 +183,18 @@ class DashboardController extends Controller
         // Lama masa tenggang mengikuti pengaturan admin per jenis layanan.
         $graceDays = app(RenewalService::class)->graceDaysFor($vps);
 
+        // Phase 5D/5F: capability map gates the Day-2 self-service panel.
+        // Manual/retail servers get capable=false and keep the legacy buttons.
+        $day2 = app(\App\Services\Provisioning\VpsDay2Service::class)->capabilities($vps);
+
         return view('dashboard.show', compact(
             'vps',
             'serverTickets',
             'openRequests',
             'supportHours',
             'slaHours',
-            'graceDays'
+            'graceDays',
+            'day2'
         ));
     }
 
@@ -227,6 +244,14 @@ class DashboardController extends Controller
         }
 
         $controlPanel = $vps->hasFixedStack() ? $vps->control_panel : $validated['control_panel'];
+
+        if (app(VpsLifecycleDispatcher::class)->supports($vps)
+            && ! app(\App\Services\Provisioning\Stacks\StackRegistry::class)->supportsOs($validated['os'], (string) $controlPanel)) {
+            return back()->withInput()->withErrors([
+                'control_panel' => 'Kombinasi sistem operasi dan stack tersebut belum didukung untuk reinstall otomatis. Pilih OS Ubuntu/Debian atau hubungi support.',
+            ]);
+        }
+
         $osLabel = $osOptions[$validated['os']];
         $stackLabel = $stackOptions[(string) $controlPanel] ?? $vps->control_panel_label;
 
@@ -243,17 +268,28 @@ class DashboardController extends Controller
             $lines[] = 'Catatan: ' . $validated['notes'];
         }
 
+        $isAutoProvisioned = app(VpsLifecycleDispatcher::class)->supports($vps);
+
         $result = $this->openServiceRequest(
             vps: $vps,
             type: SupportTicket::TYPE_REINSTALL,
-            subject: 'Permintaan Reinstall OS - ' . $serverName,
+            subject: ($isAutoProvisioned ? 'Reinstall OS Otomatis - ' : 'Permintaan Reinstall OS - ') . $serverName,
             message: implode("\n", $lines),
             requestData: ['os' => $validated['os'], 'control_panel' => $controlPanel],
             activityAction: 'reinstall_requested',
-            activityDescription: "Permintaan reinstall OS ({$osLabel}, stack {$stackLabel}) diajukan. Menunggu dikerjakan tim.",
+            activityDescription: $isAutoProvisioned
+                ? "Reinstall OS otomatis ({$osLabel}, stack {$stackLabel}) dimulai."
+                : "Permintaan reinstall OS ({$osLabel}, stack {$stackLabel}) diajukan. Menunggu dikerjakan tim.",
         );
 
         $ticketCode = $this->ticketCode($result['ticket']);
+
+        // Phase 5B: auto-provisioned tencent instances reinstall themselves —
+        // the ticket is kept as an audit record, the job runs immediately.
+        // Manual/retail servers keep the legacy team-handled ticket flow.
+        if ($isAutoProvisioned) {
+            return $this->dispatchAutoReinstall($vps, $validated['os'], (string) $controlPanel, $result['ticket'], $ticketCode);
+        }
 
         if (!$result['created']) {
             return redirect()->route('dashboard.support.show', $result['ticket']->id)
@@ -264,6 +300,51 @@ class DashboardController extends Controller
             ->with('success', "Permintaan reinstall diterima ({$ticketCode}). Tim kami memprosesnya maksimal "
                 . SupportTicket::SERVICE_REQUEST_SLA_WORKING_HOURS . ' jam kerja dan Anda akan menerima email saat selesai. '
                 . 'Server tetap berjalan seperti biasa sampai tim mulai mengerjakan.');
+    }
+
+    /**
+     * Phase 5B — automatic reinstall for auto-provisioned (tencent) servers.
+     * The audit ticket is marked in progress; a reinstall task is dispatched
+     * unless one is already in flight. The instance shows 'reinstalling'
+     * while the job runs and returns to 'running' on completion.
+     */
+    private function dispatchAutoReinstall(VpsInstance $vps, string $os, string $controlPanel, SupportTicket $ticket, string $ticketCode)
+    {
+        if ($ticket->status === 'open') {
+            $ticket->update(['status' => 'in_progress', 'first_response_at' => now()]);
+        }
+
+        $hasLive = ProvisioningTask::where('vps_instance_id', $vps->id)
+            ->where('kind', 'reinstall')
+            ->whereIn('status', ['pending', 'running'])
+            ->exists();
+
+        if (!$hasLive) {
+            $task = ProvisioningTask::create([
+                'order_id' => $vps->order_id,
+                'vps_instance_id' => $vps->id,
+                'kind' => 'reinstall',
+                'status' => 'pending',
+                'provider' => 'tencent',
+                'input' => ['os' => $os, 'control_panel' => $controlPanel, 'ticket_id' => $ticket->id],
+            ]);
+
+            try {
+                app(VpsStateMachine::class)->transition($vps, 'reinstalling', [
+                    'reason' => 'Reinstall otomatis dimulai.',
+                    'actor_type' => 'system',
+                    'allowSame' => true,
+                ]);
+            } catch (\Throwable $e) {
+                // Best-effort UI state; the job still runs.
+            }
+
+            ReinstallVpsJob::dispatch($task->id);
+        }
+
+        return redirect()->route('dashboard.vps.show', $vps->id)
+            ->with('success', "Reinstall sedang diproses otomatis ({$ticketCode}). Server dipasang ulang dengan OS dan stack pilihan Anda; "
+                . 'kredensial baru tersedia di dashboard setelah selesai. Seluruh data lama terhapus.');
     }
 
     /**

@@ -1,8 +1,6 @@
 <div class="border border-hairline bg-white p-5 sm:p-8 space-y-6">
     <div class="border-b border-hairline pb-4 flex items-center justify-between gap-4">
         <div>
-            <span class="font-mono text-[10px] uppercase tracking-widest text-electric font-bold block mb-1"
-                  x-text="isDirectCheckout ? 'LANGKAH 02 // METODE PEMBAYARAN' : 'LANGKAH 03 // METODE PEMBAYARAN'"></span>
             <h2 class="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">Metode Pembayaran</h2>
             <p class="text-xs text-muted mt-1">Satu gerbang pembayaran instan dan aman untuk seluruh saluran pembayaran resmi.</p>
         </div>
@@ -36,30 +34,32 @@
         </div>
 
         <div class="mb-4">
-            <h3 class="font-display text-lg font-bold text-ink">Pembayaran Otomatis Online (Instan)</h3>
+            <h3 class="font-display text-lg font-bold text-ink">Pembayaran Otomatis Online (Midtrans)</h3>
             <p class="text-xs sm:text-sm text-muted mt-1 leading-relaxed">
-                Bayar mudah dan cepat tanpa konfirmasi manual. Pilih QRIS (semua e-wallet &amp; mobile banking), Virtual Account Mandiri, BNI, BRI, Permata, CIMB Niaga, Indomaret, AstraPay, atau Akulaku di checkout gateway resmi.
+                Bayar mudah dan cepat tanpa konfirmasi manual melalui Midtrans. Pilih QRIS (semua e-wallet &amp; mobile banking), Virtual Account BCA, Mandiri, BNI, BRI, Permata, CIMB Niaga, GoPay, ShopeePay, atau Kartu Kredit di jendela Snap resmi.
             </p>
         </div>
 
         {{-- Supported Channel Logos --}}
         <div class="p-4 bg-white border border-hairline space-y-2.5">
             <div class="flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-muted font-bold">
-                <span>Saluran pembayaran didukung:</span>
+                <span>Saluran pembayaran didukung (Midtrans):</span>
                 <span class="text-emerald-700">Terhubung Langsung</span>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
                 @php
                     $channels = [
-                        ['QRIS (BCA, Livin, GoPay, OVO, ShopeePay, Dana)', 'qris.svg', 'h-5 sm:h-6'],
+                        ['QRIS (Semua E-Wallet & Mobile Banking)', 'qris.svg', 'h-5 sm:h-6'],
+                        ['Bank BCA VA', 'va_bca.svg', 'h-4 sm:h-5'],
                         ['Bank Mandiri VA', 'va_mandiri.svg', 'h-4 sm:h-5'],
                         ['Bank BNI VA', 'va_bni.svg', 'h-4 sm:h-5'],
                         ['Bank BRI VA', 'va_bri.svg', 'h-4 sm:h-5'],
                         ['CIMB Niaga VA', 'va_cimb.svg', 'h-4 sm:h-5'],
                         ['Bank Permata VA', 'va_permata.svg', 'h-4 sm:h-5'],
+                        ['GoPay', 'gopay.svg', 'h-4 sm:h-5'],
+                        ['ShopeePay', 'ewallet_shopeepay.svg', 'h-4 sm:h-5'],
                         ['Indomaret Retail', 'indomaret.svg', 'h-4 sm:h-5'],
-                        ['AstraPay E-Wallet', 'astrapay.svg', 'h-4 sm:h-5'],
                         ['Akulaku PayLater', 'akulaku.svg', 'h-4 sm:h-5'],
                     ];
                 @endphp

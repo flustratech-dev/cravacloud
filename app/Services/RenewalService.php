@@ -240,6 +240,60 @@ class RenewalService
             $order->customer_id
         );
 
+        // Phase 4B: perpanjangan di sisi upstream untuk instance hasil
+        // auto-provisioning (provider tencent). Dieksekusi SETELAH commit DB
+        // (afterCommit) supaya job tidak pernah membaca tanggal yang belum
+        // committed; masa aktif pelanggan sudah aman lebih dulu. Alur manual
+        // tidak berubah sama sekali. RenewVpsJob juga memulihkan instance
+        // SHUTDOWN (recycle bin) dan menyalakan yang STOPPED (Revisi 4).
+        if ($instance->provider === 'tencent' && $instance->provider_resource_id) {
+            $orderId = (int) $order->id;
+            $instanceId = (int) $instance->id;
+            \Illuminate\Support\Facades\DB::afterCommit(function () use ($orderId, $instanceId, $months) {
+                $this->dispatchUpstreamRenewal($orderId, $instanceId, $months);
+            });
+        }
+
         return $instance;
+    }
+
+    /**
+     * Buat task renew + dispatch RenewVpsJob (idempoten: handleRenewalPayment
+     * menahan renewal_applied_at sehingga hook ini hanya terdaftar sekali
+     * per order renewal).
+     */
+    private function dispatchUpstreamRenewal(int $orderId, int $instanceId, int $months): void
+    {
+        try {
+            $task = \App\Models\ProvisioningTask::create([
+                'order_id' => $orderId,
+                'vps_instance_id' => $instanceId,
+                'kind' => 'renew',
+                'status' => 'pending',
+                'provider' => 'tencent',
+                'input' => ['months' => $months],
+            ]);
+
+            \App\Jobs\Provisioning\RenewVpsJob::dispatch($task->id);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('renewal.upstream_dispatch_failed', [
+                'order_id' => $orderId,
+                'vps_instance_id' => $instanceId,
+                'error' => $e->getMessage(),
+            ]);
+
+            try {
+                app(AdminAlertService::class)->digest(
+                    'Renewal upstream tidak ter-dispatch',
+                    "Order renewal #{$orderId} untuk instance #{$instanceId} sudah memperpanjang masa aktif pelanggan, "
+                    ."tetapi job renewal upstream gagal dibuat. Proses manual diperlukan.\n\nError: {$e->getMessage()}"
+                );
+            } catch (\Throwable $alertError) {
+                \Illuminate\Support\Facades\Log::error('renewal.upstream_dispatch_alert_failed', [
+                    'order_id' => $orderId,
+                    'error' => $alertError->getMessage(),
+                ]);
+            }
+        }
     }
 }

@@ -24,6 +24,7 @@ class StartVpsJob extends AbstractProvisioningJob
                 'reason' => 'Start job selesai.',
                 'actor_type' => 'system',
                 'metadata' => ['task_id' => $task->id],
+                'allowSame' => true,
             ]);
         } catch (\Throwable $e) {
             Log::warning('provisioning.start_transition_failed', ['task_id' => $task->id, 'error' => $e->getMessage()]);

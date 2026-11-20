@@ -12,9 +12,12 @@ use App\Observers\LinkedAccountObserver;
 use App\Services\ImpersonationService;
 use App\Services\MaintenanceService;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use App\Services\SettingsService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
@@ -44,7 +47,11 @@ class AppServiceProvider extends ServiceProvider
         // Cegah Chrome warning: "was preloaded using link preload but not used" akibat Cloudflare Early Hints / Rocket Loader
         Vite::usePreloadTagAttributes(fn () => false);
 
-        if (str_contains(request()->header('x-forwarded-proto', ''), 'https') || request()->isSecure()) {
+        if (
+            str_contains((string) request()->header('x-forwarded-proto', ''), 'https')
+            || str_contains((string) request()->header('cf-visitor', ''), '"https"')
+            || request()->isSecure()
+        ) {
             URL::forceScheme('https');
         }
 
@@ -150,5 +157,19 @@ class AppServiceProvider extends ServiceProvider
         View::composer('layouts.dashboard', function ($view) {
             $view->with('upcomingMaintenance', app(MaintenanceService::class)->upcomingWindows());
         });
+
+        // ============================================================
+        // Phase 5D — rate limiter aksi Day-2 VPS (customer & admin).
+        // Kunci per user + instance agar satu pelanggan tidak bisa
+        // memborbardir satu server, tanpa memblokir server lainnya.
+        // 'vps-sensitive' dipecah dua: reset password 3/jam, upgrade 5/jam.
+        // ============================================================
+        $day2Key = fn (Request $request) => ($request->user()?->id ?? 'guest').'|'.$request->route('id');
+
+        RateLimiter::for('vps-power', fn (Request $request) => Limit::perMinute(10)->by($day2Key($request)));
+        RateLimiter::for('vps-console', fn (Request $request) => Limit::perMinute(10)->by($day2Key($request)));
+        RateLimiter::for('vps-firewall', fn (Request $request) => Limit::perMinute(20)->by($day2Key($request)));
+        RateLimiter::for('vps-reset-password', fn (Request $request) => Limit::perHour(3)->by($day2Key($request)));
+        RateLimiter::for('vps-upgrade', fn (Request $request) => Limit::perHour(5)->by($day2Key($request)));
     }
 }

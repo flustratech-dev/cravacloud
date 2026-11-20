@@ -7,7 +7,9 @@ use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\InvalidStateException;
 use Mockery;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class GoogleAuthTest extends TestCase
@@ -200,5 +202,125 @@ class GoogleAuthTest extends TestCase
 
         $response->assertRedirect(route('admin.index'));
         $this->assertAuthenticated();
+    }
+
+    public static function redirectOriginProvider(): array
+    {
+        return [
+            'local localhost 8050' => ['http://localhost:8050', 'http://localhost:8050/auth/google/callback'],
+            'local 127.0.0.1 8050' => ['http://127.0.0.1:8050', 'http://127.0.0.1:8050/auth/google/callback'],
+            'http dev my.id' => ['http://dev.cravacloud.my.id', 'http://dev.cravacloud.my.id/auth/google/callback'],
+            'https dev my.id' => ['https://dev.cravacloud.my.id', 'https://dev.cravacloud.my.id/auth/google/callback'],
+            'https staging my.id' => ['https://staging.cravacloud.my.id', 'https://staging.cravacloud.my.id/auth/google/callback'],
+            'https prod my.id' => ['https://cravacloud.my.id', 'https://cravacloud.my.id/auth/google/callback'],
+            'https dev com' => ['https://dev.cravacloud.com', 'https://dev.cravacloud.com/auth/google/callback'],
+            'https staging com' => ['https://staging.cravacloud.com', 'https://staging.cravacloud.com/auth/google/callback'],
+            'https prod com' => ['https://cravacloud.com', 'https://cravacloud.com/auth/google/callback'],
+            'https www com' => ['https://www.cravacloud.com', 'https://www.cravacloud.com/auth/google/callback'],
+        ];
+    }
+
+    #[DataProvider('redirectOriginProvider')]
+    public function test_google_redirect_adapts_callback_uri_to_active_origin(string $origin, string $expectedCallback): void
+    {
+        config([
+            'app.url' => 'https://cravacloud.id',
+            'services.google.client_id' => 'test-client-id',
+            'services.google.client_secret' => 'test-client-secret',
+            'services.google.redirect' => 'https://cravacloud.id/auth/google/callback',
+        ]);
+
+        $response = $this->get($origin . '/auth/google');
+
+        $response->assertStatus(302);
+        $location = (string) $response->headers->get('Location');
+        $this->assertStringContainsString('accounts.google.com', $location);
+
+        parse_str((string) parse_url($location, PHP_URL_QUERY), $query);
+        $this->assertSame($expectedCallback, $query['redirect_uri'] ?? null);
+    }
+
+    public function test_google_redirect_preserves_intended_checkout_url_and_blocks_external_redirect(): void
+    {
+        $intendedCheckout = 'https://cravacloud.my.id/checkout/3';
+
+        $existingUser = User::create([
+            'username' => 'checkoutgoogleuser',
+            'email' => 'checkoutgoogle@gmail.com',
+            'full_name' => 'Checkout Google User',
+            'password' => Hash::make('password123'),
+            'channel' => 'website',
+            'is_admin' => false,
+        ]);
+
+        $this->get('https://cravacloud.my.id/auth/google?intended=' . urlencode($intendedCheckout))
+            ->assertStatus(302);
+
+        $abstractUser = Mockery::mock('Laravel\Socialite\Two\User');
+        $abstractUser->shouldReceive('getId')->andReturn('google-checkout-123');
+        $abstractUser->shouldReceive('getName')->andReturn('Checkout Google User');
+        $abstractUser->shouldReceive('getEmail')->andReturn('checkoutgoogle@gmail.com');
+        $abstractUser->shouldReceive('getAvatar')->andReturn('https://lh3.googleusercontent.com/a/test');
+
+        $provider = Mockery::mock('Laravel\Socialite\Contracts\Provider');
+        $provider->shouldReceive('user')->andReturn($abstractUser);
+
+        Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
+
+        $callbackResponse = $this->get('https://cravacloud.my.id/auth/google/callback');
+        $callbackResponse->assertRedirect($intendedCheckout);
+        $this->assertAuthenticatedAs($existingUser);
+    }
+
+    public function test_google_redirect_ignores_external_untrusted_intended_url(): void
+    {
+        $this->get('https://cravacloud.my.id/auth/google?intended=' . urlencode('https://evil.example/phish'))
+            ->assertStatus(302);
+
+        $this->assertNull(session('url.intended'));
+    }
+
+    public function test_google_callback_handles_invalid_state_with_clear_message(): void
+    {
+        $provider = Mockery::mock('Laravel\Socialite\Contracts\Provider');
+        $provider->shouldReceive('user')->andThrow(new InvalidStateException());
+
+        Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
+
+        $response = $this->get(route('auth.google.callback'));
+
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHas('error', 'Sesi login Google sudah kadaluarsa atau tidak valid. Silakan coba masuk dengan Google lagi.');
+        $this->assertGuest();
+    }
+
+    public function test_register_rejects_email_tampering_after_google_prefill(): void
+    {
+        $abstractUser = Mockery::mock('Laravel\Socialite\Two\User');
+        $abstractUser->shouldReceive('getId')->andReturn('google-locked-email-1');
+        $abstractUser->shouldReceive('getName')->andReturn('Locked Email User');
+        $abstractUser->shouldReceive('getEmail')->andReturn('verified@gmail.com');
+        $abstractUser->shouldReceive('getAvatar')->andReturn('https://lh3.googleusercontent.com/a/locked');
+
+        $provider = Mockery::mock('Laravel\Socialite\Contracts\Provider');
+        $provider->shouldReceive('user')->andReturn($abstractUser);
+
+        Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
+
+        $this->get(route('auth.google.callback'))->assertRedirect(route('register'));
+
+        $response = $this->post(route('register'), [
+            'full_name' => 'Locked Email User',
+            'username' => 'lockedemailuser',
+            'email' => 'tampered@evil.com',
+            'password' => 'SecureP@ss123',
+            'password_confirmation' => 'SecureP@ss123',
+            'google_id' => 'google-locked-email-1',
+            'terms' => '1',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertDatabaseMissing('users', ['email' => 'tampered@evil.com']);
+        $this->assertGuest();
     }
 }

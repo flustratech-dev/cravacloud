@@ -43,173 +43,6 @@
                     {{-- Payment Content --}}
                     <div class="p-6 sm:p-8">
 
-                        {{-- Lynk.id Payment --}}
-                        @if($order->payment_method === 'lynk')
-                        <div class="text-center mb-8 flex flex-col items-center justify-center">
-                            <div class="w-48 h-20 mx-auto flex items-center justify-center p-3 bg-white border border-hairline mb-5">
-                                <img src="{{ asset('images/payments/lynk.svg') }}" alt="Lynk.id Checkout" class="max-h-12 max-w-full object-contain">
-                            </div>
-
-                            <h2 class="font-display text-xl font-bold text-ink mb-2">Bayar via Lynk.id Gateway</h2>
-                            <p class="text-xs text-muted max-w-md mx-auto mb-5 leading-relaxed">
-                                Selesaikan transaksi Anda melalui gateway pembayaran resmi Lynk.id (QRIS, VA Bank, GoPay, OVO, DANA, ShopeePay, dan Kartu Debit/Kredit).
-                            </p>
-
-                            <div class="p-4 bg-creamDark/60 border border-hairline max-w-sm w-full mx-auto text-center space-y-1 mb-5">
-                                <span class="font-mono text-[10px] uppercase tracking-wider text-muted block">Total Nominal Tagihan</span>
-                                <div class="text-2xl font-bold font-mono text-electric">
-                                    Rp {{ number_format($order->amount, 0, ',', '.') }}
-                                </div>
-                            </div>
-
-                            @php
-                                $lynkCheckoutUrl = !empty($order->vpsSpec->payment_url) ? $order->vpsSpec->payment_url : null;
-                            @endphp
-
-                            @if($lynkCheckoutUrl)
-                                <div class="w-full max-w-sm mx-auto mb-5">
-                                    <a href="{{ $lynkCheckoutUrl }}" target="_blank"
-                                       class="w-full rounded-none inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-electric hover:bg-electricHover text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors">
-                                        <span>Buka Halaman Checkout Lynk.id</span>
-                                        <span>↗</span>
-                                    </a>
-                                    <p class="font-mono text-[10px] text-muted mt-2">Tautan checkout aman terbuka di tab baru</p>
-                                </div>
-                            @endif
-
-                            {{-- Cek Status Block --}}
-                            <div class="w-full max-w-sm mx-auto">
-                                <div class="p-4 border transition-colors text-center"
-                                     :class="{
-                                         'bg-creamDark/40 border-hairline': checkStatus === 'idle',
-                                         'bg-amber-50 border-amber-500 text-amber-950': checkStatus === 'pending',
-                                         'bg-emerald-50 border-emerald-600 text-emerald-950': checkStatus === 'success'
-                                     }">
-                                    <button type="button"
-                                            @click="handleCheckStatus()"
-                                            :disabled="isChecking"
-                                            class="w-full rounded-none px-5 py-3 font-mono font-bold text-xs uppercase tracking-wider text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                                            :class="checkStatus === 'success' ? 'bg-ink hover:bg-electric' : 'bg-electric hover:bg-electricHover disabled:opacity-60'">
-                                        <svg x-show="isChecking" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <span x-text="buttonText"></span>
-                                    </button>
-
-                                    <div class="mt-3 text-xs">
-                                        <template x-if="checkStatus === 'idle'">
-                                            <p class="text-muted">Setelah menyelesaikan pembayaran di Lynk.id, klik tombol di atas untuk sinkronisasi status server.</p>
-                                        </template>
-                                        <template x-if="checkStatus === 'pending'">
-                                            <div class="space-y-1.5 text-left bg-white p-3 border border-amber-400">
-                                                <div class="font-mono font-bold text-amber-900 text-xs">Status: Menunggu Pembayaran (Pending)</div>
-                                                <p class="text-[11px] text-amber-800 leading-relaxed">Webhook dari Lynk.id belum diterima. Selesaikan pembayaran di halaman Lynk.id.</p>
-                                                <div class="font-mono text-[11px] text-amber-950 pt-1 border-t border-amber-200">
-                                                    Verifikasi otomatis: <span x-text="countdownText"></span>
-                                                </div>
-                                            </div>
-                                        </template>
-                                        <template x-if="checkStatus === 'success'">
-                                            <div class="space-y-1 text-left bg-white p-3 border border-emerald-500">
-                                                <div class="font-mono font-bold text-emerald-900 text-xs">Status: Pembayaran Berhasil Diterima</div>
-                                                <p class="text-[11px] text-emerald-800">Transaksi Lynk.id terverifikasi. Mengalihkan ke dashboard...</p>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        @endif
-
-                        {{-- QRIS Payment --}}
-                        @if(in_array($order->payment_method, ['qris']))
-                        <div class="text-center mb-8 flex flex-col items-center justify-center">
-                            {{-- Crisp White QR Canvas with Solid Ink Frame for Scanner Clarity --}}
-                            <div class="qris-light-box w-72 h-72 sm:w-80 sm:h-80 mx-auto flex items-center justify-center p-4 bg-white border-2 border-ink">
-                                <img src="{{ $qrisDataUri }}" alt="QRIS Payment CravaCloud" class="max-w-full max-h-full object-contain">
-                            </div>
-
-                            <div class="mt-5 p-4 bg-creamDark/60 border border-hairline max-w-sm w-full mx-auto text-center space-y-1.5">
-                                <span class="font-mono text-[10px] uppercase tracking-wider text-muted block">Total Pembayaran Sesuai Tagihan</span>
-                                <div class="text-2xl font-bold font-mono text-electric">
-                                    Rp {{ number_format($order->amount, 0, ',', '.') }}
-                                </div>
-                                <button type="button"
-                                        @click="navigator.clipboard.writeText('{{ $order->amount }}'); showAlert('Nominal tagihan disalin: Rp {{ number_format($order->amount, 0, ',', '.') }}', { icon: 'success' })"
-                                        class="font-mono text-[11px] text-ink hover:text-electric font-bold inline-flex items-center gap-1.5 pt-1 transition-colors cursor-pointer uppercase">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                                    </svg>
-                                    <span>Salin Nominal Tagihan</span>
-                                </button>
-                            </div>
-
-                            <div class="mt-3 flex items-center justify-center gap-2">
-                                <a href="{{ $qrisDataUri }}" target="_blank" download="qris-cravacloud-order-{{ $order->id }}.svg"
-                                   class="rounded-none inline-flex items-center gap-1.5 font-mono text-xs font-bold uppercase tracking-wider px-4 py-2.5 bg-white border border-ink hover:bg-creamDark text-ink transition-colors">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                                    </svg>
-                                    <span>Unduh / Buka QRIS</span>
-                                </a>
-                            </div>
-
-                            <div class="mt-6 w-full max-w-sm mx-auto">
-                                <div class="p-4 border transition-colors text-center"
-                                     :class="{
-                                         'bg-creamDark/40 border-hairline': checkStatus === 'idle',
-                                         'bg-amber-50 border-amber-500 text-amber-950': checkStatus === 'pending',
-                                         'bg-emerald-50 border-emerald-600 text-emerald-950': checkStatus === 'success'
-                                     }">
-                                    <button type="button"
-                                            @click="handleCheckStatus()"
-                                            :disabled="isChecking"
-                                            class="w-full rounded-none px-5 py-3 font-mono font-bold text-xs uppercase tracking-wider text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                                            :class="checkStatus === 'success' ? 'bg-ink hover:bg-electric' : 'bg-electric hover:bg-electricHover disabled:opacity-60'">
-                                        <svg x-show="isChecking" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <span x-text="buttonText"></span>
-                                    </button>
-
-                                    <div class="mt-3 text-xs">
-                                        <template x-if="checkStatus === 'idle'">
-                                            <p class="text-muted">Klik tombol di atas setelah Anda menyelesaikan pembayaran QRIS melalui aplikasi e-wallet atau mobile banking.</p>
-                                        </template>
-                                        <template x-if="checkStatus === 'pending'">
-                                            <div class="space-y-1.5 text-left bg-white p-3 border border-amber-400">
-                                                <div class="font-mono font-bold text-amber-900 text-xs">Status: Menunggu Pembayaran (Pending)</div>
-                                                <p class="text-[11px] text-amber-800 leading-relaxed">Pembayaran belum terdeteksi pada sistem mutasi. Silakan selesaikan scan QRIS Anda.</p>
-                                                <div class="font-mono text-[11px] text-amber-950 pt-1 border-t border-amber-200">
-                                                    Verifikasi otomatis: <span x-text="countdownText"></span>
-                                                </div>
-                                            </div>
-                                        </template>
-                                        <template x-if="checkStatus === 'success'">
-                                            <div class="space-y-1 text-left bg-white p-3 border border-emerald-500">
-                                                <div class="font-mono font-bold text-emerald-900 text-xs">Status: Pembayaran Berhasil Diterima</div>
-                                                <p class="text-[11px] text-emerald-800">Transaksi QRIS diterima dan masuk antrean aktivasi server. Mengalihkan...</p>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="space-y-2 mt-6 text-center">
-                                <p class="font-mono text-[10px] uppercase tracking-wider text-muted">Mendukung mobile banking &amp; e-wallet</p>
-                                <div class="flex flex-wrap items-center justify-center gap-1.5 max-w-md mx-auto">
-                                    @foreach(['va_bca' => 'BCA', 'va_mandiri' => 'Mandiri', 'va_bri' => 'BRI', 'va_bni' => 'BNI', 'gopay' => 'GoPay', 'ewallet_ovo' => 'OVO', 'dana' => 'DANA', 'ewallet_shopeepay' => 'ShopeePay'] as $file => $app)
-                                        <div class="w-11 h-7 bg-white border border-hairline flex items-center justify-center p-1" title="{{ $app }}">
-                                            <img src="{{ asset('images/payments/' . $file . '.svg') }}" alt="{{ $app }}" class="max-h-4 max-w-full object-contain">
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                        @endif
-
                         {{-- Midtrans Snap Payment --}}
                         @if(!empty($isMidtrans))
                         <div class="text-center mb-8 flex flex-col items-center justify-center">
@@ -313,44 +146,6 @@
                         </div>
                         @endif
 
-                        {{-- Fallback Non-Midtrans VA Payment --}}
-                        @if(empty($isMidtrans) && in_array($order->payment_method, ['bca_va', 'mandiri_va', 'bni_va', 'bri_va']))
-                        <div class="text-center mb-8">
-                            <div class="bg-creamDark/40 border border-hairline p-6 max-w-md mx-auto">
-                                <h3 class="font-display font-bold text-lg text-ink mb-3">Virtual Account</h3>
-                                <div class="bg-white border border-ink p-4 mb-4">
-                                    <div class="font-mono text-[10px] uppercase text-muted mb-1">Nomor Virtual Account</div>
-                                    <div class="font-bold text-xl font-mono text-electric" x-text="virtualAccountNumber"></div>
-                                </div>
-                                <p class="text-xs text-muted">Transfer ke nomor Virtual Account di atas melalui ATM, mobile banking, atau internet banking.</p>
-                            </div>
-                        </div>
-                        @endif
-
-                        {{-- Fallback Non-Midtrans E-Wallet --}}
-                        @if(empty($isMidtrans) && in_array($order->payment_method, ['gopay', 'ovo', 'dana', 'shopeepay']))
-                        <div class="text-center mb-8">
-                            <div class="flex flex-col items-center">
-                                <div class="qris-light-box w-32 h-32 mb-5 bg-white border-2 border-ink flex items-center justify-center p-4">
-                                    @php
-                                        $walletImages = [
-                                            'gopay' => 'gopay.svg',
-                                            'ovo' => 'ewallet_ovo.svg',
-                                            'dana' => 'dana.svg',
-                                            'shopeepay' => 'ewallet_shopeepay.svg'
-                                        ];
-                                    @endphp
-                                    <img src="{{ asset('images/payments/' . ($walletImages[$order->payment_method] ?? 'qris.jpeg')) }}"
-                                         alt="{{ strtoupper($order->payment_method) }}"
-                                         class="max-w-full max-h-full object-contain">
-                                </div>
-                                <p class="text-xs text-muted mb-4">
-                                    Buka aplikasi {{ strtoupper($order->payment_method) }} Anda dan scan QR code atau selesaikan tagihan tersedia.
-                                </p>
-                            </div>
-                        </div>
-                        @endif
-
                         {{-- Payment Instructions --}}
                         <div class="border border-hairline p-6 mb-6 bg-creamDark/30">
                             <h3 class="font-mono text-xs font-bold uppercase tracking-wider text-ink mb-4">Instruksi Pembayaran</h3>
@@ -360,17 +155,7 @@
                                     <div>
                                         <p class="font-display font-bold text-sm text-ink mb-0.5">Lakukan pembayaran</p>
                                         <p class="text-xs text-muted">
-                                            @if($order->payment_method === 'qris')
-                                                Scan QR code menggunakan aplikasi e-wallet atau mobile banking
-                                            @elseif($order->payment_method === 'lynk')
-                                                Buka tautan checkout Lynk.id dan selesaikan pembayaran via QRIS, Virtual Account, E-Wallet, atau Kartu
-                                            @elseif(!empty($isMidtrans))
-                                                Selesaikan pembayaran melalui jendela Midtrans menggunakan GoPay, QRIS, atau Virtual Account bank pilihan Anda
-                                            @elseif(str_contains($order->payment_method, '_va'))
-                                                Transfer ke nomor Virtual Account yang ditampilkan
-                                            @else
-                                                Gunakan aplikasi {{ strtoupper($order->payment_method) }} untuk melakukan pembayaran
-                                            @endif
+                                            Selesaikan pembayaran melalui jendela Midtrans menggunakan QRIS, Virtual Account Bank, GoPay, ShopeePay, atau metode lainnya.
                                         </p>
                                     </div>
                                 </div>
@@ -559,7 +344,6 @@ function paymentGateway() {
     return {
         isProcessing: false,
         showSuccessModal: false,
-        virtualAccountNumber: this.generateVirtualAccount(),
         elapsedSeconds: {{ $elapsedSeconds }},
         checkStatus: 'idle',
         isChecking: false,
@@ -677,18 +461,6 @@ function paymentGateway() {
                 this.isChecking = false;
                 showAlert('Gagal memeriksa status pembayaran. Silakan coba beberapa saat lagi.', { icon: 'error', title: 'Terjadi Kesalahan' });
             });
-        },
-
-        generateVirtualAccount() {
-            const prefix = {
-                'bca_va': '88012',
-                'mandiri_va': '88888',
-                'bni_va': '88123',
-                'bri_va': '88234'
-            }['{{ $order->payment_method }}'] || '88000';
-
-            const random = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
-            return prefix + random;
         },
     };
 }

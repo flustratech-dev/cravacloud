@@ -184,7 +184,7 @@ class VpsSpecSeeder extends Seeder
                 'bandwidth' => 30,
                 'cost_price' => 80000,
                 'sell_price' => 115000,
-                'payment_url' => 'https://lynk.id/cravacloud/674yy1kv815m/checkout',
+                'payment_url' => null,
                 'is_active' => true,
                 'tagline' => 'Ubah terminal VPS kamu jadi mesin coding otomatis bertenaga AI kelas dunia.',
                 'target_audience' => 'Mahasiswa Teknik Informatika, backend developer, DevOps enthusiast.',
@@ -208,7 +208,7 @@ class VpsSpecSeeder extends Seeder
                 'bandwidth' => 50,
                 'cost_price' => 100000,
                 'sell_price' => 150000,
-                'payment_url' => 'https://lynk.id/cravacloud/28eqqvl88q48/checkout',
+                'payment_url' => null,
                 'is_active' => true,
                 'tagline' => 'Koding dengan asisten AI dari browser di mana saja — iPad, tablet, atau laptop kentang.',
                 'target_audience' => 'Developer freelance, pelajar mobilitas tinggi, yang tidak ingin install software berat di laptop sendiri.',
@@ -233,7 +233,7 @@ class VpsSpecSeeder extends Seeder
                 'bandwidth' => 100,
                 'cost_price' => 130000,
                 'sell_price' => 185000,
-                'payment_url' => 'https://lynk.id/cravacloud/mqgmmo5gm24m/checkout',
+                'payment_url' => null,
                 'is_active' => true,
                 'tagline' => 'Server AI mandiri dengan multi-model routing & autonomous decision making.',
                 'target_audience' => 'AI engineer, researcher, agency automation, pengguna ekosistem Hermes & Omniroute.',
@@ -257,7 +257,7 @@ class VpsSpecSeeder extends Seeder
                 'bandwidth' => 100,
                 'cost_price' => 190000,
                 'sell_price' => 265000,
-                'payment_url' => 'https://lynk.id/cravacloud/znj5501mgq7g/checkout',
+                'payment_url' => null,
                 'is_active' => true,
                 'tagline' => 'Platform AI private lengkap: buat chatbot dokumen perusahaan tanpa data bocor ke pihak luar.',
                 'target_audience' => 'Startup, UMKM, kantor konsultan, peneliti skripsi RAG/dokumen internal.',
@@ -284,7 +284,7 @@ class VpsSpecSeeder extends Seeder
                 'bandwidth' => 20,
                 'cost_price' => 60000,
                 'sell_price' => 95000,
-                'payment_url' => 'https://lynk.id/cravacloud/wdxjj1rm9104/checkout',
+                'payment_url' => null,
                 'is_active' => true,
                 'tagline' => 'Development, tugas kuliah, staging, web traffic rendah',
                 'target_audience' => 'Menampung hingga ~50–80 Koneksi Bersamaan | Database aktif ~10–20 GB',
@@ -311,7 +311,7 @@ class VpsSpecSeeder extends Seeder
                 'bandwidth' => 30,
                 'cost_price' => 90000,
                 'sell_price' => 145000,
-                'payment_url' => 'https://lynk.id/cravacloud/4k4dd20v29yz/checkout',
+                'payment_url' => null,
                 'is_active' => true,
                 'tagline' => 'Production UMKM, SaaS early stage, e-commerce',
                 'target_audience' => 'Kuat hingga ~200–350 Koneksi Bersamaan | Database aktif ~40–50 GB',
@@ -340,7 +340,7 @@ class VpsSpecSeeder extends Seeder
                 'bandwidth' => 30,
                 'cost_price' => 150000,
                 'sell_price' => 225000,
-                'payment_url' => 'https://lynk.id/cravacloud/o15vv84gw7zz/checkout',
+                'payment_url' => null,
                 'is_active' => true,
                 'tagline' => 'High-traffic SQL, Vector Search (Qdrant/Chroma), RAG',
                 'target_audience' => 'Sanggup menampung ~800–1.200+ Koneksi Bersamaan & AI Vector Search',
@@ -375,6 +375,33 @@ class VpsSpecSeeder extends Seeder
                     ])
                 );
             }
+        }
+
+        // Tencent integration Phase 2 — upstream bundle mapping (D3: only the
+        // 8 VPS packages; ai_combo & managed_db intentionally stay unmapped).
+        // Same map as migration 2026_11_19_100002, which covers existing
+        // catalogs; this pass covers fresh DBs where migrations run before
+        // seeding. Idempotent.
+        $bundleMap = [
+            'Starter XS' => ['bundle_starter_nmc_lin_med2_01', 'STARTER_BUNDLE'],
+            'Starter S' => ['bundle_starter_nmc_lin_med4_01', 'STARTER_BUNDLE'],
+            'Starter M' => ['bundle_starter_nmc_lin_med8_01', 'STARTER_BUNDLE'],
+            'Starter L' => ['bundle_starter_nmc_lin_med8_02', 'STARTER_BUNDLE'],
+            'Enterprise Pro' => ['bundle_gen_nmc_lin_lg8_01', 'GENERAL_BUNDLE'],
+            'Enterprise Max' => ['bundle_gen_nmc_lin_lg16_01', 'GENERAL_BUNDLE'],
+            'Enterprise Ultra' => ['bundle_gen_nmc_lin_2xlg16_01', 'GENERAL_BUNDLE'],
+            'Enterprise Extreme' => ['bundle_gen_nmc_lin_2xlg32_01', 'GENERAL_BUNDLE'],
+        ];
+
+        foreach ($bundleMap as $name => [$bundleId, $bundleType]) {
+            DB::table('vps_specs')
+                ->where('category', 'vps')
+                ->where('name', $name)
+                ->update([
+                    'upstream_bundle_id' => $bundleId,
+                    'upstream_bundle_type' => $bundleType,
+                    'updated_at' => now(),
+                ]);
         }
     }
 }

@@ -118,8 +118,13 @@ class AuthController extends Controller
         }
     }
 
-    public function showRegister()
+    public function showRegister(Request $request)
     {
+        if ($request->boolean('reset_google')) {
+            $request->session()->forget(['google_oauth_registration', 'google_prefill']);
+            return redirect()->route('register');
+        }
+
         return view('auth.register');
     }
 
@@ -146,6 +151,17 @@ class AuthController extends Controller
             'terms.accepted' => 'Anda wajib menyetujui Ketentuan Layanan dan Kebijakan Privasi untuk melanjutkan.',
         ]);
 
+        $oauthRegistration = $request->session()->get('google_oauth_registration');
+        if (!empty($validated['google_id']) && is_array($oauthRegistration)) {
+            if (($oauthRegistration['google_id'] ?? null) !== $validated['google_id']
+                || strtolower((string) ($oauthRegistration['email'] ?? '')) !== strtolower($validated['email'])
+            ) {
+                return back()->withInput()->withErrors([
+                    'email' => 'Alamat email harus sama dengan akun Google yang terhubung.',
+                ]);
+            }
+        }
+
         RateLimiter::hit($throttleKey, 60);
 
         $user = User::create([
@@ -156,13 +172,14 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
             'channel' => 'website',
             'google_id' => $validated['google_id'] ?? null,
-            'avatar' => $validated['avatar'] ?? null,
+            'avatar' => $validated['avatar'] ?? ($oauthRegistration['avatar'] ?? null),
         ]);
 
         $user->forceFill(['password_changed_at' => now()])->save();
 
         if (!empty($validated['google_id'])) {
             $user->markEmailAsVerified();
+            $request->session()->forget('google_oauth_registration');
         } else {
             // Kirim link verifikasi email.
             try {
@@ -174,8 +191,12 @@ class AuthController extends Controller
 
         $this->completeLogin($user, $request);
 
+        $successMessage = !empty($validated['google_id'])
+            ? 'Selamat datang di CravaCloud! Akun Google Anda telah terhubung dan email otomatis terverifikasi.'
+            : 'Selamat datang di CravaCloud! Kami sudah mengirim link verifikasi ke email Anda.';
+
         return redirect()->intended(route('dashboard.index'))
-            ->with('success', 'Selamat datang di CravaCloud! Kami sudah mengirim link verifikasi ke email Anda.');
+            ->with('success', $successMessage);
     }
 
     public function logout(Request $request)

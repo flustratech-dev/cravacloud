@@ -57,11 +57,16 @@
     <div class="bg-white p-5 border border-electric">
         <div class="flex items-start gap-3">
             <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-electric text-white shrink-0 mt-0.5">
-                Sistem Terpadu (.env)
+                Gateway Tunggal
             </span>
-            <p class="text-xs text-ink leading-relaxed">
-                Seluruh transaksi checkout CravaCloud kini diproses secara terpusat oleh <strong>Xendit Payment Gateway</strong> dengan kredensial produksi yang dikelola langsung melalui berkas <code class="font-mono bg-creamDark px-1">.env</code> server. Gateway lama lainnya telah dinonaktifkan secara otomatis.
-            </p>
+            <div class="space-y-1.5">
+                <p class="text-xs text-ink leading-relaxed">
+                    Seluruh transaksi checkout, perpanjangan, dan upgrade CravaCloud diproses melalui <strong>Midtrans Payment Gateway</strong>. Kredensial dapat diatur di panel ini atau fallback dari berkas <code class="font-mono bg-creamDark px-1">.env</code> server.
+                </p>
+                <p class="font-mono text-[11px] text-muted">
+                    Webhook Notification URL: <code class="bg-creamDark px-1.5 py-0.5 text-ink select-all">{{ url('/api/webhooks/payment') }}</code>
+                </p>
+            </div>
         </div>
     </div>
 
@@ -69,7 +74,7 @@
     <div class="bg-white border border-hairline overflow-hidden">
         <div class="px-5 py-4 border-b border-hairline">
             <h3 class="font-display font-bold text-ink text-base">Daftar Payment Gateway</h3>
-            <p class="text-xs text-muted mt-0.5">Xendit beroperasi sebagai gateway tunggal. Nilai kredensial utama dibaca dari environment (.env).</p>
+            <p class="text-xs text-muted mt-0.5">Midtrans beroperasi sebagai gateway tunggal. Kredensial yang kosong di panel otomatis membaca environment (.env).</p>
         </div>
 
         <div class="overflow-x-auto">
@@ -108,12 +113,19 @@
                             </td>
                             <td class="px-5 py-3.5">
                                 @forelse($gateway->fields() as $field => $label)
+                                    @php
+                                        $envVal = $gateway->code === 'midtrans' ? (string) config('services.midtrans.' . $field, '') : '';
+                                        $envMasked = $envVal !== '' ? (strlen($envVal) <= 8 ? str_repeat('•', strlen($envVal)) : substr($envVal, 0, 4) . str_repeat('•', 6) . substr($envVal, -2)) : null;
+                                    @endphp
                                     <div class="text-[11px]">
                                         <span class="text-muted">{{ $label }}:</span>
                                         @if($gateway->hasCredential($field))
                                             <span class="font-mono text-ink font-semibold">{{ $gateway->maskedCredential($field) }}</span>
+                                        @elseif($envMasked)
+                                            <span class="font-mono text-ink font-semibold">{{ $envMasked }}</span>
+                                            <span class="text-muted italic">(.env)</span>
                                         @else
-                                            <span class="text-muted italic">belum diisi{{ $gateway->code === 'lynk' || $gateway->code === 'midtrans' ? ' (memakai .env)' : '' }}</span>
+                                            <span class="text-muted italic">belum diisi</span>
                                         @endif
                                     </div>
                                 @empty
@@ -125,6 +137,11 @@
                                     <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-creamDark text-ink border border-ink">{{ $gateway->mode_label }}</span>
                                 @else
                                     <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-creamDark text-ink border border-hairline">{{ $gateway->mode_label }}</span>
+                                @endif
+                                @if($gateway->code === 'midtrans' && !$gateway->hasCredential('server_key') && (bool) config('services.midtrans.is_production', false) !== ($gateway->mode === 'production'))
+                                    <span class="block text-[10px] font-mono text-amber-800 mt-1">
+                                        .env = {{ config('services.midtrans.is_production') ? 'Produksi' : 'Sandbox' }}
+                                    </span>
                                 @endif
                             </td>
                             <td class="px-5 py-3.5 text-center">

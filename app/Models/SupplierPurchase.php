@@ -25,12 +25,19 @@ class SupplierPurchase extends Model
         'supplier_expires_at',
         'notes',
         'created_by',
+        // Tencent integration Phase 2 (D9: USD HPP × admin-managed rate).
+        'currency',
+        'exchange_rate',
+        'upstream_reference',
+        'metadata',
     ];
 
     protected $casts = [
         'actual_cost' => 'decimal:2',
         'purchased_at' => 'datetime',
         'supplier_expires_at' => 'datetime',
+        'exchange_rate' => 'decimal:4',
+        'metadata' => 'array',
     ];
 
     public function order()

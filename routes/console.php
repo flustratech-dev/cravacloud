@@ -107,19 +107,19 @@ Schedule::command('fulfillment:remind-admin')
     ->description('Ingatkan admin (WA + email) order lunas yang belum disetup, bertahap sampai diserahkan.');
 
 // ============================================================
-// Provisioning reconciliation (TIDAK dijadwalkan)
+// Provisioning reconciliation (Phase 4D — aktif)
 // ============================================================
-// Server dibeli retail tanpa API supplier, sehingga provider 'manual' tidak
-// bisa membaca status mesin. Menjalankan provider:reconcile tiap 15 menit
-// hanya menulis ulang setiap baris VPS tanpa manfaat, jadi tidak dijadwalkan.
-// Aktifkan kembali bila sudah ada adapter provider yang benar-benar memanggil API:
-//
-// Schedule::command('provider:reconcile')
-//     ->everyFifteenMinutes()
-//     ->timezone('Asia/Jakarta')
-//     ->withoutOverlapping()
-//     ->onOneServer()
-//     ->description('Rekonsiliasi status VPS antara database dan provider.');
+// Sejak ada adapter tencent yang benar-benar memanggil API, reconcile
+// dijalankan tiap 15 menit: sync status + IP, koreksi kuota (syncFromProvider),
+// deteksi orphan crava-* (alert, TANPA auto-terminate) dan drift masa aktif.
+// No-op penuh bila tidak ada instance non-manual, jadi deployment manual
+// murni tidak memanggil API apa pun.
+Schedule::command('provider:reconcile --auto-correct')
+    ->everyFifteenMinutes()
+    ->timezone('Asia/Jakarta')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->description('Rekonsiliasi status VPS, kuota, orphan, dan drift masa aktif (no-op tanpa instance non-manual).');
 
 // ============================================================
 // Akun tertaut: perubahan akun yang belum sampai ke CravaCloud WA Gateway
@@ -142,3 +142,20 @@ Schedule::command('orders:expire-pending')
     ->onOneServer()
     ->description('Batalkan secara otomatis order pending yang melebihi batas waktu pembayaran 24 jam.');
 
+
+// ============================================================
+// Tencent integration Phase 2 — guard read-only (Rp0)
+// ============================================================
+// Sinkronisasi kuota pool (tencent:sync-quota) sejak Phase 4D sudah menjadi
+// bagian dari provider:reconcile tiap 15 menit (syncFromProvider dipanggil di
+// sana), jadi tidak dijadwalkan terpisah lagi agar tidak dobel beban API.
+// Command-nya tetap tersedia untuk dijalankan manual kapan pun.
+
+// Watchdog saldo upstream (D9): alert WA+email bila < $20 atau < HPP order
+// pending terendah. Read-only; dedupe harian dengan eskalasi bila makin turun.
+Schedule::command('tencent:check-balance')
+    ->hourly()
+    ->timezone('Asia/Jakarta')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->description('Cek saldo upstream dan alert bila di bawah threshold (read-only).');

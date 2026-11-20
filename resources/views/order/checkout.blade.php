@@ -375,7 +375,11 @@
                             </div>
                             <div class="flex justify-between items-start gap-2">
                                 <span class="text-muted font-mono uppercase text-[11px]">Paket</span>
-                                <span class="font-display font-bold text-ink text-right" x-text="currentSpec ? currentSpec.name : 'Pilih Paket'"></span>
+                                <div class="text-right">
+                                    <span class="font-display font-bold text-ink block" x-text="currentSpec ? currentSpec.name : 'Pilih Paket'"></span>
+                                    <span x-show="currentSpec" class="font-mono text-[10px] text-muted block"
+                                          x-text="currentSpec ? (currentSpec.cpu + ' vCPU · ' + currentSpec.ram + ' GB · ' + currentSpec.disk + ' GB NVMe') : ''"></span>
+                                </div>
                             </div>
                             <div class="flex justify-between items-start gap-2">
                                 <span class="text-muted font-mono uppercase text-[11px]">Datacenter</span>
@@ -408,14 +412,15 @@
                         <div class="flex flex-wrap justify-center gap-1.5">
                             @foreach([
                                 'qris' => 'QRIS',
+                                'va_bca' => 'BCA',
                                 'va_mandiri' => 'Mandiri',
                                 'va_bri' => 'BRI',
                                 'va_bni' => 'BNI',
                                 'va_permata' => 'Permata',
                                 'va_cimb' => 'CIMB Niaga',
-                                'indomaret' => 'Indomaret',
-                                'astrapay' => 'AstraPay',
-                                'akulaku' => 'Akulaku'
+                                'gopay' => 'GoPay',
+                                'ewallet_shopeepay' => 'ShopeePay',
+                                'indomaret' => 'Indomaret'
                             ] as $file => $name)
                                 <div class="w-10 h-6 flex items-center justify-center bg-white border border-hairline px-1" title="{{ $name }}">
                                     <img src="{{ asset('images/payments/' . $file . '.svg') }}" alt="{{ $name }}" class="max-h-3.5 object-contain">
@@ -572,31 +577,31 @@ function checkoutState() {
         os: 'ubuntu2404',
         dbEngine: 'postgres',
         dbManager: 'cloudbeaver',
-        operatingSystems: {{ Js::from(\App\Models\Order::osLabels()) }},
+        operatingSystems: {{ Js::from(\App\Models\Order::checkoutOperatingSystems()) }},
+        stackSupportedOs: {{ Js::from($stackSupportedOs ?? app(\App\Services\Provisioning\Stacks\StackRegistry::class)->supportedOsMap()) }},
         paymentMethod: 'online_payment',
         selectedPaymentImage: 'qris.svg',
         paymentMethods: {
-            online_payment: { name: 'Pembayaran Otomatis Online (Instan)', image: 'qris.svg', description: 'QRIS, Mandiri VA, BNI VA, BRI VA, CIMB Niaga, Permata, Indomaret, AstraPay, Akulaku' },
-            qris: { name: 'QRIS', image: 'qris.svg', description: 'Semua e-wallet & mobile banking instan' },
-            mandiri_va: { name: 'Mandiri Virtual Account', image: 'va_mandiri.svg', description: 'Virtual Account otomatis 24 jam' },
-            bni_va: { name: 'BNI Virtual Account', image: 'va_bni.svg', description: 'Virtual Account otomatis 24 jam' },
-            bri_va: { name: 'BRI Virtual Account', image: 'va_bri.svg', description: 'Virtual Account otomatis 24 jam' },
-            cimb_va: { name: 'CIMB Niaga VA', image: 'va_cimb.svg', description: 'Virtual Account otomatis 24 jam' },
-            permata_va: { name: 'Permata Virtual Account', image: 'va_permata.svg', description: 'Virtual Account otomatis 24 jam' },
-            indomaret: { name: 'Indomaret', image: 'indomaret.svg', description: 'Bayar tunai di gerai Indomaret' },
-            astrapay: { name: 'AstraPay', image: 'astrapay.svg', description: 'Aplikasi AstraPay & Dompet Digital' },
-            akulaku: { name: 'Akulaku PayLater', image: 'akulaku.svg', description: 'Cicilan & PayLater tanpa kartu' },
-            bca_va: { name: 'BCA Virtual Account', image: 'va_bca.svg', description: 'Sedang dinonaktifkan' },
-            bsi_va: { name: 'BSI Virtual Account', image: 'va_bsi.svg', description: 'Sedang dinonaktifkan' },
-            danamon_va: { name: 'Danamon Virtual Account', image: 'va_danamon.svg', description: 'Sedang dinonaktifkan' },
-            seabank_va: { name: 'SeaBank Virtual Account', image: 'va_seabank.svg', description: 'Sedang dinonaktifkan' },
-            credit_card: { name: 'Kartu Kredit / Debit', image: 'credit_card.svg', description: 'Sedang dinonaktifkan' },
-            gopay: { name: 'GoPay', image: 'gopay.svg', description: 'Sedang dinonaktifkan' },
-            ovo: { name: 'OVO', image: 'ewallet_ovo.svg', description: 'Sedang dinonaktifkan' },
-            dana: { name: 'DANA', image: 'dana.svg', description: 'Sedang dinonaktifkan' },
-            shopeepay: { name: 'ShopeePay', image: 'ewallet_shopeepay.svg', description: 'Sedang dinonaktifkan' }
+            online_payment: { name: 'Pembayaran Otomatis Online (Midtrans)', image: 'midtrans.svg', description: 'QRIS, Virtual Account Bank (BCA, Mandiri, BNI, BRI, Permata, CIMB), GoPay, ShopeePay, Kartu Kredit' },
+            midtrans_snap: { name: 'Pembayaran Otomatis Online (Midtrans)', image: 'midtrans.svg', description: 'QRIS, Virtual Account Bank, E-Wallet, Kartu Kredit' },
+            qris: { name: 'QRIS (Midtrans)', image: 'qris.svg', description: 'Semua e-wallet & mobile banking instan via Midtrans' },
+            mandiri_va: { name: 'Mandiri Virtual Account', image: 'va_mandiri.svg', description: 'Virtual Account otomatis 24 jam via Midtrans' },
+            bni_va: { name: 'BNI Virtual Account', image: 'va_bni.svg', description: 'Virtual Account otomatis 24 jam via Midtrans' },
+            bri_va: { name: 'BRI Virtual Account', image: 'va_bri.svg', description: 'Virtual Account otomatis 24 jam via Midtrans' },
+            cimb_va: { name: 'CIMB Niaga VA', image: 'va_cimb.svg', description: 'Virtual Account otomatis 24 jam via Midtrans' },
+            permata_va: { name: 'Permata Virtual Account', image: 'va_permata.svg', description: 'Virtual Account otomatis 24 jam via Midtrans' },
+            bca_va: { name: 'BCA Virtual Account', image: 'va_bca.svg', description: 'Virtual Account otomatis 24 jam via Midtrans' },
+            bsi_va: { name: 'BSI Virtual Account', image: 'va_bsi.svg', description: 'Virtual Account otomatis 24 jam via Midtrans' },
+            danamon_va: { name: 'Danamon Virtual Account', image: 'va_danamon.svg', description: 'Virtual Account otomatis 24 jam via Midtrans' },
+            seabank_va: { name: 'SeaBank Virtual Account', image: 'va_seabank.svg', description: 'Virtual Account otomatis 24 jam via Midtrans' },
+            credit_card: { name: 'Kartu Kredit / Debit', image: 'credit_card.svg', description: 'Visa / Mastercard via Midtrans' },
+            gopay: { name: 'GoPay', image: 'gopay.svg', description: 'Pembayaran instan GoPay via Midtrans' },
+            ovo: { name: 'OVO', image: 'ewallet_ovo.svg', description: 'Dompet digital via Midtrans' },
+            dana: { name: 'DANA', image: 'dana.svg', description: 'Dompet digital via Midtrans' },
+            shopeepay: { name: 'ShopeePay', image: 'ewallet_shopeepay.svg', description: 'Pembayaran instan ShopeePay via Midtrans' },
+            indomaret: { name: 'Indomaret', image: 'indomaret.svg', description: 'Bayar tunai di gerai Indomaret via Midtrans' },
+            akulaku: { name: 'Akulaku PayLater', image: 'akulaku.svg', description: 'Cicilan & PayLater via Midtrans' }
         },
-        qrisSvgDataUri: '{{ app(\App\Services\QrisService::class)->generateDataUri($selectedSpec ? $selectedSpec->sell_price : 115000) }}',
 
         // Auth & User State
         isLoggedIn: {{ auth()->check() ? 'true' : 'false' }},
@@ -621,18 +626,6 @@ function checkoutState() {
         isLoggingIn: false,
         loginError: '',
         csrfToken: '{{ csrf_token() }}',
-
-        async refreshQris() {
-            try {
-                const res = await fetch('/qris/render?amount=' + this.totalPrice);
-                const data = await res.json();
-                if (data.svg_data_uri) {
-                    this.qrisSvgDataUri = data.svg_data_uri;
-                }
-            } catch (e) {
-                console.error('Error refreshing QRIS:', e);
-            }
-        },
 
         // Computed properties
         get selectedPaymentMethod() {
@@ -713,6 +706,23 @@ function checkoutState() {
             };
             return labels[this.controlPanel] || 'Tanpa Control Panel';
         },
+        get compatibleOperatingSystems() {
+            const all = this.operatingSystems || {};
+            if (this.isDirectCheckout) return all;
+            const allowed = this.stackSupportedOs[this.controlPanel];
+            if (!Array.isArray(allowed) || allowed.length === 0) return all;
+            const filtered = {};
+            for (const key of Object.keys(all)) {
+                if (allowed.includes(key)) filtered[key] = all[key];
+            }
+            return Object.keys(filtered).length > 0 ? filtered : all;
+        },
+        ensureCompatibleOs() {
+            const compat = this.compatibleOperatingSystems;
+            if (!compat[this.os]) {
+                this.os = compat.ubuntu2404 ? 'ubuntu2404' : Object.keys(compat)[0];
+            }
+        },
 
         applyAiPackageDefaults() {
             const spec = this.currentSpec;
@@ -792,12 +802,12 @@ function checkoutState() {
                     this.controlPanel = 'none';
                     this.stackType = 'none';
                 }
+                this.ensureCompatibleOs();
             }
 
             this.saveDraft();
 
             this.$watch('selectedSpec', () => {
-                this.refreshQris();
                 if (this.isDirectCheckout) {
                     if (this.currentSlide === 0) this.currentSlide = 1;
                     if (this.isDatabasePackage) {
@@ -810,6 +820,7 @@ function checkoutState() {
                         this.controlPanel = 'none';
                         this.stackType = 'none';
                     }
+                    this.ensureCompatibleOs();
                 }
                 this.saveDraft();
             });
@@ -818,7 +829,7 @@ function checkoutState() {
             this.$watch('provider', () => this.saveDraft());
             this.$watch('datacenter', () => this.saveDraft());
             this.$watch('os', () => this.saveDraft());
-            this.$watch('controlPanel', () => this.saveDraft());
+            this.$watch('controlPanel', () => { this.ensureCompatibleOs(); this.saveDraft(); });
             this.$watch('dbEngine', () => this.saveDraft());
             this.$watch('dbManager', () => this.saveDraft());
             this.$watch('billingCycle', () => this.saveDraft());

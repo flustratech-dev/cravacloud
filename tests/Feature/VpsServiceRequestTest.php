@@ -483,14 +483,19 @@ class VpsServiceRequestTest extends TestCase
 
     // ======================= Jadwal latar belakang =======================
 
-    public function test_unused_background_jobs_are_not_scheduled(): void
+    public function test_background_job_schedule_matches_current_policy(): void
     {
         $commands = collect(app(Schedule::class)->events())
             ->map(fn ($event) => (string) $event->command)
             ->implode("\n");
 
-        $this->assertStringNotContainsString('provider:reconcile', $commands);
+        // Phase 4D: provider:reconcile AKTIF tiap 15 menit (no-op tanpa
+        // instance non-manual). maintenance:sync tetap tidak dijadwalkan.
+        $this->assertStringContainsString('provider:reconcile', $commands);
         $this->assertStringNotContainsString('maintenance:sync', $commands);
         $this->assertStringContainsString('billing:renew', $commands);
+        // tencent:sync-quota sudah menjadi bagian provider:reconcile —
+        // tidak dijadwalkan terpisah agar tidak dobel beban API.
+        $this->assertStringNotContainsString('tencent:sync-quota', $commands);
     }
 }

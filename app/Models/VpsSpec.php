@@ -30,6 +30,9 @@ class VpsSpec extends Model
         'default_stack',
         'allowed_providers',
         'default_provider',
+        // Tencent integration (internal upstream mapping; never customer-facing).
+        'upstream_bundle_id',
+        'upstream_bundle_type',
     ];
 
     protected $casts = [
@@ -65,6 +68,16 @@ class VpsSpec extends Model
         static::deleted(function () {
             \Illuminate\Support\Facades\Cache::forget('landing.specs');
         });
+    }
+
+    /**
+     * True when this spec is mapped to a verified upstream bundle and is
+     * therefore eligible for auto-provisioning (D3: only the 8 VPS packages;
+     * ai_combo & managed_db stay unmapped/manual until repriced).
+     */
+    public function hasUpstreamMapping(): bool
+    {
+        return filled($this->upstream_bundle_id) && filled($this->upstream_bundle_type);
     }
 
     public function isAiPackage(): bool

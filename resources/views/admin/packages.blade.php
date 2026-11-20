@@ -40,7 +40,6 @@
         bandwidth: 1000,
         cost_price: 0,
         sell_price: 0,
-        payment_url: '',
         is_active: true,
         is_renewable: true,
         replacement_spec_id: ''
@@ -78,7 +77,6 @@
             bandwidth: spec.bandwidth,
             cost_price: spec.cost_price,
             sell_price: spec.sell_price,
-            payment_url: spec.payment_url || '',
             is_active: Boolean(spec.is_active),
             is_renewable: spec.is_renewable !== undefined ? Boolean(spec.is_renewable) : true,
             replacement_spec_id: spec.replacement_spec_id || ''

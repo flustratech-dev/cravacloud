@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DatacenterRegion;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
@@ -12,6 +13,10 @@ use App\Models\User;
 use App\Models\VpsSpec;
 use App\Models\WebhookEvent;
 use App\Services\OrderStateMachine;
+use App\Services\Provisioning\Exceptions\PendingOrderLimitException;
+use App\Services\Provisioning\Exceptions\QuotaExhaustedException;
+use App\Services\Provisioning\Stacks\StackRegistry;
+use App\Services\UpstreamQuotaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -42,8 +47,9 @@ class OrderController extends Controller
         $hasExplicitSpec = !empty($spec_id) || $request->has('spec_id');
         $selectedSpecId = $spec_id ?? $request->query('spec_id', $defaultSpec->id ?? 1);
         $selectedSpec = $specs->firstWhere('id', $selectedSpecId) ?? $defaultSpec;
+        $stackSupportedOs = app(StackRegistry::class)->supportedOsMap();
 
-        return view('order.checkout', compact('specs', 'selectedSpec', 'hasExplicitSpec'));
+        return view('order.checkout', compact('specs', 'selectedSpec', 'hasExplicitSpec', 'stackSupportedOs'));
     }
 
     public function quickLogin(Request $request)
@@ -136,7 +142,7 @@ class OrderController extends Controller
             'billing_cycle' => 'nullable|string|in:monthly',
             'hostname' => ['required', 'string', 'max:63', 'regex:/^[A-Za-z0-9][A-Za-z0-9-]*$/'],
             'root_password' => 'nullable|string|max:255',
-            'payment_method' => 'required|string|in:online_payment,midtrans_snap,qris,lynk,bca_va,mandiri_va,bni_va,bri_va,cimb_va,permata_va,other_va,bsi_va,danamon_va,seabank_va,credit_card,gopay,shopeepay,ovo,dana,indomaret,astrapay,akulaku',
+            'payment_method' => 'required|string|in:online_payment,midtrans_snap,qris,bca_va,mandiri_va,bni_va,bri_va,cimb_va,permata_va,other_va,bsi_va,danamon_va,seabank_va,credit_card,gopay,shopeepay,ovo,dana,indomaret,akulaku',
             'db_engine' => 'nullable|string|in:postgres,mysql,redis,mongodb,vector',
             'db_manager' => 'nullable|string|in:cloudbeaver,cli_only',
             // Guest fields if not logged in
@@ -181,8 +187,20 @@ class OrderController extends Controller
         $validated['provider'] = Order::DEFAULT_PROVIDER;
         validator($validated, [
             'datacenter_location' => [Rule::in(['indonesia', 'singapore'])],
-            'os' => [Rule::in(array_keys(Order::osLabels()))],
+            'os' => [Rule::in(array_keys(Order::checkoutOperatingSystems()))],
         ])->validate();
+
+        if (! $isAiPackage && ! $isDbPackage
+            && ! app(StackRegistry::class)->supportsOs($validated['os'], $validated['control_panel'])) {
+            $compatMessage = 'Kombinasi sistem operasi dan stack tersebut belum didukung. Silakan pilih OS yang kompatibel atau Tanpa Control Panel.';
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $compatMessage,
+                    'errors' => ['os' => [$compatMessage]],
+                ], 422);
+            }
+            return back()->withInput()->withErrors(['os' => $compatMessage]);
+        }
 
         $user = Auth::user();
 
@@ -260,9 +278,34 @@ class OrderController extends Controller
 
         $spec = VpsSpec::findOrFail($validated['vps_spec_id']);
 
+        // Tencent integration Phase 2 — quota guard (revision 1 anti-DoS).
+        // Default mode 'observe': log tanpa menolak. Mode 'enforce' (setting
+        // quota_guard_mode): tolak bila pool penuh / >2 order pending per user,
+        // dengan pesan netral + pilihan lokasi alternatif (D4, white-label).
+        try {
+            app(UpstreamQuotaService::class)->guardCheckout(
+                $spec,
+                $validated['datacenter_location'],
+                $user->id,
+            );
+        } catch (QuotaExhaustedException|PendingOrderLimitException $e) {
+            $guardMessage = $e->customerMessage();
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $guardMessage,
+                    'errors' => ['vps_spec_id' => [$guardMessage]],
+                ], 422);
+            }
+            return back()->withInput()->withErrors(['vps_spec_id' => $guardMessage]);
+        }
+
         $cycle = 'monthly';
         $netAmount = (float) $spec->sell_price;
         $setupFee = 0;
+
+        // Region upstream untuk order ini (nullable bila lokasi belum dipetakan).
+        $regionCode = UpstreamQuotaService::LOCATION_REGION[$validated['datacenter_location']] ?? null;
+        $datacenterRegion = $regionCode ? DatacenterRegion::where('code', $regionCode)->first() : null;
 
         // PHASE 2 - bukti persetujuan dicatat bersama order dalam satu transaksi.
         $termsVersion = config('legal.terms_version');
@@ -272,7 +315,7 @@ class OrderController extends Controller
         // Bungkus dalam transaction agar order + invoice + status history atomic.
         $order = DB::transaction(function () use (
             $user, $organization, $spec, $validated, $cycle, $netAmount, $setupFee,
-            $termsVersion, $termsIp, $termsAgent
+            $termsVersion, $termsIp, $termsAgent, $datacenterRegion
         ) {
             $order = Order::create([
                 'customer_id' => $user->id,
@@ -295,6 +338,7 @@ class OrderController extends Controller
                 'hostname' => strtolower($validated['hostname']),
                 'root_password' => $validated['root_password'] ?? null,
                 'datacenter_location' => $validated['datacenter_location'],
+                'datacenter_region_id' => $datacenterRegion?->id,
                 'os' => $validated['os'],
                 'billing_cycle' => $cycle,
                 'status' => 'pending',
@@ -352,33 +396,25 @@ class OrderController extends Controller
             return $order;
         });
 
-        // Simpan ID order aktif di session browser agar bisa dipulihkan saat kembali dari Lynk/gateway
+        // Simpan ID order aktif di session browser agar bisa dipulihkan saat kembali dari Midtrans
         session(['last_order_id' => $order->id]);
 
         // VPS Instance TIDAK dibuat di sini.
-        // Instance hanya dibuat oleh Admin setelah payment terkonfirmasi via webhook.
+        // Instance hanya dibuat oleh Admin/Orchestrator setelah payment terkonfirmasi via webhook.
 
         $snapToken = null;
         $snapRedirectUrl = null;
-        $xenditInvoiceUrl = null;
 
-        // Dispatch ke Gateway yang sesuai dengan metode pembayaran yang dipilih
+        // Dispatch ke Midtrans Snap (gateway tunggal)
         if (PaymentGateway::isMidtransMethod($order->payment_method)) {
             $snapResult = \App\Services\Payments\MidtransService::createSnapTransaction($order);
             if (!empty($snapResult['success'])) {
                 $snapToken = $snapResult['token'] ?? null;
                 $snapRedirectUrl = $snapResult['redirect_url'] ?? null;
             }
-        } elseif (PaymentGateway::isXenditMethod($order->payment_method) && \App\Services\Payments\XenditService::isConfigured()) {
-            $xenditResult = \App\Services\Payments\XenditService::createInvoice($order, $order->payment_method);
-            if (!empty($xenditResult['success'])) {
-                $xenditInvoiceUrl = $xenditResult['invoice_url'] ?? null;
-            }
         }
 
-        $redirectUrl = ($order->payment_method === 'lynk' && !empty($spec->payment_url))
-            ? $spec->payment_url
-            : ($xenditInvoiceUrl ?: ($snapRedirectUrl ?: route('order.payment', $order->id)));
+        $redirectUrl = $snapRedirectUrl ?: route('order.payment', $order->id);
 
         // If user explicitly chose to postpone payment and view dashboard (locked state)
         if ($request->filled('redirect_to_dashboard') && $request->input('redirect_to_dashboard') == '1') {
@@ -398,30 +434,19 @@ class OrderController extends Controller
             return response()->json([
                 'success' => true,
                 'order_id' => $order->id,
-                'invoice_url' => $xenditInvoiceUrl,
                 'snap_token' => $snapToken,
                 'snap_redirect_url' => $snapRedirectUrl,
                 'redirect_url' => $redirectUrl,
             ]);
         }
 
-        // Jika metode pembayaran Lynk dan paket memiliki payment_url, langsung alihkan ke Lynk checkout
-        if ($order->payment_method === 'lynk' && !empty($spec->payment_url)) {
-            return redirect()->away($spec->payment_url);
-        }
-
-        // Jika ada Xendit Invoice URL, langsung alihkan ke halaman invoice Xendit
-        if ($xenditInvoiceUrl) {
-            return redirect()->away($xenditInvoiceUrl);
-        }
-
-        // Jika metode Midtrans dan ada snap redirect url, alihkan langsung ke halaman pembayaran Midtrans
+        // Jika ada snap redirect url, alihkan langsung ke halaman pembayaran Midtrans
         if ($snapRedirectUrl) {
             return redirect()->away($snapRedirectUrl);
         }
 
         return redirect()->route('order.payment', $order->id)
-            ->with('info', 'Pesanan berhasil dibuat. Silakan selesaikan pembayaran sesuai metode yang Anda pilih.');
+            ->with('info', 'Pesanan berhasil dibuat. Silakan selesaikan pembayaran melalui Midtrans.');
     }
 
     public function payment($id)
@@ -432,18 +457,14 @@ class OrderController extends Controller
             abort(403);
         }
 
-        // Cek sinkronisasi real-time ke Xendit / Midtrans jika order masih pending
+        // Cek sinkronisasi real-time ke Midtrans jika order masih pending
         if (!$order->paid_at) {
             $revalidateResponse = $this->revalidatePendingOrder($order);
             if ($revalidateResponse) {
                 return $revalidateResponse;
             }
 
-            if (PaymentGateway::isXenditMethod($order->payment_method)) {
-                \App\Services\Payments\XenditService::checkAndSyncStatus($order);
-            } elseif (PaymentGateway::isMidtransMethod($order->payment_method)) {
-                \App\Services\Payments\MidtransService::checkAndSyncStatus($order);
-            }
+            \App\Services\Payments\MidtransService::checkAndSyncStatus($order);
             $order->refresh();
         }
 
@@ -452,79 +473,35 @@ class OrderController extends Controller
             return redirect()->route('order.success', $order->id);
         }
 
-        // Untuk Xendit, jika sudah ada invoice URL, langsung buka atau alihkan ke status
-        if (PaymentGateway::isXenditMethod($order->payment_method)) {
-            $tx = PaymentTransaction::where('order_id', $order->id)->where('provider', 'xendit')->latest()->first();
-            $invoiceUrl = $tx?->raw_payload['invoice_url'] ?? null;
-            if ($invoiceUrl) {
-                return redirect()->away($invoiceUrl);
-            }
-            return redirect()->route('order.payment.status', $order->id);
-        }
-
-        // Untuk metode pembayaran Midtrans, alihkan langsung ke halaman status pembayaran
+        // Untuk metode pembayaran Midtrans eksplisit, alihkan ke halaman status pembayaran
         if (PaymentGateway::isMidtransMethod($order->payment_method)) {
             return redirect()->route('order.payment.status', $order->id);
         }
 
-        $paymentMethodNames = [
-            'online_payment' => 'Pembayaran Otomatis Online (Instan)',
-            'qris' => 'QRIS Instan',
-            'indomaret' => 'Indomaret Retail',
-            'astrapay' => 'AstraPay E-Wallet',
-            'akulaku' => 'Akulaku PayLater',
-            'midtrans_snap' => 'QRIS Otomatis',
-            'lynk' => 'Lynk.id Checkout',
-            'bca_va' => 'BCA Virtual Account',
-            'bsi_va' => 'BSI Virtual Account',
-            'danamon_va' => 'Danamon Virtual Account',
-            'seabank_va' => 'SeaBank Virtual Account',
-            'credit_card' => 'Kartu Kredit / Debit',
-            'mandiri_va' => 'Mandiri Virtual Account',
-            'bni_va' => 'BNI Virtual Account',
-            'bri_va' => 'BRI Virtual Account',
-            'permata_va' => 'Permata Virtual Account',
-            'cimb_va' => 'CIMB Niaga VA',
-            'other_va' => 'Virtual Account Bank Lainnya',
-            'gopay' => 'GoPay',
-            'ovo' => 'OVO',
-            'dana' => 'DANA',
-            'shopeepay' => 'ShopeePay',
-        ];
-
         $devSimulateEnabled = config('app.env') === 'local' && (bool) config('cravacloud.dev_simulate_payment', false);
-
-        // Generate dynamic QRIS khusus nominal pesanan ini
-        $qrisService = app(\App\Services\QrisService::class);
-        $qrisDataUri = $qrisService->generateDataUri((float) $order->amount);
-        $qrisPayload = $qrisService->generatePayload((float) $order->amount);
         $elapsedSeconds = (int) max(0, now()->diffInSeconds($order->created_at));
 
-        // Integrasi Midtrans Snap
-        $isMidtrans = PaymentGateway::isMidtransMethod($order->payment_method);
+        // Integrasi Midtrans Snap (termasuk fallback order tanpa payment_method spesifik)
+        $isMidtrans = true;
         $snapToken = null;
         $snapRedirectUrl = null;
         $snapJsUrl = null;
         $snapClientKey = null;
         $snapError = null;
 
-        if ($isMidtrans) {
-            $snapResult = \App\Services\Payments\MidtransService::createSnapTransaction($order);
-            if ($snapResult['success']) {
-                $snapToken = $snapResult['token'];
-                $snapRedirectUrl = $snapResult['redirect_url'];
-            } else {
-                $snapError = $snapResult['error'] ?? 'Gagal membuat sesi pembayaran Midtrans.';
-            }
-            $snapJsUrl = \App\Services\Payments\MidtransService::getSnapJsUrl();
-            $snapClientKey = \App\Services\Payments\MidtransService::getClientKey();
+        $snapResult = \App\Services\Payments\MidtransService::createSnapTransaction($order);
+        if ($snapResult['success']) {
+            $snapToken = $snapResult['token'];
+            $snapRedirectUrl = $snapResult['redirect_url'];
+        } else {
+            $snapError = $snapResult['error'] ?? 'Gagal membuat sesi pembayaran Midtrans.';
         }
+        $snapJsUrl = \App\Services\Payments\MidtransService::getSnapJsUrl();
+        $snapClientKey = \App\Services\Payments\MidtransService::getClientKey();
 
         return view('order.payment-gateway', compact(
             'order',
             'devSimulateEnabled',
-            'qrisDataUri',
-            'qrisPayload',
             'elapsedSeconds',
             'isMidtrans',
             'snapToken',
@@ -757,7 +734,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Callback handler setelah pembayaran dari payment gateway (Lynk, Shopee, dsb).
+     * Callback handler setelah pembayaran dari payment gateway (Midtrans).
      */
     public function paymentCallback(Request $request)
     {
@@ -778,12 +755,17 @@ class OrderController extends Controller
                 $order = Order::find($orderId);
             }
 
+            // 1b. Cek prefix order_id Midtrans (CRV-123-ts / ORDER-123-ts)
+            if (!$order && preg_match('/^(?:CRV|ORDER|VX)[-_]?(\d+)(?:[-_].*)?$/i', (string) $orderId, $m)) {
+                $order = Order::find((int) $m[1]);
+            }
+
             // 2. Cek Shopee order ID
             if (!$order) {
                 $order = Order::where('shopee_order_id', $orderId)->first();
             }
 
-            // 3. Cek via PaymentTransaction (misal refId Lynk)
+            // 3. Cek via PaymentTransaction
             if (!$order) {
                 $tx = PaymentTransaction::where('provider_transaction_id', $orderId)
                     ->orWhere('provider_order_ref', $orderId)
@@ -794,7 +776,7 @@ class OrderController extends Controller
                 }
             }
 
-            // 4. Cek via WebhookEvent (misal event_id Lynk)
+            // 4. Cek via WebhookEvent
             if (!$order) {
                 $evt = WebhookEvent::where('event_id', $orderId)
                     ->whereNotNull('order_id')

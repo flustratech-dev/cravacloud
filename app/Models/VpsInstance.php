@@ -196,6 +196,8 @@ class VpsInstance extends Model
 
     protected $casts = [
         'initial_root_password' => 'encrypted',
+        // D10: legacy plaintext converted by credentials:reencrypt.
+        'db_password' => 'encrypted',
         'root_password_revealed_at' => 'datetime',
         'starts_at' => 'datetime',
         'expires_at' => 'datetime',
@@ -478,6 +480,10 @@ class VpsInstance extends Model
     /** Pilihan OS untuk reinstall, mengikuti daftar OS provider server ini. */
     public function reinstallOsOptions(): array
     {
+        if ($this->provider === 'tencent') {
+            return Order::checkoutOperatingSystems();
+        }
+
         return Order::operatingSystems()[$this->provider] ?? Order::osLabels();
     }
 

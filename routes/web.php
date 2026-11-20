@@ -11,10 +11,12 @@ use App\Http\Controllers\Admin\NotificationTemplateController as AdminTemplateCo
 use App\Http\Controllers\Admin\PaymentGatewayController as AdminPaymentGatewayController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\SupplierPurchaseController as AdminSupplierPurchaseController;
+use App\Http\Controllers\Admin\VpsActionController as AdminVpsActionController;
 use App\Http\Controllers\Admin\WebhookLogController as AdminWebhookLogController;
 use App\Http\Controllers\Admin\WhatsAppController as AdminWhatsAppController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Dashboard\VpsActionController as DashboardVpsActionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\GoogleAuthController;
@@ -26,7 +28,6 @@ use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\TwoFactorController;
 use App\Models\VpsSpec;
-use App\Services\QrisService;
 use App\Support\KatalogDokumentasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -171,15 +172,6 @@ Route::post('/order/payment/{id}/dev-simulate', [OrderController::class, 'devSim
 Route::get('/order/success/{id}', [OrderController::class, 'success'])->name('order.success');
 Route::get('/order/callback', [OrderController::class, 'paymentCallback'])->name('order.callback');
 Route::get('/payment/callback', [OrderController::class, 'paymentCallback'])->name('payment.callback');
-Route::get('/qris/render', function (Request $request, QrisService $qrisService) {
-    $amount = max(1000, (float) $request->input('amount', 80000));
-
-    return response()->json([
-        'amount' => $amount,
-        'payload' => $qrisService->generatePayload($amount),
-        'svg_data_uri' => $qrisService->generateDataUri($amount),
-    ]);
-})->name('qris.render');
 
 // Authentication Routes (PRD 12.1)
 Route::middleware('guest')->group(function () {
@@ -273,6 +265,20 @@ Route::middleware(['auth', '2fa', 'org.context'])->group(function () {
         Route::post('/vps/{id}/requests/unreachable', [DashboardController::class, 'reportUnreachable'])->middleware('permission:vps.manage')->middleware('maintenance:vps_actions')->middleware('throttle:10,1')->name('vps.report-unreachable');
         Route::post('/vps/{id}/reveal-password', [DashboardController::class, 'revealPassword'])->middleware('permission:vps.credentials')->name('vps.reveal-password');
         Route::post('/vps/{id}/renew', [DashboardController::class, 'renewVps'])->middleware('permission:vps.read')->name('vps.renew');
+
+        // Phase 5D — Day-2 self-service (hanya instance yang capable; UI manual
+        // tetap memakai tombol lama). Org-scoped di controller; rate limiter
+        // per user+instance didefinisikan di AppServiceProvider.
+        Route::get('/vps/{id}/day2/capabilities.json', [DashboardVpsActionController::class, 'capabilities'])->middleware('permission:vps.read')->name('vps.day2.capabilities');
+        Route::post('/vps/{id}/day2/power', [DashboardVpsActionController::class, 'power'])->middleware('permission:vps.manage')->middleware('maintenance:vps_actions')->middleware('throttle:vps-power')->name('vps.day2.power');
+        Route::post('/vps/{id}/day2/reset-password', [DashboardVpsActionController::class, 'resetPassword'])->middleware('permission:vps.credentials')->middleware('maintenance:vps_actions')->middleware('throttle:vps-reset-password')->name('vps.day2.reset-password');
+        Route::get('/vps/{id}/day2/console.json', [DashboardVpsActionController::class, 'console'])->middleware('permission:vps.credentials')->middleware('maintenance:vps_actions')->middleware('throttle:vps-console')->name('vps.day2.console');
+        Route::get('/vps/{id}/day2/firewall.json', [DashboardVpsActionController::class, 'firewallIndex'])->middleware('permission:vps.manage')->name('vps.day2.firewall.index');
+        Route::post('/vps/{id}/day2/firewall', [DashboardVpsActionController::class, 'firewallStore'])->middleware('permission:vps.manage')->middleware('maintenance:vps_actions')->middleware('throttle:vps-firewall')->name('vps.day2.firewall.store');
+        Route::delete('/vps/{id}/day2/firewall', [DashboardVpsActionController::class, 'firewallDestroy'])->middleware('permission:vps.manage')->middleware('maintenance:vps_actions')->middleware('throttle:vps-firewall')->name('vps.day2.firewall.destroy');
+        Route::get('/vps/{id}/day2/traffic.json', [DashboardVpsActionController::class, 'traffic'])->middleware('permission:vps.read')->name('vps.day2.traffic');
+        Route::post('/vps/{id}/day2/upgrade/preview', [DashboardVpsActionController::class, 'upgradePreview'])->middleware('permission:billing.manage')->middleware('throttle:vps-upgrade')->name('vps.day2.upgrade.preview');
+        Route::post('/vps/{id}/day2/upgrade', [DashboardVpsActionController::class, 'upgrade'])->middleware('permission:billing.manage')->middleware('maintenance:vps_actions')->middleware('throttle:vps-upgrade')->name('vps.day2.upgrade');
         Route::get('/billing', [DashboardController::class, 'billing'])->middleware('permission:billing.read')->name('billing');
         Route::post('/subscriptions/{id}/auto-renew', [DashboardController::class, 'toggleAutoRenew'])->middleware('permission:billing.read')->name('subscriptions.auto-renew');
         Route::post('/subscriptions/{id}/cancel', [DashboardController::class, 'cancelSubscription'])->middleware('permission:billing.read')->name('subscriptions.cancel');
@@ -317,6 +323,19 @@ Route::middleware(['auth', '2fa', 'org.context'])->group(function () {
         Route::post('/instances/{id}/suspend', [AdminController::class, 'suspendInstance'])->name('instances.suspend');
         Route::post('/instances/{id}/unsuspend', [AdminController::class, 'unsuspendInstance'])->name('instances.unsuspend');
         Route::post('/instances/{id}/terminate', [AdminController::class, 'terminateInstance'])->name('instances.terminate');
+
+        // Phase 5D — admin Day-2 mirror (semua tenant, jejak AdminAuditLog).
+        Route::get('/instances/{id}/day2/capabilities.json', [AdminVpsActionController::class, 'capabilities'])->name('instances.day2.capabilities');
+        Route::get('/instances/{id}/day2/status.json', [AdminVpsActionController::class, 'status'])->name('instances.day2.status');
+        Route::post('/instances/{id}/day2/power', [AdminVpsActionController::class, 'power'])->middleware('throttle:vps-power')->name('instances.day2.power');
+        Route::post('/instances/{id}/day2/reset-password', [AdminVpsActionController::class, 'resetPassword'])->middleware('throttle:vps-reset-password')->name('instances.day2.reset-password');
+        Route::get('/instances/{id}/day2/console.json', [AdminVpsActionController::class, 'console'])->middleware('throttle:vps-console')->name('instances.day2.console');
+        Route::get('/instances/{id}/day2/firewall.json', [AdminVpsActionController::class, 'firewallIndex'])->name('instances.day2.firewall.index');
+        Route::post('/instances/{id}/day2/firewall', [AdminVpsActionController::class, 'firewallStore'])->middleware('throttle:vps-firewall')->name('instances.day2.firewall.store');
+        Route::delete('/instances/{id}/day2/firewall', [AdminVpsActionController::class, 'firewallDestroy'])->middleware('throttle:vps-firewall')->name('instances.day2.firewall.destroy');
+        Route::get('/instances/{id}/day2/traffic.json', [AdminVpsActionController::class, 'traffic'])->name('instances.day2.traffic');
+        Route::post('/instances/{id}/day2/upgrade/preview', [AdminVpsActionController::class, 'upgradePreview'])->middleware('throttle:vps-upgrade')->name('instances.day2.upgrade.preview');
+        Route::post('/instances/{id}/day2/upgrade', [AdminVpsActionController::class, 'upgrade'])->middleware('throttle:vps-upgrade')->name('instances.day2.upgrade');
         Route::get('/packages', [AdminController::class, 'packages'])->name('packages.index');
         Route::post('/packages', [AdminController::class, 'storePackage'])->name('packages.store');
         Route::put('/packages/{id}', [AdminController::class, 'updatePackage'])->name('packages.update');
@@ -425,3 +444,18 @@ Route::middleware(['auth', '2fa', 'org.context'])->group(function () {
         Route::delete('/supplier-purchases/{id}', [AdminSupplierPurchaseController::class, 'destroy'])->name('supplier.destroy');
     });
 });
+
+if (app()->environment('local')) {
+    Route::get('/demo-console-placeholder', function () {
+        return response(
+            '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Demo Konsol Server</title></head>'
+            .'<body style="font-family:monospace;background:#0f172a;color:#e2e8f0;padding:2rem;">'
+            .'<h2 style="margin-top:0;">[LOCAL PREVIEW] Konsol Server (VNC)</h2>'
+            .'<p>Ini adalah placeholder lokal dari <strong>DemoTencentUiSeeder</strong> (Rp0, tanpa API eksternal).</p>'
+            .'<p>Pada server produksi, tombol "Buka Konsol" membuka sesi VNC sekali pakai yang berlaku ~15 detik.</p>'
+            .'</body></html>',
+            200,
+            ['Content-Type' => 'text/html; charset=UTF-8']
+        );
+    })->name('demo.console.placeholder');
+}

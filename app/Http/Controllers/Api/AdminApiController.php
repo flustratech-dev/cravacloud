@@ -339,6 +339,15 @@ class AdminApiController extends Controller
         $provider = Order::DEFAULT_PROVIDER;
         $datacenterLocation = $validated['datacenter_location'] ?? 'indonesia';
 
+        // Tencent Phase 2 — quota guard observe-only (jalur Shopee API;
+        // pembayaran eksternal, order tetap dicatat; enforce di reserveHard).
+        app(\App\Services\UpstreamQuotaService::class)->guardCheckout(
+            $spec,
+            $datacenterLocation,
+            $user->id,
+            canReject: false,
+        );
+
         try {
             $order = DB::transaction(function () use ($user, $organization, $spec, $validated, $provider, $datacenterLocation) {
                 $order = Order::create([

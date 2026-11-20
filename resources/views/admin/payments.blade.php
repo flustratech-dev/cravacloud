@@ -14,23 +14,23 @@
     openApprove(order) {
         this.selectedOrder = order;
         this.reference = '';
-        this.note = 'Mutasi DANA Bisnis cocok';
+        this.note = 'Pembayaran terkonfirmasi di dashboard Midtrans';
         this.approveModal = true;
     },
 
     openHold(order) {
         this.selectedOrder = order;
-        this.note = 'Mutasi belum tampak di DANA Bisnis MERCHANT, menunggu pengecekan berkala';
+        this.note = 'Status transaksi belum settled di dashboard Midtrans, menunggu pengecekan berkala';
         this.holdModal = true;
     },
 
     openReject(order) {
         this.selectedOrder = order;
-        this.rejectReason = 'Mutasi pembayaran tidak ditemukan pada akun DANA Bisnis MERCHANT';
+        this.rejectReason = 'Pembayaran tidak ditemukan pada dashboard Midtrans';
         this.rejectModal = true;
     }
 }">
-    {{-- Banner Petunjuk Verifikasi DANA Bisnis --}}
+    {{-- Banner Petunjuk Verifikasi Manual Fallback Midtrans --}}
     <div class="bg-white border border-hairline p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-start gap-3.5">
             <div class="w-10 h-10 bg-ink text-cream flex items-center justify-center shrink-0">
@@ -39,18 +39,18 @@
                 </svg>
             </div>
             <div>
-                <h2 class="font-display text-sm font-bold text-ink">Instruksi Verifikasi Mutasi DANA Bisnis</h2>
+                <h2 class="font-display text-sm font-bold text-ink">Verifikasi Pembayaran Manual (Fallback Midtrans)</h2>
                 <p class="text-xs text-muted mt-0.5 leading-relaxed">
-                    Buka aplikasi DANA Bisnis pada merchant <strong class="text-ink">MERCHANT</strong> &rarr; menu <strong class="text-ink">Riwayat Transaksi</strong>.
-                    Cocokkan nominal persis sebelum menyetujui pesanan. Sistem otomatis mengirimkan notifikasi email resmi ke pelanggan setelah disetujui atau ditolak.
+                    Halaman ini digunakan untuk pengecekan manual jika webhook <strong class="text-ink">Midtrans</strong> tertunda atau order perlu disetujui/ditolak langsung oleh admin.
+                    Cocokkan Order ID (<code class="font-mono bg-creamDark px-1">CRV-...</code>) dan nominal di Dashboard Midtrans sebelum menyetujui pesanan.
                 </p>
             </div>
         </div>
 
         <div class="shrink-0 flex items-center gap-2.5">
             <div class="px-3.5 py-2 bg-creamDark/60 border border-hairline text-xs">
-                <span class="font-mono text-muted block text-[10px] uppercase tracking-wider">Merchant DANA</span>
-                <strong class="text-ink font-mono font-bold">MERCHANT</strong>
+                <span class="font-mono text-muted block text-[10px] uppercase tracking-wider">Gateway Aktif</span>
+                <strong class="text-ink font-mono font-bold">MIDTRANS</strong>
             </div>
             <div class="px-3.5 py-2 bg-white border border-ink text-xs">
                 <span class="font-mono text-muted block text-[10px] uppercase tracking-wider">Perlu Verifikasi</span>
@@ -154,7 +154,7 @@
                                         </svg>
                                     </button>
                                 </div>
-                                <div class="font-mono text-[10px] text-muted mt-0.5">DANA: MERCHANT</div>
+                                <div class="font-mono text-[10px] text-muted mt-0.5">MIDTRANS</div>
                             </td>
 
                             <td class="px-5 py-4 whitespace-nowrap">
@@ -265,8 +265,8 @@
                                 </div>
 
                                 <div class="space-y-1.5">
-                                    <label class="font-mono text-[10px] font-bold uppercase tracking-widest text-muted block">Nomor Referensi Mutasi DANA (Opsional):</label>
-                                    <input type="text" name="reference" x-model="reference" placeholder="Contoh: DANA-20260915-XXXXX"
+                                    <label class="font-mono text-[10px] font-bold uppercase tracking-widest text-muted block">Nomor Referensi Midtrans / Mutasi (Opsional):</label>
+                                    <input type="text" name="reference" x-model="reference" placeholder="Contoh: CRV-123-XXXXX / Transaction ID"
                                            class="w-full text-xs p-2.5 border border-hairline bg-white font-mono focus:outline-none focus:border-electric">
                                 </div>
 
@@ -362,9 +362,9 @@
                             <div class="space-y-1.5">
                                 <label class="font-mono text-[10px] font-bold uppercase tracking-widest text-muted block">Pilihan Alasan Cepat:</label>
                                 <div class="flex flex-wrap gap-1.5">
-                                    <button type="button" @click="rejectReason = 'Mutasi pembayaran tidak ditemukan pada akun DANA Bisnis MERCHANT'"
+                                    <button type="button" @click="rejectReason = 'Pembayaran tidak ditemukan pada dashboard Midtrans'"
                                             class="px-2.5 py-1 bg-creamDark hover:border-ink text-ink font-mono text-[10px] border border-hairline cursor-pointer">
-                                        Mutasi Tidak Ditemukan
+                                        Transaksi Tidak Ditemukan
                                     </button>
                                     <button type="button" @click="rejectReason = 'Nominal pembayaran tidak sesuai dengan tagihan invoice'"
                                             class="px-2.5 py-1 bg-creamDark hover:border-ink text-ink font-mono text-[10px] border border-hairline cursor-pointer">

@@ -51,7 +51,7 @@ class WebhookEvent extends Model
      */
     public function isReplayable(): bool
     {
-        return $this->provider === 'lynk'
+        return $this->provider === 'midtrans'
             && $this->signature_verified
             && in_array($this->processing_status, ['received', 'failed'], true);
     }

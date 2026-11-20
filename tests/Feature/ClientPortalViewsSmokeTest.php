@@ -84,10 +84,11 @@ class ClientPortalViewsSmokeTest extends TestCase
         $recoveryRes->assertSee('Recovery codes');
         $recoveryRes->assertSee('name="_token"', false);
 
-        // Default checkout must show VPS plans only (no DB Micro / AI options in selector)
+        // Default checkout preselects default VPS plan without an in-form package selector
         $checkoutRes = $this->get(route('checkout'));
         $checkoutRes->assertOk();
-        $checkoutRes->assertSee('Starter XS —');
+        $checkoutRes->assertSee('Starter XS');
+        $checkoutRes->assertDontSee('checkout-package-spec', false);
         $checkoutRes->assertDontSee('DB Micro —');
         $checkoutRes->assertDontSee('Terminal Coding Agent —');
     }

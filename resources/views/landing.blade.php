@@ -70,7 +70,7 @@
             'name' => 'Enterprise Extreme',
             'desc' => 'Kapasitas puncak 32 GB RAM & 380 GB SSD untuk beban enterprise skala besar.',
             'cpu' => 8, 'ram' => 32, 'disk' => 380, 'bandwidth' => 50, 'quota' => '8,0 TB / bulan',
-            'price' => 2850000, 'default_stack' => 'dokploy', 'featured' => 'dark',
+            'price' => 2850000, 'default_stack' => 'dokploy', 'featured' => 'electric',
         ],
     ];
 
@@ -476,142 +476,92 @@
         </div>
 
         <!-- ================================================================= -->
-        <!-- LINI 1: CRAVACLOUD STARTER SERIES (4 PAKET)                       -->
+        <!-- LINI 1 & 2: CRAVACLOUD STARTER & ENTERPRISE SERIES                -->
         <!-- ================================================================= -->
-        <div id="pricing-starter" class="mb-14">
-            <div class="pb-4 mb-6 border-b border-hairline text-center">
-                <h3 class="font-display font-bold text-xl sm:text-2xl text-electric uppercase tracking-tight">
-                    CRAVACLOUD STARTER SERIES
-                </h3>
-            </div>
+        @php
+            $pricingSeries = [
+                [
+                    'id' => 'pricing-starter',
+                    'title' => 'CRAVACLOUD STARTER SERIES',
+                    'cards' => $starterCards,
+                    'wrapperClass' => 'mb-14',
+                ],
+                [
+                    'id' => 'pricing-enterprise',
+                    'title' => 'CRAVACLOUD ENTERPRISE SERIES',
+                    'cards' => $enterpriseCards,
+                    'wrapperClass' => '',
+                ],
+            ];
+        @endphp
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 border-t border-l border-hairline">
-                @foreach($starterCards as $plan)
-                    @php
-                        $isElectric = $plan['featured'] === 'electric';
-                        $isInactive = !$plan['is_active'];
-                    @endphp
-                    <div class="{{ $isElectric ? 'bg-electric text-white border-r border-b border-electric relative shadow-xl' : 'bg-cream hover:bg-white border-r border-b border-hairline transition-colors' }} p-7 flex flex-col">
-                        <div>
-                            @if($isInactive)
-                                <span class="inline-block mb-2 bg-amber-200 text-amber-950 font-mono font-bold px-2 py-0.5 text-[10px]">MAINTENANCE</span>
-                            @endif
+        @foreach($pricingSeries as $series)
+            <div id="{{ $series['id'] }}"@if($series['wrapperClass'] !== '') class="{{ $series['wrapperClass'] }}"@endif>
+                <div class="pb-4 mb-6 border-b border-hairline text-center">
+                    <h3 class="font-display font-bold text-xl sm:text-2xl text-electric uppercase tracking-tight">
+                        {{ $series['title'] }}
+                    </h3>
+                </div>
 
-                            <h4 class="font-display font-bold text-xl {{ $isElectric ? 'text-white' : 'text-ink' }} uppercase">
-                                {{ $plan['name'] }}
-                            </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 border-t border-l border-hairline">
+                    @foreach($series['cards'] as $plan)
+                        @php
+                            $isElectric = $plan['featured'] === 'electric';
+                            $isInactive = !$plan['is_active'];
+                        @endphp
+                        <div class="{{ $isElectric ? 'bg-electric text-white border-r border-b border-electric relative shadow-xl' : 'bg-cream hover:bg-white border-r border-b border-hairline transition-colors' }} p-7 flex flex-col">
+                            <div>
+                                @if($isInactive)
+                                    <span class="inline-block mb-2 bg-amber-200 text-amber-950 font-mono font-bold px-2 py-0.5 text-[10px]">MAINTENANCE</span>
+                                @endif
 
-                            <div class="mt-4 flex items-baseline flex-wrap gap-x-1.5">
-                                <span class="font-display font-extrabold text-2xl xl:text-[28px] tracking-tight {{ $isElectric ? 'text-white' : 'text-ink' }} whitespace-nowrap">{{ $plan['price_formatted'] }}</span>
-                                <span class="text-xs font-mono {{ $isElectric ? 'text-white/75' : 'text-muted' }}">/bulan</span>
+                                <h4 class="font-display font-bold text-xl {{ $isElectric ? 'text-white' : 'text-ink' }} uppercase">
+                                    {{ $plan['name'] }}
+                                </h4>
+
+                                <div class="mt-4 flex items-baseline flex-wrap gap-x-1.5">
+                                    <span class="font-display font-extrabold text-2xl xl:text-[28px] tracking-tight {{ $isElectric ? 'text-white' : 'text-ink' }} whitespace-nowrap">{{ $plan['price_formatted'] }}</span>
+                                    <span class="text-xs font-mono {{ $isElectric ? 'text-white/75' : 'text-muted' }}">/bulan</span>
+                                </div>
+
+                                <a href="{{ $plan['checkout_url'] }}"
+                                   class="mt-5 w-full {{ $isInactive ? 'border border-hairline bg-creamDark text-muted hover:border-ink hover:text-ink' : ($isElectric ? 'bg-white hover:bg-cream text-electric font-bold' : 'border border-ink bg-transparent hover:bg-ink hover:text-white text-ink font-semibold') }} text-xs font-mono uppercase py-3.5 px-4 flex items-center justify-between transition-colors">
+                                    <span>{{ $isInactive ? 'Sedang Pemeliharaan' : 'Pilih Paket' }}</span>
+                                    <span>↗</span>
+                                </a>
                             </div>
 
-                            <a href="{{ $plan['checkout_url'] }}"
-                               class="mt-5 w-full {{ $isInactive ? 'border border-hairline bg-creamDark text-muted hover:border-ink hover:text-ink' : ($isElectric ? 'bg-white hover:bg-cream text-electric font-bold' : 'border border-ink bg-transparent hover:bg-ink hover:text-white text-ink font-semibold') }} text-xs font-mono uppercase py-3.5 px-4 flex items-center justify-between transition-colors">
-                                <span>{{ $isInactive ? 'Sedang Pemeliharaan' : 'Pilih Paket' }}</span>
-                                <span>↗</span>
-                            </a>
+                            <ul class="mt-6 pt-6 border-t {{ $isElectric ? 'border-white/20 text-white/95' : 'border-hairline text-ink/90' }} space-y-3 text-xs font-mono">
+                                <li class="flex justify-between">
+                                    <span class="{{ $isElectric ? 'text-white/70' : 'text-muted' }}">vCPU</span>
+                                    <span class="font-bold">{{ $plan['cpu'] }} vCPU</span>
+                                </li>
+                                <li class="flex justify-between">
+                                    <span class="{{ $isElectric ? 'text-white/70' : 'text-muted' }}">RAM</span>
+                                    <span class="font-bold">{{ $plan['ram'] }} GB</span>
+                                </li>
+                                <li class="flex justify-between">
+                                    <span class="{{ $isElectric ? 'text-white/70' : 'text-muted' }}">Penyimpanan</span>
+                                    <span class="font-bold">{{ $plan['disk'] }} GB NVMe SSD</span>
+                                </li>
+                                <li class="flex justify-between">
+                                    <span class="{{ $isElectric ? 'text-white/70' : 'text-muted' }}">Network Speed</span>
+                                    <span class="font-bold">{{ $plan['bandwidth'] }} Mbps</span>
+                                </li>
+                                <li class="flex justify-between">
+                                    <span class="{{ $isElectric ? 'text-white/70' : 'text-muted' }}">Kuota Transfer</span>
+                                    <span class="font-bold">{{ $plan['quota'] }}</span>
+                                </li>
+                                <li class="flex justify-between">
+                                    <span class="{{ $isElectric ? 'text-white/70' : 'text-muted' }}">IP Publik</span>
+                                    <span class="font-bold">1x Dedicated IPv4</span>
+                                </li>
+                            </ul>
                         </div>
-
-                        <ul class="mt-6 pt-6 border-t {{ $isElectric ? 'border-white/20 text-white/95' : 'border-hairline text-ink/90' }} space-y-3 text-xs font-mono">
-                            <li class="flex justify-between">
-                                <span class="{{ $isElectric ? 'text-white/70' : 'text-muted' }}">vCPU</span>
-                                <span class="font-bold">{{ $plan['cpu'] }} vCPU</span>
-                            </li>
-                            <li class="flex justify-between">
-                                <span class="{{ $isElectric ? 'text-white/70' : 'text-muted' }}">RAM</span>
-                                <span class="font-bold">{{ $plan['ram'] }} GB</span>
-                            </li>
-                            <li class="flex justify-between">
-                                <span class="{{ $isElectric ? 'text-white/70' : 'text-muted' }}">Penyimpanan</span>
-                                <span class="font-bold">{{ $plan['disk'] }} GB NVMe SSD</span>
-                            </li>
-                            <li class="flex justify-between">
-                                <span class="{{ $isElectric ? 'text-white/70' : 'text-muted' }}">Network Speed</span>
-                                <span class="font-bold">{{ $plan['bandwidth'] }} Mbps</span>
-                            </li>
-                            <li class="flex justify-between">
-                                <span class="{{ $isElectric ? 'text-white/70' : 'text-muted' }}">Kuota Transfer</span>
-                                <span class="font-bold">{{ $plan['quota'] }}</span>
-                            </li>
-                            <li class="flex justify-between">
-                                <span class="{{ $isElectric ? 'text-white/70' : 'text-muted' }}">IP Publik</span>
-                                <span class="font-bold">1x Dedicated IPv4</span>
-                            </li>
-                        </ul>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
             </div>
-        </div>
-
-        <!-- ================================================================= -->
-        <!-- LINI 2: CRAVACLOUD ENTERPRISE SERIES (4 PAKET)                    -->
-        <!-- ================================================================= -->
-        <div id="pricing-enterprise">
-            <div class="pb-4 mb-6 border-b border-hairline text-center">
-                <h3 class="font-display font-bold text-xl sm:text-2xl text-electric uppercase tracking-tight">
-                    CRAVACLOUD ENTERPRISE SERIES
-                </h3>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 border-t border-l border-hairline">
-                @foreach($enterpriseCards as $plan)
-                    @php
-                        $isDark = $plan['featured'] === 'dark';
-                        $isInactive = !$plan['is_active'];
-                    @endphp
-                    <div class="{{ $isDark ? 'bg-ink text-cream' : 'bg-cream hover:bg-white transition-colors' }} border-r border-b border-hairline p-7 flex flex-col">
-                        <div>
-                            @if($isInactive)
-                                <span class="inline-block mb-2 bg-amber-200 text-amber-950 font-mono font-bold px-2 py-0.5 text-[10px]">MAINTENANCE</span>
-                            @endif
-
-                            <h4 class="font-display font-bold text-xl {{ $isDark ? 'text-white' : 'text-ink' }} uppercase">
-                                {{ $plan['name'] }}
-                            </h4>
-
-                            <div class="mt-4 flex items-baseline flex-wrap gap-x-1.5">
-                                <span class="font-display font-extrabold text-2xl xl:text-[28px] tracking-tight {{ $isDark ? 'text-white' : 'text-ink' }} whitespace-nowrap">{{ $plan['price_formatted'] }}</span>
-                                <span class="text-xs font-mono {{ $isDark ? 'text-cream/60' : 'text-muted' }}">/bulan</span>
-                            </div>
-
-                            <a href="{{ $plan['checkout_url'] }}"
-                               class="mt-5 w-full {{ $isInactive ? 'border border-hairline bg-creamDark text-muted' : ($isDark ? 'bg-electric hover:bg-electricHover text-white font-bold' : 'border border-ink bg-transparent hover:bg-ink hover:text-white text-ink font-semibold') }} text-xs font-mono uppercase py-3.5 px-4 flex items-center justify-between transition-colors">
-                                <span>{{ $isInactive ? 'Sedang Pemeliharaan' : 'Pilih Paket' }}</span>
-                                <span>↗</span>
-                            </a>
-                        </div>
-
-                        <ul class="mt-6 pt-6 border-t {{ $isDark ? 'border-white/15 text-cream/90' : 'border-hairline text-ink/90' }} space-y-3 text-xs font-mono">
-                            <li class="flex justify-between">
-                                <span class="{{ $isDark ? 'text-cream/60' : 'text-muted' }}">vCPU</span>
-                                <span class="font-bold">{{ $plan['cpu'] }} vCPU</span>
-                            </li>
-                            <li class="flex justify-between">
-                                <span class="{{ $isDark ? 'text-cream/60' : 'text-muted' }}">RAM</span>
-                                <span class="font-bold">{{ $plan['ram'] }} GB</span>
-                            </li>
-                            <li class="flex justify-between">
-                                <span class="{{ $isDark ? 'text-cream/60' : 'text-muted' }}">Penyimpanan</span>
-                                <span class="font-bold">{{ $plan['disk'] }} GB NVMe SSD</span>
-                            </li>
-                            <li class="flex justify-between">
-                                <span class="{{ $isDark ? 'text-cream/60' : 'text-muted' }}">Network Speed</span>
-                                <span class="font-bold">{{ $plan['bandwidth'] }} Mbps</span>
-                            </li>
-                            <li class="flex justify-between">
-                                <span class="{{ $isDark ? 'text-cream/60' : 'text-muted' }}">Kuota Transfer</span>
-                                <span class="font-bold">{{ $plan['quota'] }}</span>
-                            </li>
-                            <li class="flex justify-between">
-                                <span class="{{ $isDark ? 'text-cream/60' : 'text-muted' }}">IP Publik</span>
-                                <span class="font-bold">1x Dedicated IPv4</span>
-                            </li>
-                        </ul>
-                    </div>
-                @endforeach
-            </div>
-        </div>
+        @endforeach
 
         @if($extraSpecs->isNotEmpty())
             <div id="pricing-custom" class="mt-14">

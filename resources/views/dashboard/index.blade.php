@@ -212,7 +212,11 @@
                                         <span class="font-mono text-[11px] text-muted">Order #{{ $order->id }}</span>
                                     </div>
                                     <p class="text-[11px] text-muted leading-relaxed">
-                                        Pesanan terverifikasi. Server sedang dialokasikan dan dikonfigurasi (maksimal 1x24 jam sejak pembayaran, umumnya lebih cepat).
+                                        @if($order->latestProvisioningTask && $order->latestProvisioningTask->provider === 'tencent')
+                                            Pembayaran terverifikasi. Sistem sedang mengalokasikan server dan memasang stack secara otomatis (~2–5 menit).
+                                        @else
+                                            Pesanan terverifikasi. Server sedang dialokasikan dan dikonfigurasi (maksimal 1x24 jam sejak pembayaran, umumnya lebih cepat).
+                                        @endif
                                     </p>
                                 </div>
 
@@ -320,7 +324,7 @@
                             <div class="space-y-1.5 text-xs text-muted mb-3 pt-1">
                                 <div class="flex justify-between gap-2">
                                     <span>OS</span>
-                                    <span class="font-semibold text-ink text-right">{{ $instance->os ?? 'Ubuntu 24.04 LTS' }}</span>
+                                    <span class="font-semibold text-ink text-right">{{ $instance->os_label ?: ($instance->os ?? 'Ubuntu 24.04 LTS') }}</span>
                                 </div>
                                 <div class="flex justify-between items-center gap-2">
                                     <span>Stack / Panel</span>
@@ -352,7 +356,7 @@
                                         </div>
                                     @else
                                         <p class="text-[11px] text-muted italic">
-                                            {{ $instance->status === 'running' ? 'Tautan web sedang disiapkan tim.' : 'Layanan sedang tidak aktif. Buka detail untuk informasi lebih lanjut.' }}
+                                            {{ $instance->status === 'running' ? ($instance->provider === 'tencent' ? 'Tautan web sedang disiapkan otomatis.' : 'Tautan web sedang disiapkan tim.') : 'Layanan sedang tidak aktif. Buka detail untuk informasi lebih lanjut.' }}
                                         </p>
                                     @endif
                                 </div>

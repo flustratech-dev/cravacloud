@@ -1,20 +1,6 @@
-@php
-    $retiredLegacyNames = ['Student Basic', 'Standard', 'Premium', 'Startup', 'Business', 'Mahasiswa Basic'];
-    $availableCheckoutSpecs = $specs->filter(function ($s) use ($retiredLegacyNames, $selectedSpec) {
-        $isSelected = $selectedSpec && (int) $s->id === (int) $selectedSpec->id;
-        if ($isSelected) {
-            return true;
-        }
-        return $s->is_active
-            && !in_array($s->category, ['ai_combo', 'managed_db'], true)
-            && !in_array($s->name, $retiredLegacyNames, true);
-    });
-@endphp
-
 <div class="border border-hairline bg-white p-5 sm:p-8 space-y-8">
     <div class="border-b border-hairline pb-4 flex items-center justify-between gap-4">
         <div>
-            <span class="font-mono text-[10px] uppercase tracking-widest text-electric font-bold block mb-1">LANGKAH 01 // SPESIFIKASI &amp; STACK</span>
             <h2 class="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">Konfigurasi VPS Anda</h2>
         </div>
         <span class="w-8 h-8 bg-electric text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">01</span>
@@ -34,41 +20,11 @@
         <p class="font-mono text-[11px] text-muted mt-1.5">Gunakan huruf, angka, dan tanda hubung (`-`). Maksimal 63 karakter.</p>
     </div>
 
-    {{-- Step 2: Select Package --}}
-    <div>
-        <div class="flex items-center gap-2.5 mb-2.5">
-            <span class="w-5 h-5 bg-ink text-cream font-mono text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
-            <label for="checkout-package-spec" class="font-mono text-xs font-bold uppercase tracking-wider text-ink">Paket Layanan</label>
-        </div>
-        <select id="checkout-package-spec"
-                x-model.number="selectedSpec"
-                class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono font-semibold focus:outline-none focus:border-electric transition-colors">
-            @foreach($availableCheckoutSpecs as $spec)
-                <option value="{{ $spec->id }}">
-                    {{ $spec->name }} — {{ $spec->cpu }} vCPU / {{ $spec->ram }} GB RAM / {{ $spec->disk }} GB NVMe (Rp {{ number_format($spec->sell_price, 0, ',', '.') }}/bln){{ !$spec->is_active ? ' [Maintenance]' : '' }}
-                </option>
-            @endforeach
-        </select>
-
-        <template x-if="currentSpec">
-            <div class="mt-3 p-4 bg-creamDark/60 border border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                    <div class="font-display font-bold text-ink text-sm" x-text="currentSpec.name"></div>
-                    <div class="font-mono text-xs text-muted mt-0.5"
-                         x-text="currentSpec.cpu + ' vCPU Dedicated • ' + currentSpec.ram + ' GB RAM • ' + currentSpec.disk + ' GB NVMe SSD'"></div>
-                </div>
-                <div class="font-mono font-bold text-electric text-sm shrink-0">
-                    <span x-text="formatRupiah(totalPrice)"></span><span class="text-[11px] text-muted font-normal">/bln</span>
-                </div>
-            </div>
-        </template>
-    </div>
-
-    {{-- Step 3: Datacenter & OS --}}
+    {{-- Step 2: Datacenter & OS --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
             <div class="flex items-center gap-2.5 mb-2.5">
-                <span class="w-5 h-5 bg-ink text-cream font-mono text-[10px] font-bold flex items-center justify-center shrink-0">3A</span>
+                <span class="w-5 h-5 bg-ink text-cream font-mono text-[10px] font-bold flex items-center justify-center shrink-0">2A</span>
                 <label class="font-mono text-xs font-bold uppercase tracking-wider text-ink">Lokasi Datacenter</label>
             </div>
             <div class="grid grid-cols-2 gap-px bg-hairline border border-hairline">
@@ -89,23 +45,27 @@
 
         <div>
             <div class="flex items-center gap-2.5 mb-2.5">
-                <span class="w-5 h-5 bg-ink text-cream font-mono text-[10px] font-bold flex items-center justify-center shrink-0">3B</span>
+                <span class="w-5 h-5 bg-ink text-cream font-mono text-[10px] font-bold flex items-center justify-center shrink-0">2B</span>
                 <label for="checkout-os" class="font-mono text-xs font-bold uppercase tracking-wider text-ink">Sistem Operasi (OS)</label>
             </div>
             <select id="checkout-os"
                     x-model="os"
                     class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric transition-colors">
-                <template x-for="[key, label] in Object.entries(operatingSystems || {})" :key="key">
+                <template x-for="[key, label] in Object.entries(compatibleOperatingSystems || {})" :key="key">
                     <option :value="key" x-text="label"></option>
                 </template>
             </select>
+            <p x-show="!isDirectCheckout && Object.keys(compatibleOperatingSystems || {}).length < Object.keys(operatingSystems || {}).length"
+               class="font-mono text-[11px] text-muted mt-1.5">
+                Menampilkan OS kompatibel dengan stack <span class="text-ink font-semibold" x-text="controlPanelLabel"></span>.
+            </p>
         </div>
     </div>
 
-    {{-- Step 4: Stack Selection --}}
+    {{-- Step 3: Stack Selection --}}
     <div>
         <div class="flex items-center gap-2.5 mb-2.5">
-            <span class="w-5 h-5 bg-ink text-cream font-mono text-[10px] font-bold flex items-center justify-center shrink-0">4</span>
+            <span class="w-5 h-5 bg-ink text-cream font-mono text-[10px] font-bold flex items-center justify-center shrink-0">3</span>
             <label class="font-mono text-xs font-bold uppercase tracking-wider text-ink">1-Click Stack / Control Panel</label>
         </div>
 
@@ -134,7 +94,7 @@
                 $panels = [
                     'coolify' => ['name' => 'Coolify', 'desc' => 'Self-hosted PaaS', 'logo' => 'coolify.svg'],
                     'dokploy' => ['name' => 'Dokploy', 'desc' => 'Docker PaaS', 'logo' => 'dokploy.svg'],
-                    'aapanel' => ['name' => 'aaPanel', 'desc' => 'Lightweight web panel', 'logo' => 'aapanel.svg'],
+                    'aapanel' => ['name' => 'aaPanel', 'desc' => 'Lightweight web panel', 'logo' => 'aapanel.png'],
                     'cloudpanel' => ['name' => 'CloudPanel', 'desc' => 'PHP, Node, Python UI', 'logo' => 'cloudpanel.svg'],
                     'docker' => ['name' => 'Docker Engine', 'desc' => 'Container & Compose', 'logo' => 'docker.svg'],
                     'cyberpanel' => ['name' => 'CyberPanel', 'desc' => 'OpenLiteSpeed panel', 'logo' => 'cyberpanel.svg'],
@@ -167,7 +127,7 @@
                     'agent_zero' => ['name' => 'Agent Zero', 'desc' => 'Dynamic AI framework', 'logo' => 'agent_zero.svg'],
                     'n8n' => ['name' => 'n8n Automation', 'desc' => 'Workflow automation', 'logo' => 'n8n.svg'],
                     'ollama' => ['name' => 'Ollama', 'desc' => 'Run local LLMs', 'logo' => 'ollama.svg'],
-                    'dify_ollama' => ['name' => 'Dify + Ollama', 'desc' => 'AI RAG orchestration', 'logo' => 'ollama.svg'],
+                    'dify_ollama' => ['name' => 'Dify + Ollama', 'desc' => 'AI RAG orchestration', 'logo' => 'dify_ollama.svg'],
                     'anythingllm' => ['name' => 'AnythingLLM', 'desc' => 'Private RAG chat', 'logo' => 'anythingllm.svg'],
                     'librechat' => ['name' => 'LibreChat', 'desc' => 'Open-source AI chat', 'logo' => 'librechat.svg'],
                     'vscode_server' => ['name' => 'VS Code Server', 'desc' => 'Web-based IDE', 'logo' => 'vscode_server.svg'],
@@ -197,7 +157,7 @@
 
         {{-- Fresh OS confirmation --}}
         <div x-show="stackType === 'none'" x-transition class="p-4 bg-creamDark/60 border border-hairline text-xs text-ink/80 font-mono">
-            Server dikirim dengan clean Ubuntu/Debian OS (akses penuh `root` SSH tanpa software tambahan).
+            Server dikirim dengan OS bersih pilihan Anda tanpa software tambahan. Kredensial akses SSH penuh tersedia langsung di dashboard.
         </div>
     </div>
 </div>

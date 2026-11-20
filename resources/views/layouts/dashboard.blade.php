@@ -120,7 +120,7 @@
                 </div>
 
                 <div class="flex items-center gap-3 shrink-0">
-                    <a href="{{ route('checkout') }}"
+                    <a href="{{ route('home') }}#pricing"
                        class="hidden sm:inline-flex items-center gap-1.5 bg-electric hover:bg-electricHover text-white font-mono text-[11px] font-bold uppercase tracking-wider px-4 py-2 transition-colors">
                         <span>+ Deploy</span>
                     </a>

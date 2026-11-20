@@ -217,14 +217,14 @@ class SettingsAndMaintenanceTest extends TestCase
     }
 
     /**
-     * Ini pengaman paling kritis. Bila webhook Lynk ditolak saat maintenance,
-     * pembayaran pelanggan berpotensi hilang tanpa percobaan ulang.
+     * Ini pengaman paling kritis. Bila webhook Midtrans ditolak saat maintenance,
+     * pembayaran pelanggan berpotensi gagal tercatat.
      */
     public function test_payment_webhook_is_never_blocked_by_maintenance(): void
     {
         $this->settings()->set('maintenance_global_enabled', true, 'boolean');
 
-        $response = $this->post('/api/webhooks/lynk', ['test' => true]);
+        $response = $this->postJson('/api/webhooks/payment', ['test' => true]);
 
         $this->assertNotSame(503, $response->getStatusCode());
     }

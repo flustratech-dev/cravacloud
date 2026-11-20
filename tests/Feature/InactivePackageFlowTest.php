@@ -177,4 +177,22 @@ class InactivePackageFlowTest extends TestCase
         // Package must still remain inactive, NOT reset to true!
         $this->assertFalse($spec->fresh()->is_active);
     }
+
+    public function test_checkout_hides_package_selector_and_step_eyebrow_labels(): void
+    {
+        $spec = VpsSpec::where('category', 'vps')->where('is_active', true)->firstOrFail();
+
+        $this->get(route('checkout', $spec->id))
+            ->assertOk()
+            ->assertSee($spec->name)
+            ->assertSee('Konfigurasi VPS Anda')
+            ->assertSee('Informasi Akun')
+            ->assertSee('Metode Pembayaran')
+            ->assertDontSee('checkout-package-spec', false)
+            ->assertDontSee('LANGKAH 01 // SPESIFIKASI')
+            ->assertDontSee('LANGKAH 02 // IDENTITAS AKUN')
+            ->assertDontSee('LANGKAH 01 // IDENTITAS AKUN')
+            ->assertDontSee('LANGKAH 03 // METODE PEMBAYARAN')
+            ->assertDontSee('LANGKAH 02 // METODE PEMBAYARAN');
+    }
 }

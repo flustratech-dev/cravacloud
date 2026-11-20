@@ -71,6 +71,9 @@ class Order extends Model
         'renewal_applied_at',
         'admin_reminder_count',
         'admin_reminded_at',
+        // Tencent integration Phase 2.
+        'datacenter_region_id',
+        'metadata',
     ];
 
     protected $casts = [
@@ -88,7 +91,17 @@ class Order extends Model
         'amount' => 'decimal:2',
         'setup_fee' => 'decimal:2',
         'provisioning_attempts' => 'integer',
+        'metadata' => 'array',
+        // D10: credentials encrypted at rest. Legacy plaintext rows are
+        // converted once by `php artisan credentials:reencrypt`.
+        'root_password' => 'encrypted',
+        'db_password' => 'encrypted',
     ];
+
+    public function datacenterRegion()
+    {
+        return $this->belongsTo(DatacenterRegion::class);
+    }
 
     public function customer()
     {
@@ -153,9 +166,13 @@ class Order extends Model
             self::DEFAULT_PROVIDER => [
                 'ubuntu2404' => 'Ubuntu Server 24.04 LTS 64bit',
                 'ubuntu2204' => 'Ubuntu Server 22.04 LTS 64bit',
+                'ubuntu2604' => 'Ubuntu Server 26.04 LTS 64bit',
+                'ubuntu2004' => 'Ubuntu Server 20.04 LTS 64bit',
+                'debian13' => 'Debian 13.2 Trixie 64bit',
                 'debian12' => 'Debian 12.0 Bookworm 64bit',
-                'debian11' => 'Debian 11 Bullseye 64bit',
+                'debian11' => 'Debian 11.1 Bullseye 64bit',
                 'debian10' => 'Debian 10 Buster 64bit',
+                'rocky10' => 'Rocky Linux 10.2 64bit',
                 'rocky94' => 'Rocky Linux 9.4 64bit',
                 'centos_stream9' => 'CentOS Stream 9 64bit',
                 'centos76' => 'CentOS 7.6 64bit',
@@ -170,6 +187,31 @@ class Order extends Model
     public static function osLabels(): array
     {
         return self::operatingSystems()[self::DEFAULT_PROVIDER];
+    }
+
+    /**
+     * Katalog OS untuk CHECKOUT baru (D2): seluruh distro Linux non-EOL
+     * yang terverifikasi langsung pada DescribeBlueprints ap-jakarta & ap-singapore.
+     * osLabels() tetap lengkap agar histori order lama tetap terbaca labelnya.
+     *
+     * @return array<string, string>
+     */
+    public static function checkoutOperatingSystems(): array
+    {
+        $verified = [
+            'ubuntu2404',
+            'ubuntu2204',
+            'ubuntu2604',
+            'ubuntu2004',
+            'debian13',
+            'debian12',
+            'debian11',
+            'rocky10',
+            'rocky94',
+            'centos_stream9',
+        ];
+
+        return array_intersect_key(self::osLabels(), array_flip($verified));
     }
 
     /**
@@ -286,14 +328,19 @@ class Order extends Model
         return $paidAt->copy()->addHours(self::SETUP_SLA_HOURS)->lessThan(now());
     }
 
+    public function isUpgrade(): bool
+    {
+        return $this->order_type === 'upgrade';
+    }
+
     public function isRenewal(): bool
     {
-        return $this->order_type === 'renewal' || !empty($this->vps_instance_id);
+        return $this->order_type === 'renewal' || (!empty($this->vps_instance_id) && !$this->isUpgrade());
     }
 
     public function isNew(): bool
     {
-        return !$this->isRenewal();
+        return !$this->isRenewal() && !$this->isUpgrade();
     }
 
     public function provisioningTasks()
@@ -309,9 +356,9 @@ class Order extends Model
     public function getPaymentMethodNameAttribute(): string
     {
         $names = [
-            'lynk' => 'Lynk.id Checkout',
-            'qris' => 'QRIS Manual',
-            'midtrans_snap' => 'QRIS Otomatis',
+            'online_payment' => 'Pembayaran Online Otomatis (Midtrans)',
+            'midtrans_snap' => 'Pembayaran Online Otomatis (Midtrans)',
+            'qris' => 'QRIS Otomatis (Midtrans)',
             'mandiri_va' => 'Mandiri Virtual Account',
             'bni_va' => 'BNI Virtual Account',
             'bri_va' => 'BRI Virtual Account',
@@ -327,6 +374,8 @@ class Order extends Model
             'ovo' => 'OVO',
             'dana' => 'DANA',
             'shopeepay' => 'ShopeePay',
+            'indomaret' => 'Indomaret',
+            'akulaku' => 'Akulaku PayLater',
         ];
 
         return $names[$this->payment_method] ?? strtoupper((string) $this->payment_method);

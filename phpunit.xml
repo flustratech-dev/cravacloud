@@ -31,10 +31,9 @@
         <!-- Akun tertaut tidak pernah memanggil aplikasi seberang dari tes, walau .env lokal mengisinya. -->
         <env name="LINKED_ACCOUNTS_URL" value=""/>
         <env name="LINKED_ACCOUNTS_SECRET" value=""/>
-        <env name="XENDIT_SECRET_KEY" value=""/>
-        <env name="XENDIT_WEBHOOK_TOKEN" value=""/>
         <env name="MIDTRANS_SERVER_KEY" value=""/>
         <env name="MIDTRANS_CLIENT_KEY" value=""/>
+        <env name="MIDTRANS_IS_PRODUCTION" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>

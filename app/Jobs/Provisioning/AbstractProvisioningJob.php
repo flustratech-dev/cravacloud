@@ -68,6 +68,9 @@ abstract class AbstractProvisioningJob implements ShouldQueue
         try {
             $provider = $manager->provider($task->provider);
             $output = $this->run($provider, $task);
+            // Review patch A1: task.output is plaintext JSON — never persist
+            // credentials there. They live encrypted on the instance.
+            $output = $this->stripSensitive($output);
             $task->markSucceeded($output);
             $this->onSuccess($task->fresh(), $output);
         } catch (ProviderException $e) {
@@ -99,7 +102,29 @@ abstract class AbstractProvisioningJob implements ShouldQueue
     {
         $task = ProvisioningTask::find($this->taskId);
         if (!$task) return;
+
+        // Review patch A2: handle() already ran markFailed + onFailure for
+        // non-retryable errors before calling fail(); the queue worker then
+        // invokes failed() again. Guard so onFailure never runs twice.
+        if ($task->status === 'failed') return;
+
         $task->markFailed($e->getMessage());
         $this->onFailure($task->fresh(), $e->getMessage());
+    }
+
+    /** Remove credential keys from output before it is persisted (A1). */
+    protected function stripSensitive(array $output): array
+    {
+        foreach (['root_password', 'password', 'db_password', 'secret', 'secret_key'] as $key) {
+            unset($output[$key]);
+        }
+
+        if (isset($output['meta']) && is_array($output['meta'])) {
+            foreach (['root_password', 'password', 'db_password', 'secret', 'secret_key'] as $key) {
+                unset($output['meta'][$key]);
+            }
+        }
+
+        return $output;
     }
 }

@@ -46,7 +46,7 @@ class PaymentCallbackAndAlertTest extends TestCase
             'status' => 'paid',
             'paid_at' => now(),
             'channel' => 'website',
-            'payment_method' => 'lynk',
+            'payment_method' => 'midtrans_snap',
             'amount' => 80000,
             'currency' => 'IDR',
         ]);
@@ -74,7 +74,7 @@ class PaymentCallbackAndAlertTest extends TestCase
             'status' => 'pending',
             'paid_at' => null,
             'channel' => 'website',
-            'payment_method' => 'lynk',
+            'payment_method' => 'midtrans_snap',
             'amount' => 80000,
             'currency' => 'IDR',
         ]);
@@ -100,7 +100,7 @@ class PaymentCallbackAndAlertTest extends TestCase
             'status' => 'paid',
             'paid_at' => now(),
             'channel' => 'website',
-            'payment_method' => 'lynk',
+            'payment_method' => 'midtrans_snap',
             'amount' => 80000,
             'currency' => 'IDR',
         ]);
@@ -139,7 +139,7 @@ class PaymentCallbackAndAlertTest extends TestCase
             'status' => 'pending',
             'paid_at' => null,
             'channel' => 'website',
-            'payment_method' => 'lynk',
+            'payment_method' => 'midtrans_snap',
             'amount' => 80000,
             'currency' => 'IDR',
         ]);
@@ -152,7 +152,7 @@ class PaymentCallbackAndAlertTest extends TestCase
         $response->assertDontSee('Pembayaran Berhasil Dikonfirmasi!');
     }
 
-    public function test_payment_callback_with_lynk_ref_id_and_session_recovery(): void
+    public function test_payment_callback_with_midtrans_ref_id_and_session_recovery(): void
     {
         $order = Order::create([
             'customer_id' => $this->user->id,
@@ -162,30 +162,30 @@ class PaymentCallbackAndAlertTest extends TestCase
             'datacenter_location' => 'indonesia',
             'os' => 'ubuntu2404',
             'control_panel' => 'coolify',
-            'hostname' => 'srv-lynk-paid',
+            'hostname' => 'srv-midtrans-paid',
             'status' => 'paid',
             'paid_at' => now(),
             'channel' => 'website',
-            'payment_method' => 'lynk',
+            'payment_method' => 'midtrans_snap',
             'amount' => 1000,
             'currency' => 'IDR',
         ]);
 
         PaymentTransaction::create([
             'order_id' => $order->id,
-            'provider' => 'lynk',
-            'provider_transaction_id' => 'LYNK-TX-998877',
-            'provider_order_ref' => 'MSG-123456',
-            'payment_method' => 'lynk',
+            'provider' => 'midtrans',
+            'provider_transaction_id' => 'MID-TX-998877',
+            'provider_order_ref' => 'CRV-' . $order->id . '-123456',
+            'payment_method' => 'midtrans_snap',
             'amount' => 1000,
             'currency' => 'IDR',
             'status' => 'settled',
         ]);
 
-        // Skenario: User tidak sedang login di session browser (misal dari redirect Lynk),
+        // Skenario: User tidak sedang login di session browser (misal dari redirect Midtrans),
         // tapi browser memiliki session last_order_id
         $response = $this->withSession(['last_order_id' => $order->id])
-            ->get(route('payment.callback', ['refId' => 'LYNK-TX-998877']));
+            ->get(route('payment.callback', ['order_id' => 'CRV-' . $order->id . '-123456']));
 
         $response->assertRedirect(route('dashboard.index', [
             'payment_success' => 1,
@@ -205,11 +205,11 @@ class PaymentCallbackAndAlertTest extends TestCase
             'datacenter_location' => 'indonesia',
             'os' => 'ubuntu2404',
             'control_panel' => 'coolify',
-            'hostname' => 'srv-lynk-session',
+            'hostname' => 'srv-midtrans-session',
             'status' => 'paid',
             'paid_at' => now(),
             'channel' => 'website',
-            'payment_method' => 'lynk',
+            'payment_method' => 'midtrans_snap',
             'amount' => 1000,
             'currency' => 'IDR',
         ]);
@@ -239,7 +239,7 @@ class PaymentCallbackAndAlertTest extends TestCase
             'status' => 'pending',
             'paid_at' => null,
             'channel' => 'website',
-            'payment_method' => 'lynk',
+            'payment_method' => 'midtrans_snap',
             'amount' => 1000,
             'currency' => 'IDR',
         ]);

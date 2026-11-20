@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Models\VpsSpec;
 use App\Notifications\PaymentReceivedNotification;
 use App\Notifications\PaymentRejectedNotification;
-use App\Services\QrisService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -39,29 +38,6 @@ class PaymentVerificationTest extends TestCase
         $this->spec = VpsSpec::where('is_active', true)->first();
     }
 
-    public function test_qris_service_generates_valid_dynamic_payload_and_data_uri(): void
-    {
-        $service = app(QrisService::class);
-
-        $payload80k = $service->generatePayload(80000);
-        $this->assertStringContainsString('010212', $payload80k);
-        $this->assertStringContainsString('540580000', $payload80k);
-        $this->assertStringContainsString('5909MERCHANT', $payload80k);
-        $this->assertStringEndsWith('6304071A', $payload80k);
-
-        $svgUri = $service->generateDataUri(80000);
-        $this->assertStringStartsWith('data:image/svg+xml;base64,', $svgUri);
-    }
-
-    public function test_public_qris_render_endpoint(): void
-    {
-        $response = $this->getJson(route('qris.render', ['amount' => 110000]));
-
-        $response->assertStatus(200);
-        $response->assertJsonStructure(['amount', 'payload', 'svg_data_uri']);
-        $this->assertStringContainsString('5406110000', $response->json('payload'));
-    }
-
     public function test_admin_can_view_payments_page(): void
     {
         $order = Order::create([
@@ -83,7 +59,7 @@ class PaymentVerificationTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Verifikasi Pembayaran');
-        $response->assertSee('MERCHANT');
+        $response->assertSee('MIDTRANS');
         $response->assertSee('Rp 80.000');
     }
 

@@ -46,6 +46,17 @@ class PaymentCompletionService
                 }
             }
 
+            // Phase 5C: upgrade order paid → apply the bundle upgrade upstream.
+            // isUpgrade() is excluded from isRenewal()/isNew() so it never gets
+            // misrouted into the renewal or new-provision flows.
+            if ($order->isUpgrade()) {
+                try {
+                    app(UpgradeService::class)->handleUpgradePayment($order);
+                } catch (\Throwable $e) {
+                    Log::error('payment_completion.upgrade_failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+                }
+            }
+
             $claimed = Order::whereKey($order->id)
                 ->whereNull('paid_notified_at')
                 ->update(['paid_notified_at' => now()]);
@@ -61,6 +72,20 @@ class PaymentCompletionService
             // Order Shopee sudah punya notifikasi admin sendiri (AdminShopeeOrderNotification).
             if ($order->channel !== 'shopee') {
                 $this->adminAlerts->orderPaid($order);
+            }
+
+            // Phase 3 (D13 canary): auto-provisioning hanya jalan bila gate
+            // mengizinkan (default OFF → alur manual tidak berubah sedikit pun).
+            // Kegagalan di sini tidak boleh mengganggu penyelesaian pembayaran.
+            if ($order->isNew()) {
+                try {
+                    app(\App\Services\Provisioning\ProvisioningOrchestrator::class)->maybeAutoProvision($order);
+                } catch (\Throwable $e) {
+                    Log::error('payment_completion.auto_provision_failed', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
         } catch (\Throwable $e) {
             Log::error('payment_completion.failed', ['order_id' => $orderId, 'error' => $e->getMessage()]);

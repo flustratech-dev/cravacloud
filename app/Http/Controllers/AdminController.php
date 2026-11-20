@@ -34,7 +34,8 @@ class AdminController extends Controller
     public function __construct(
         protected OrderStateMachine $orderStateMachine,
         protected VpsStateMachine $vpsStateMachine,
-        protected ReportExportService $reportExportService
+        protected ReportExportService $reportExportService,
+        protected \App\Services\Provisioning\VpsLifecycleDispatcher $lifecycle
     ) {
     }
 
@@ -99,7 +100,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Menu Verifikasi Pembayaran (Cek Mutasi DANA Bisnis MERCHANT).
+     * Menu Verifikasi Pembayaran Manual (Fallback Midtrans).
      */
     public function payments(Request $request)
     {
@@ -137,7 +138,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Setujui Pembayaran (Admin telah mencocokkan mutasi DANA Bisnis MERCHANT).
+     * Setujui Pembayaran Manual (Fallback Midtrans oleh Admin).
      */
     public function approvePayment(Request $request, $id)
     {
@@ -157,18 +158,17 @@ class AdminController extends Controller
                 $tx = PaymentTransaction::create([
                     'order_id' => $order->id,
                     'invoice_id' => $order->invoice?->id,
-                    'provider' => 'qris_manual',
-                    'provider_transaction_id' => 'DANA-MUTASI-' . Str::upper(Str::random(10)),
-                    'provider_order_ref' => 'ORDER-' . $order->id,
-                    'payment_method' => $order->payment_method ?? 'qris',
+                    'provider' => 'manual_admin',
+                    'provider_transaction_id' => 'MANUAL-' . Str::upper(Str::random(10)),
+                    'provider_order_ref' => 'CRV-' . $order->id,
+                    'payment_method' => $order->payment_method ?? 'midtrans_snap',
                     'amount' => $order->amount,
                     'currency' => 'IDR',
                     'status' => 'settled',
                     'settled_at' => now(),
                     'raw_payload' => [
-                        'account_name' => 'MERCHANT',
                         'reference' => $validated['reference'] ?? null,
-                        'note' => $validated['note'] ?? 'Mutasi DANA Bisnis diverifikasi oleh admin',
+                        'note' => $validated['note'] ?? 'Pembayaran diverifikasi manual oleh admin',
                         'admin_user_id' => Auth::id(),
                     ],
                 ]);
@@ -177,7 +177,7 @@ class AdminController extends Controller
                     $order,
                     'paid',
                     [
-                        'reason' => 'Admin verifikasi pembayaran: mutasi DANA Bisnis MERCHANT cocok. ' . ($validated['note'] ?? ''),
+                        'reason' => 'Admin verifikasi pembayaran manual. ' . ($validated['note'] ?? ''),
                         'actor_type' => 'admin',
                         'metadata' => [
                             'reference' => $validated['reference'] ?? null,
@@ -221,7 +221,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Tahan / Pending Catatan Mutasi (Admin masih menunggu mutasi muncul di DANA Bisnis).
+     * Tahan / Pending Catatan Verifikasi (Admin masih menunggu konfirmasi Midtrans).
      */
     public function holdPayment(Request $request, $id)
     {
@@ -804,6 +804,16 @@ class AdminController extends Controller
             ? Str::slug($validated['hostname'])
             : ('vps-' . Str::slug($user->username));
 
+        // Tencent Phase 2 — quota guard observe-only untuk jalur Shopee:
+        // pembayaran sudah terjadi di marketplace, order wajib tetap dicatat.
+        // Penegakan keras ada di reserveHard() saat paid (blueprint §2.4).
+        app(\App\Services\UpstreamQuotaService::class)->guardCheckout(
+            $spec,
+            $datacenterLocation,
+            $user->id,
+            canReject: false,
+        );
+
         // Semua dalam satu transaction: create order pending, transisi pending->paid,
         // catat payment_transactions, dan faktur.
         try {
@@ -1181,7 +1191,18 @@ class AdminController extends Controller
             ->take(15)
             ->get();
 
-        return view('admin.instances', compact('instances', 'recentLogs', 'statusCounts', 'categoryCounts', 'category', 'status', 'search'));
+        // Phase 5F: Day-2 capability map for the admin mirror (only capable
+        // auto-provisioned instances get the panel; manual rows stay unchanged).
+        $day2Service = app(\App\Services\Provisioning\VpsDay2Service::class);
+        $day2Caps = [];
+        foreach ($instances as $instance) {
+            $caps = $day2Service->capabilities($instance);
+            if (!empty($caps['capable'])) {
+                $day2Caps[$instance->id] = $caps;
+            }
+        }
+
+        return view('admin.instances', compact('instances', 'recentLogs', 'statusCounts', 'categoryCounts', 'category', 'status', 'search', 'day2Caps'));
     }
 
     public function monitoring()
@@ -1193,7 +1214,20 @@ class AdminController extends Controller
             ->whereNotNull('sla_due_at')->where('sla_due_at', '<', now())->whereNull('first_response_at')->latest('sla_due_at')->get();
         $recentTransitions = VpsStatusHistory::with('vpsInstance')->latest('created_at')->take(25)->get();
 
-        return view('admin.monitoring', compact('statusCounts', 'problemInstances', 'staleProvisioning', 'slaBreaches', 'recentTransitions'));
+        // Phase 5F — admin-only upstream widgets.
+        // Quota pool: pure DB read. Balance: read the CACHE only (no live
+        // Billing call on page load — keeps the page safe offline / Rp0).
+        $quotaPools = \App\Models\UpstreamQuotaPool::orderBy('region_code')->orderBy('bundle_type')->get();
+        $rawBalance = \Illuminate\Support\Facades\Cache::get('tencent:balance');
+        $balanceDivisor = max(1, (int) config('services.tencent.balance_divisor', 100));
+        $balanceUsd = $rawBalance === null ? null : round((float) $rawBalance / $balanceDivisor, 2);
+        $balanceThreshold = (float) config('services.tencent.low_balance_usd', 20);
+        $quotaGuardMode = app(\App\Services\SettingsService::class)->get('quota_guard_mode', 'observe');
+
+        return view('admin.monitoring', compact(
+            'statusCounts', 'problemInstances', 'staleProvisioning', 'slaBreaches', 'recentTransitions',
+            'quotaPools', 'balanceUsd', 'balanceThreshold', 'quotaGuardMode'
+        ));
     }
 
     public function reports(Request $request)
@@ -1401,6 +1435,24 @@ class AdminController extends Controller
         $instance = VpsInstance::findOrFail($id);
         $reason = $request->input('reason', 'Penangguhan layanan oleh Administrator.');
 
+        // Phase 4C (tencent): matikan upstream dulu via StopVpsJob; status
+        // suspended di-set setelah job sukses. Alur manual tidak berubah.
+        if ($this->lifecycle->supports($instance)) {
+            try {
+                $this->lifecycle->suspend($instance, $reason);
+                $instance->refresh()->logActivity(
+                    action: 'suspend',
+                    description: "VPS ditangguhkan oleh Administrator (stop upstream diproses). Alasan: {$reason}",
+                    status: 'pending',
+                    userId: Auth::id()
+                );
+            } catch (\Throwable $e) {
+                return back()->with('error', 'Gagal suspend: ' . $e->getMessage());
+            }
+
+            return back()->with('success', "VPS {$instance->hostname} sedang ditangguhkan (server dimatikan di upstream terlebih dahulu).");
+        }
+
         try {
             $this->vpsStateMachine->transition($instance, 'suspended', [
                 'reason' => $reason,
@@ -1425,6 +1477,25 @@ class AdminController extends Controller
         $instance = VpsInstance::findOrFail($id);
         $reason = $request->input('reason', 'Penangguhan dicabut oleh Administrator.');
 
+        // Phase 4C (tencent): STOPPED → StartVpsJob; SHUTDOWN (recycle bin)
+        // → RenewVpsJob (satu-satunya jalur pemulihan, Revisi 4). Status
+        // running di-set setelah job sukses. Alur manual tidak berubah.
+        if ($this->lifecycle->supports($instance)) {
+            try {
+                $this->lifecycle->unsuspend($instance, $reason);
+                $instance->refresh()->logActivity(
+                    action: 'unsuspend',
+                    description: "Penangguhan VPS dicabut oleh Administrator (pemulihan upstream diproses).",
+                    status: 'pending',
+                    userId: Auth::id()
+                );
+            } catch (\Throwable $e) {
+                return back()->with('error', 'Gagal unsuspend: ' . $e->getMessage());
+            }
+
+            return back()->with('success', "Penangguhan VPS {$instance->hostname} sedang dicabut (server diaktifkan kembali di upstream).");
+        }
+
         try {
             $this->vpsStateMachine->transition($instance, 'running', [
                 'reason' => $reason,
@@ -1448,6 +1519,26 @@ class AdminController extends Controller
     {
         $instance = VpsInstance::with('order')->findOrFail($id);
         $reason = $request->input('reason', 'Terminasi permanen oleh Administrator.');
+
+        // Phase 4C (tencent): destroy upstream 2 tahap via DestroyVpsJob;
+        // kuota dilepas + VPS/order → terminated SETELAH job sukses, supaya
+        // DB tidak pernah mengklaim terminated padahal upstream masih ada.
+        // Alur manual tidak berubah.
+        if ($this->lifecycle->supports($instance)) {
+            try {
+                $this->lifecycle->destroy($instance, $reason);
+                $instance->refresh()->logActivity(
+                    action: 'terminate',
+                    description: "Terminasi permanen oleh Administrator (destroy upstream diproses). Alasan: {$reason}",
+                    status: 'pending',
+                    userId: Auth::id()
+                );
+            } catch (\Throwable $e) {
+                return back()->with('error', 'Gagal terminate: ' . $e->getMessage());
+            }
+
+            return back()->with('success', "VPS {$instance->hostname} sedang di-terminasi (penghapusan upstream diproses aman dua tahap).");
+        }
 
         try {
             DB::transaction(function () use ($instance, $reason) {
@@ -1744,16 +1835,6 @@ class AdminController extends Controller
      */
     public function storePackage(Request $request)
     {
-        if ($request->filled('payment_url')) {
-            $url = trim((string) $request->input('payment_url'));
-            if (!preg_match('~^https?://~i', $url)) {
-                $url = 'https://' . $url;
-            }
-            $request->merge(['payment_url' => $url]);
-        } elseif ($request->has('payment_url')) {
-            $request->merge(['payment_url' => null]);
-        }
-
         $validated = $request->validate([
             'name' => 'required|string|max:100|unique:vps_specs,name',
             'category' => 'nullable|string|in:vps,ai_combo,managed_db',
@@ -1772,7 +1853,6 @@ class AdminController extends Controller
             'bandwidth' => 'required|integer|min:1|max:10000',
             'cost_price' => 'required|numeric|min:0',
             'sell_price' => 'required|numeric|min:0',
-            'payment_url' => 'nullable|url|max:500',
             'is_active' => 'nullable|boolean',
             'is_renewable' => 'nullable|boolean',
             'replacement_spec_id' => 'nullable|integer|exists:vps_specs,id',
@@ -1805,16 +1885,6 @@ class AdminController extends Controller
     {
         $spec = VpsSpec::findOrFail($id);
 
-        if ($request->filled('payment_url')) {
-            $url = trim((string) $request->input('payment_url'));
-            if (!preg_match('~^https?://~i', $url)) {
-                $url = 'https://' . $url;
-            }
-            $request->merge(['payment_url' => $url]);
-        } elseif ($request->has('payment_url')) {
-            $request->merge(['payment_url' => null]);
-        }
-
         $validated = $request->validate([
             'name' => 'required|string|max:100|unique:vps_specs,name,' . $spec->id,
             'category' => 'nullable|string|in:vps,ai_combo,managed_db',
@@ -1833,7 +1903,6 @@ class AdminController extends Controller
             'bandwidth' => 'required|integer|min:1|max:10000',
             'cost_price' => 'required|numeric|min:0',
             'sell_price' => 'required|numeric|min:0',
-            'payment_url' => 'nullable|url|max:500',
             'is_active' => 'nullable|boolean',
             'is_renewable' => 'nullable|boolean',
             'replacement_spec_id' => 'nullable|integer|exists:vps_specs,id',

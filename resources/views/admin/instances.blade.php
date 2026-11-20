@@ -1,6 +1,9 @@
 @extends('layouts.admin', ['title' => 'Server Instances', 'headerTitle' => 'Manajemen Server & Cloud Instances', 'backUrl' => route('admin.index'), 'backLabel' => 'Kembali ke Dashboard Admin'])
 
 @section('content')
+@if(!empty($day2Caps))
+    @include('dashboard.partials.day2-panel-script')
+@endif
 <div class="space-y-6">
     <!-- Stat Summary Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-hairline border border-hairline">
@@ -263,6 +266,18 @@
                                 </form>
                             </td>
                         </tr>
+                        @if(!empty($day2Caps[$instance->id]))
+                        <tr class="bg-creamDark/30">
+                            <td colspan="7" class="px-5 py-3">
+                                <details class="text-[11px]">
+                                    <summary class="cursor-pointer font-mono font-bold uppercase text-electric hover:text-ink">Kontrol Day-2 (admin) — {{ $instance->hostname ?? $instance->id }}</summary>
+                                    <div class="mt-3">
+                                        @include('dashboard.partials.day2-panel', ['day2Context' => 'admin', 'vps' => $instance, 'day2' => $day2Caps[$instance->id]])
+                                    </div>
+                                </details>
+                            </td>
+                        </tr>
+                        @endif
                     @empty
                         <tr>
                             <td colspan="7" class="px-5 py-10 text-center text-muted font-mono text-xs">

@@ -4,6 +4,7 @@ namespace App\Services\Provisioning;
 
 use App\Services\Provisioning\Contracts\VpsProviderContract;
 use App\Services\Provisioning\Providers\ManualProvider;
+use App\Services\Provisioning\Providers\TencentLighthouseProvider;
 use Illuminate\Support\Manager;
 
 /**
@@ -25,6 +26,17 @@ class ProviderManager extends Manager
     }
 
     /**
+     * Tencent Lighthouse driver (internal name 'tencent'). Auto-wired via
+     * container: LighthouseClient/TatClient/BalanceGuard are singletons in
+     * ProvisioningServiceProvider; StackInstallerService/StackRegistry are
+     * plain classes.
+     */
+    public function createTencentDriver(): VpsProviderContract
+    {
+        return $this->container->make(TencentLighthouseProvider::class);
+    }
+
+    /**
      * Resolve provider by name. Kalau tidak dikenal, fallback ke manual.
      */
     public function provider(?string $name = null): VpsProviderContract
@@ -33,6 +45,12 @@ class ProviderManager extends Manager
             return $this->driver($name);
         } catch (\Throwable $e) {
             // Fallback aman: jangan sampai crash job hanya karena config typo.
+            // Logged so a silently-downgraded 'tencent' resolution is visible.
+            \Illuminate\Support\Facades\Log::warning('provisioning.provider_fallback_manual', [
+                'requested' => $name ?? $this->getDefaultDriver(),
+                'error' => $e->getMessage(),
+            ]);
+
             return $this->createManualDriver();
         }
     }

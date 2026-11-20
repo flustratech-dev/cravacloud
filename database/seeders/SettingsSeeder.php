@@ -67,6 +67,26 @@ class SettingsSeeder extends Seeder
     protected function defaults(): array
     {
         return [
+            // ---------- Tencent integration Phase 2 (guard & rollout, D13) ----------
+            // firstOrCreate: nilai yang sudah diubah admin tidak ditimpa.
+            'quota_guard_mode' => [
+                'value' => 'observe', 'type' => 'string', 'group' => 'provisioning',
+                'label' => 'Mode Guard Kuota Upstream', 'is_public' => false, 'sort_order' => 90,
+            ],
+            'provisioning_auto_enabled' => [
+                'value' => false, 'type' => 'boolean', 'group' => 'provisioning',
+                'label' => 'Auto-Provisioning Aktif', 'is_public' => false, 'sort_order' => 91,
+            ],
+            'provisioning_auto_spec_whitelist' => [
+                'value' => [], 'type' => 'json', 'group' => 'provisioning',
+                'label' => 'Whitelist Spec Auto-Provisioning', 'is_public' => false, 'sort_order' => 92,
+            ],
+            // ---------- Tencent integration Phase 3 (D9: kurs HPP USD→IDR) ----------
+            'tencent_usd_idr' => [
+                'value' => 16500, 'type' => 'integer', 'group' => 'provisioning',
+                'label' => 'Kurs USD ke IDR (HPP Upstream)', 'is_public' => false, 'sort_order' => 93,
+            ],
+
             // ---------- Identitas Merek ----------
             'brand_name' => [
                 'value' => 'CravaCloud', 'type' => 'string', 'group' => 'brand',

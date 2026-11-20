@@ -12,7 +12,7 @@ use App\Notifications\AdminNewPaidOrderNotification;
 use App\Notifications\PaymentReceivedNotification;
 use App\Notifications\VpsProvisionedNotification;
 use App\Notifications\VpsSshUsernameChangedNotification;
-use App\Services\Payments\XenditService;
+use App\Services\Payments\MidtransService;
 use App\Services\RenewalService;
 use App\Services\SettingsService;
 use Database\Seeders\DatabaseSeeder;
@@ -47,8 +47,9 @@ class PaymentCompletionAndSshAccessTest extends TestCase
             'whatsapp.enabled' => true,
             'whatsapp.key' => 'test-key',
             'whatsapp.url' => 'https://wa.test',
-            'services.xendit.secret_key' => 'xnd_test_secret',
-            'services.xendit.webhook_token' => 'tok_test',
+            'services.midtrans.server_key' => 'SB-Mid-server-test-completion',
+            'services.midtrans.client_key' => 'SB-Mid-client-test-completion',
+            'services.midtrans.is_production' => false,
         ]);
 
         app(SettingsService::class)->setMany([
@@ -59,7 +60,14 @@ class PaymentCompletionAndSshAccessTest extends TestCase
         \App\Support\MailIdentity::flushCache();
 
         Http::fake([
-            'https://api.xendit.co/*' => Http::response(['status' => 'PAID'], 200),
+            'https://api.sandbox.midtrans.com/v2/*/status' => Http::response([
+                'status_code' => '200',
+                'transaction_status' => 'settlement',
+                'fraud_status' => 'accept',
+                'transaction_id' => 'mid_tx_sync',
+                'payment_type' => 'qris',
+                'gross_amount' => '150000.00',
+            ], 200),
             '*' => Http::response(['success' => true], 200),
         ]);
     }
@@ -92,7 +100,7 @@ class PaymentCompletionAndSshAccessTest extends TestCase
         return VpsSpec::where('category', 'vps')->first() ?? VpsSpec::first();
     }
 
-    private function pendingXenditOrder(User $customer, array $attrs = []): Order
+    private function pendingMidtransOrder(User $customer, array $attrs = []): Order
     {
         $spec = $this->spec();
 
@@ -114,9 +122,9 @@ class PaymentCompletionAndSshAccessTest extends TestCase
 
         PaymentTransaction::create([
             'order_id' => $order->id,
-            'provider' => 'xendit',
-            'provider_transaction_id' => 'inv_' . $order->id,
-            'provider_order_ref' => 'VH-ORD-' . $order->id,
+            'provider' => 'midtrans',
+            'provider_transaction_id' => 'mid_tx_' . $order->id,
+            'provider_order_ref' => 'CRV-' . $order->id,
             'payment_method' => 'online_payment',
             'amount' => 150000,
             'currency' => 'IDR',
@@ -147,16 +155,23 @@ class PaymentCompletionAndSshAccessTest extends TestCase
         ], $attrs));
     }
 
-    private function xenditWebhook(Order $order)
+    private function midtransWebhook(Order $order)
     {
-        return $this->withHeaders(['x-callback-token' => 'tok_test'])
-            ->postJson('/api/payment/xendit/webhook', [
-                'id' => 'inv_' . $order->id,
-                'external_id' => 'VH-ORD-' . $order->id,
-                'status' => 'PAID',
-                'amount' => 150000,
-                'payment_channel' => 'QRIS',
-            ]);
+        $orderId = 'CRV-' . $order->id;
+        $statusCode = '200';
+        $grossAmount = '150000.00';
+        $signature = hash('sha512', $orderId . $statusCode . $grossAmount . 'SB-Mid-server-test-completion');
+
+        return $this->postJson('/api/webhooks/payment', [
+            'order_id' => $orderId,
+            'status_code' => $statusCode,
+            'gross_amount' => $grossAmount,
+            'signature_key' => $signature,
+            'transaction_status' => 'settlement',
+            'fraud_status' => 'accept',
+            'transaction_id' => 'mid_tx_' . $order->id,
+            'payment_type' => 'qris',
+        ]);
     }
 
     private function adminWhatsAppMessages(): array
@@ -180,13 +195,14 @@ class PaymentCompletionAndSshAccessTest extends TestCase
 
     // ===================== 1. Titik pusat "setelah lunas" =====================
 
-    public function test_xendit_page_sync_before_webhook_still_notifies_once(): void
+    public function test_midtrans_page_sync_before_webhook_still_notifies_once(): void
     {
         $customer = $this->customer();
-        $order = $this->pendingXenditOrder($customer);
+        $order = $this->pendingMidtransOrder($customer);
 
         // Pelanggan kembali ke halaman order lebih dulu daripada webhook.
-        $this->assertTrue(XenditService::checkAndSyncStatus($order));
+        $res = MidtransService::checkAndSyncStatus($order);
+        $this->assertTrue((bool) ($res['success'] ?? false));
 
         $order->refresh();
         $this->assertSame('paid', $order->status);
@@ -200,20 +216,20 @@ class PaymentCompletionAndSshAccessTest extends TestCase
         $this->assertStringContainsString("#{$order->id}", $this->adminWhatsAppMessages()[0]);
 
         // Webhook tiba belakangan: tidak boleh mengirim ulang.
-        $this->xenditWebhook($order)->assertOk();
+        $this->midtransWebhook($order)->assertOk();
 
         Notification::assertSentToTimes($customer, PaymentReceivedNotification::class, 1);
         $this->assertSame(1, $this->adminMailCount(AdminNewPaidOrderNotification::class));
         $this->assertCount(1, $this->adminWhatsAppMessages());
     }
 
-    public function test_xendit_webhook_first_notifies_once(): void
+    public function test_midtrans_webhook_first_notifies_once(): void
     {
         $customer = $this->customer();
-        $order = $this->pendingXenditOrder($customer);
+        $order = $this->pendingMidtransOrder($customer);
 
-        $this->xenditWebhook($order)->assertOk();
-        $this->xenditWebhook($order)->assertOk(); // retry dari Xendit
+        $this->midtransWebhook($order)->assertOk();
+        $this->midtransWebhook($order)->assertOk(); // retry dari Midtrans
 
         $this->assertSame('paid', $order->fresh()->status);
         Notification::assertSentToTimes($customer, PaymentReceivedNotification::class, 1);
@@ -224,7 +240,7 @@ class PaymentCompletionAndSshAccessTest extends TestCase
     public function test_admin_mark_paid_sends_single_customer_email(): void
     {
         $customer = $this->customer();
-        $order = $this->pendingXenditOrder($customer, ['payment_method' => 'qris']);
+        $order = $this->pendingMidtransOrder($customer, ['payment_method' => 'qris']);
 
         $this->actingAs($this->admin())
             ->post(route('admin.orders.mark-paid', $order->id), ['note' => 'cek mutasi'])
@@ -239,12 +255,12 @@ class PaymentCompletionAndSshAccessTest extends TestCase
         $customer = $this->customer();
         $expires = now()->addDays(5)->startOfMinute();
         $vps = $this->runningVps($customer, ['expires_at' => $expires]);
-        $order = $this->pendingXenditOrder($customer, [
+        $order = $this->pendingMidtransOrder($customer, [
             'order_type' => 'renewal',
             'vps_instance_id' => $vps->id,
         ]);
 
-        XenditService::checkAndSyncStatus($order);
+        MidtransService::checkAndSyncStatus($order);
 
         $expected = $expires->copy()->addMonth();
         $this->assertTrue($vps->fresh()->expires_at->equalTo($expected));
@@ -252,7 +268,7 @@ class PaymentCompletionAndSshAccessTest extends TestCase
         $this->assertSame('active', $order->fresh()->status);
 
         // Webhook belakangan + panggilan ulang langsung: tidak boleh menambah lagi.
-        $this->xenditWebhook($order)->assertOk();
+        $this->midtransWebhook($order)->assertOk();
         app(RenewalService::class)->handleRenewalPayment($order->fresh());
 
         $this->assertTrue($vps->fresh()->expires_at->equalTo($expected));
@@ -271,7 +287,7 @@ class PaymentCompletionAndSshAccessTest extends TestCase
         $vps = $this->runningVps($customer, ['expires_at' => $expires]);
 
         // Kondisi data production yang rusak: lunas, tapi masa aktif belum ditambah.
-        $order = $this->pendingXenditOrder($customer, ['order_type' => 'renewal', 'vps_instance_id' => $vps->id]);
+        $order = $this->pendingMidtransOrder($customer, ['order_type' => 'renewal', 'vps_instance_id' => $vps->id]);
         Order::whereKey($order->id)->update(['status' => 'paid', 'paid_at' => now(), 'paid_notified_at' => now()]);
 
         $this->artisan('renewal:repair')->expectsOutputToContain('Ditemukan 1')->assertSuccessful();
@@ -289,8 +305,8 @@ class PaymentCompletionAndSshAccessTest extends TestCase
     public function test_admin_reminders_escalate_until_order_delivered(): void
     {
         $customer = $this->customer();
-        $order = $this->pendingXenditOrder($customer);
-        XenditService::checkAndSyncStatus($order);
+        $order = $this->pendingMidtransOrder($customer);
+        MidtransService::checkAndSyncStatus($order);
         $this->assertCount(1, $this->adminWhatsAppMessages()); // notifikasi lunas
 
         $reminders = fn () => collect($this->adminWhatsAppMessages())
@@ -411,8 +427,8 @@ class PaymentCompletionAndSshAccessTest extends TestCase
     public function test_admin_provision_with_custom_ssh_username_flows_to_customer(): void
     {
         $customer = $this->customer();
-        $order = $this->pendingXenditOrder($customer);
-        XenditService::checkAndSyncStatus($order);
+        $order = $this->pendingMidtransOrder($customer);
+        MidtransService::checkAndSyncStatus($order);
 
         $this->actingAs($this->admin())
             ->post(route('admin.orders.provision', $order->id), [
@@ -447,8 +463,8 @@ class PaymentCompletionAndSshAccessTest extends TestCase
     public function test_admin_provision_without_username_uses_root_and_rejects_invalid(): void
     {
         $customer = $this->customer();
-        $order = $this->pendingXenditOrder($customer);
-        XenditService::checkAndSyncStatus($order);
+        $order = $this->pendingMidtransOrder($customer);
+        MidtransService::checkAndSyncStatus($order);
 
         $this->actingAs($this->admin())
             ->post(route('admin.orders.provision', $order->id), [
@@ -516,8 +532,8 @@ class PaymentCompletionAndSshAccessTest extends TestCase
     public function test_late_activation_keeps_active_period_from_payment_time(): void
     {
         $customer = $this->customer();
-        $order = $this->pendingXenditOrder($customer);
-        XenditService::checkAndSyncStatus($order);
+        $order = $this->pendingMidtransOrder($customer);
+        MidtransService::checkAndSyncStatus($order);
         $paidAt = $order->fresh()->paid_at->copy();
 
         // Admin baru setup ±22 jam kemudian.
@@ -580,7 +596,7 @@ class PaymentCompletionAndSshAccessTest extends TestCase
         $vps = $this->runningVps($customer, ['expires_at' => now()->subDays(2)]);
         $paidAt = now()->subDay()->startOfMinute();
 
-        $order = $this->pendingXenditOrder($customer, ['order_type' => 'renewal', 'vps_instance_id' => $vps->id]);
+        $order = $this->pendingMidtransOrder($customer, ['order_type' => 'renewal', 'vps_instance_id' => $vps->id]);
         Order::whereKey($order->id)->update(['status' => 'paid', 'paid_at' => $paidAt, 'paid_notified_at' => now()]);
 
         $this->artisan('renewal:repair --apply')->assertSuccessful();
@@ -591,8 +607,8 @@ class PaymentCompletionAndSshAccessTest extends TestCase
     public function test_activation_after_sla_counts_from_handover_as_compensation(): void
     {
         $customer = $this->customer();
-        $order = $this->pendingXenditOrder($customer);
-        XenditService::checkAndSyncStatus($order);
+        $order = $this->pendingMidtransOrder($customer);
+        MidtransService::checkAndSyncStatus($order);
 
         $this->travel(30)->hours(); // lewat SLA 24 jam
         $handover = now()->copy();
@@ -621,9 +637,9 @@ class PaymentCompletionAndSshAccessTest extends TestCase
             'vps_instance_id' => $vps->id, 'supplier' => 'sumopod', 'supplier_order_no' => 'SP-' . uniqid(), 'actual_cost' => 50000,
             'purchased_at' => now(), 'supplier_expires_at' => now()->addMonths(2),
         ]);
-        $order = $this->pendingXenditOrder($customer, ['order_type' => 'renewal', 'vps_instance_id' => $vps->id]);
+        $order = $this->pendingMidtransOrder($customer, ['order_type' => 'renewal', 'vps_instance_id' => $vps->id]);
 
-        XenditService::checkAndSyncStatus($order);
+        MidtransService::checkAndSyncStatus($order);
 
         $messages = $this->adminWhatsAppMessages();
         $this->assertCount(1, $messages);

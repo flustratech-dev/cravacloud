@@ -3,18 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Concerns\LogsAdminAudit;
+use App\Http\Controllers\Api\PaymentWebhookController;
 use App\Http\Controllers\Controller;
 use App\Models\WebhookEvent;
-use App\Services\Payments\LynkPaymentProcessor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * PHASE 4 - Riwayat webhook dan proses ulang.
- *
- * Proses ulang memakai LynkPaymentProcessor yang sama dengan webhook asli,
- * dari payload yang tersimpan, tanpa meminta Lynk mengirim ulang.
+ * Riwayat webhook Midtrans dan proses ulang event gagal.
  *
  * Tiga pengaman:
  *   1. Hanya event bertanda tangan sah yang boleh diproses ulang
@@ -63,7 +60,7 @@ class WebhookLogController extends Controller
         ]);
     }
 
-    public function replay(int $id, LynkPaymentProcessor $processor)
+    public function replay(int $id, PaymentWebhookController $webhookController)
     {
         $event = WebhookEvent::findOrFail($id);
 
@@ -88,7 +85,7 @@ class WebhookLogController extends Controller
                 'replayed_by' => Auth::id(),
             ]);
 
-            $result = $processor->process($event->fresh());
+            $result = $webhookController->replayEvent($event->fresh());
         } finally {
             $lock->release();
         }

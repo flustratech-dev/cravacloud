@@ -39,7 +39,7 @@ class DashboardProvisioningCardTest extends TestCase
             'control_panel' => 'coolify',
             'billing_cycle' => 'monthly',
             'hostname' => 'cv-srv-testing',
-            'payment_method' => 'lynk',
+            'payment_method' => 'online_payment',
             'channel' => 'website',
             'amount' => 1000,
             'status' => 'paid',

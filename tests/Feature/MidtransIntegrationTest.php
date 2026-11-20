@@ -80,6 +80,106 @@ class MidtransIntegrationTest extends TestCase
         $this->assertTrue($result['success']);
         $this->assertSame('mock-snap-token-xyz', $result['token']);
         $this->assertSame('https://app.sandbox.midtrans.com/snap/v2/vtweb/mock-snap-token-xyz', $result['redirect_url']);
+        $this->assertStringStartsWith('CRV-' . $order->id . '-', $result['midtrans_order_id']);
+    }
+
+    public function test_online_payment_checkout_routes_to_midtrans_without_channel_lock(): void
+    {
+        $customer = $this->customer();
+        $spec = VpsSpec::where('is_active', true)->first();
+
+        $gw = PaymentGateway::where('code', 'midtrans')->first();
+        $gw->update([
+            'is_active' => true,
+            'mode' => 'sandbox',
+            'credentials' => [
+                'server_key' => 'SB-Mid-server-test12345',
+                'client_key' => 'SB-Mid-client-test12345',
+            ],
+        ]);
+
+        Http::fake([
+            'https://app.sandbox.midtrans.com/snap/v1/transactions' => Http::response([
+                'token' => 'snap-online-token-001',
+                'redirect_url' => 'https://app.sandbox.midtrans.com/snap/v2/vtweb/snap-online-token-001',
+            ], 201),
+        ]);
+
+        $response = $this->actingAs($customer)->postJson('/checkout', [
+            'vps_spec_id' => $spec->id,
+            'control_panel' => 'none',
+            'provider' => 'cravacloud',
+            'datacenter_location' => 'singapore',
+            'os' => 'ubuntu2404',
+            'hostname' => 'cv-online-midtrans',
+            'root_password' => 'RahasiaKuat123',
+            'payment_method' => 'online_payment',
+            'terms_accepted' => 1,
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'snap_token' => 'snap-online-token-001',
+                'snap_redirect_url' => 'https://app.sandbox.midtrans.com/snap/v2/vtweb/snap-online-token-001',
+            ]);
+
+        Http::assertSent(function ($req) {
+            $body = $req->data();
+
+            return str_starts_with($body['transaction_details']['order_id'] ?? '', 'CRV-')
+                && !array_key_exists('enabled_payments', $body)
+                && !$req->hasHeader('X-Append-Notification');
+        });
+    }
+
+    public function test_midtrans_webhook_handles_crv_prefixed_order_id(): void
+    {
+        $customer = $this->customer();
+        $spec = VpsSpec::first();
+
+        $order = Order::create([
+            'customer_id' => $customer->id,
+            'organization_id' => $customer->current_organization_id,
+            'vps_spec_id' => $spec->id,
+            'control_panel' => 'dokploy',
+            'provider' => 'cravacloud',
+            'hostname' => 'vps-webhook-crv',
+            'datacenter_location' => 'singapore',
+            'os' => 'ubuntu2404',
+            'status' => 'pending',
+            'channel' => 'website',
+            'payment_method' => 'online_payment',
+            'amount' => 150000,
+        ]);
+
+        $serverKey = 'Mid-server-prod-test-key';
+        PaymentGateway::where('code', 'midtrans')->first()->update([
+            'is_active' => true,
+            'mode' => 'production',
+            'credentials' => [
+                'server_key' => $serverKey,
+                'client_key' => 'Mid-client-prod-test-key',
+            ],
+        ]);
+
+        $orderIdParam = "CRV-{$order->id}-" . time();
+        $statusCode = '200';
+        $grossAmount = '150000.00';
+        $signature = hash('sha512', $orderIdParam . $statusCode . $grossAmount . $serverKey);
+
+        $this->postJson('/api/webhooks/payment', [
+            'order_id' => $orderIdParam,
+            'status_code' => $statusCode,
+            'gross_amount' => $grossAmount,
+            'signature_key' => $signature,
+            'transaction_status' => 'settlement',
+            'payment_type' => 'qris',
+            'transaction_id' => 'TXN-MIDTRANS-CRV-1',
+        ])->assertStatus(200)->assertJson(['success' => true]);
+
+        $this->assertSame('paid', $order->fresh()->status);
+        $this->assertNotNull($order->fresh()->paid_at);
     }
 
     public function test_midtrans_webhook_handles_prefixed_and_timestamped_order_id(): void

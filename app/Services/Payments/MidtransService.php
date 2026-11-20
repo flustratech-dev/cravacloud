@@ -70,7 +70,7 @@ class MidtransService
     /**
      * Mapping payment method kode internal CravaCloud ke enabled_payments Midtrans.
      */
-    public static function mapEnabledPayment(string $method): ?array
+    public static function mapEnabledPayment(?string $method): ?array
     {
         return match ($method) {
             'mandiri_va' => ['echannel'],
@@ -79,9 +79,18 @@ class MidtransService
             'permata_va' => ['permata_va'],
             'cimb_va' => ['cimb_va'],
             'other_va' => ['other_va', 'permata_va'],
+            'bca_va' => ['bca_va'],
+            'bsi_va' => ['bsi_va'],
+            'danamon_va' => ['danamon_va'],
+            'seabank_va' => ['seabank_va'],
+            'credit_card' => ['credit_card'],
             'gopay' => ['gopay'],
-            'midtrans_snap' => ['qris', 'other_qris', 'gopay'],
-            default => null, // null berarti tidak membatasi (Midtrans menampilkan semua channel aktif)
+            'shopeepay' => ['shopeepay'],
+            'indomaret' => ['indomaret'],
+            'akulaku' => ['akulaku'],
+            'qris' => ['qris', 'other_qris', 'gopay'],
+            'online_payment', 'midtrans_snap', null, '' => null, // tampilkan seluruh channel aktif di akun Midtrans
+            default => null,
         };
     }
 
@@ -121,8 +130,9 @@ class MidtransService
         }
 
         // 2. Format Order ID unik untuk Midtrans
-        // Gunakan timestamp agar pesanan yang diulang tidak ditolak oleh Midtrans dengan error "duplicate order_id"
-        $midtransOrderId = 'ORDER-' . $order->id . '-' . time();
+        // Prefix CRV- membedakan transaksi CravaCloud dari aplikasi lain pada akun Midtrans yang sama.
+        // Timestamp mencegah error "duplicate order_id" saat pelanggan mengulang checkout.
+        $midtransOrderId = 'CRV-' . $order->id . '-' . time();
         $grossAmount = (int) round($order->amount);
 
         // 3. Susun data customer
@@ -179,7 +189,6 @@ class MidtransService
             try {
                 $webhookUrl = route('api.webhooks.payment');
                 if (filter_var($webhookUrl, FILTER_VALIDATE_URL) && !str_contains($webhookUrl, 'localhost') && !str_contains($webhookUrl, '127.0.0.1')) {
-                    $snapHeaders['X-Append-Notification'] = $webhookUrl;
                     $snapHeaders['X-Override-Notification'] = $webhookUrl;
                 }
             } catch (\Throwable) {
@@ -297,6 +306,7 @@ class MidtransService
                 $orderRefs[] = $tx->provider_order_ref;
             }
         }
+        $orderRefs[] = 'CRV-' . $order->id;
         $orderRefs[] = 'ORDER-' . $order->id;
 
         $orderRefs = array_unique(array_filter($orderRefs));

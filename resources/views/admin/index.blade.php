@@ -97,7 +97,7 @@
                         </div>
                         <div>
                             <span class="font-display font-bold text-ink block">Website Direct</span>
-                            <span class="text-muted text-[11px]">Midtrans SNAP &amp; QRIS</span>
+                            <span class="text-muted text-[11px]">Midtrans Snap</span>
                         </div>
                     </div>
                     <span class="font-mono font-bold text-ink">{{ $orders_web }} Order</span>

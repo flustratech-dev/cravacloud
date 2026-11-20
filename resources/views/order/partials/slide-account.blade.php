@@ -1,8 +1,6 @@
 <div class="border border-hairline bg-white p-5 sm:p-8 space-y-6">
     <div class="border-b border-hairline pb-4 flex items-center justify-between gap-4">
         <div>
-            <span class="font-mono text-[10px] uppercase tracking-widest text-electric font-bold block mb-1"
-                  x-text="isDirectCheckout ? 'LANGKAH 01 // IDENTITAS AKUN' : 'LANGKAH 02 // IDENTITAS AKUN'"></span>
             <h2 class="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">Informasi Akun &amp; Kontak Server</h2>
         </div>
         <span class="w-8 h-8 bg-electric text-white font-mono text-xs font-bold flex items-center justify-center shrink-0"
