@@ -84,75 +84,137 @@
             <button type="button" @click="selectStack('app')"
                     :class="stackType === 'app' ? 'bg-ink text-cream' : 'bg-white text-ink hover:bg-creamDark/50'"
                     class="py-3 px-4 font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer text-center">
-                AI &amp; Tools App
+                1-Click Applications
             </button>
         </div>
 
-        {{-- Control Panel Selection Grid --}}
-        <div x-show="stackType === 'control_panel'" x-transition class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            @php
-                $panels = [
-                    'coolify' => ['name' => 'Coolify', 'desc' => 'Self-hosted PaaS', 'logo' => 'coolify.svg'],
-                    'dokploy' => ['name' => 'Dokploy', 'desc' => 'Docker PaaS', 'logo' => 'dokploy.svg'],
-                    'aapanel' => ['name' => 'aaPanel', 'desc' => 'Lightweight web panel', 'logo' => 'aapanel.png'],
-                    'cloudpanel' => ['name' => 'CloudPanel', 'desc' => 'PHP, Node, Python UI', 'logo' => 'cloudpanel.svg'],
-                    'docker' => ['name' => 'Docker Engine', 'desc' => 'Container & Compose', 'logo' => 'docker.svg'],
-                    'cyberpanel' => ['name' => 'CyberPanel', 'desc' => 'OpenLiteSpeed panel', 'logo' => 'cyberpanel.svg'],
-                    'hestiacp' => ['name' => 'HestiaCP', 'desc' => 'Lightweight web panel', 'logo' => 'hestiacp.svg'],
-                ];
-            @endphp
-            @foreach($panels as $key => $info)
-                <label class="p-3.5 cursor-pointer transition-colors relative flex flex-col justify-between bg-white"
-                       :class="controlPanel === '{{ $key }}' ? 'border-2 border-electric bg-cream' : 'border border-hairline hover:border-ink/40'">
-                    <input type="radio" name="control_panel" value="{{ $key }}" x-model="controlPanel" class="sr-only">
-                    <div class="w-8 h-8 mb-2.5 flex items-center justify-center">
-                        <img src="{{ asset('images/logos/panels/' . $info['logo']) }}" alt="{{ $info['name'] }}" class="max-h-full max-w-full object-contain">
-                    </div>
-                    <div>
-                        <div class="font-display font-bold text-sm text-ink">{{ $info['name'] }}</div>
-                        <div class="text-[11px] text-muted leading-tight mt-0.5">{{ $info['desc'] }}</div>
-                    </div>
-                </label>
-            @endforeach
-        </div>
+        {{-- Search & Category Filters (Shared across Control Panel & 1-Click Applications) --}}
+        <div x-show="stackType === 'control_panel' || stackType === 'app'" x-transition class="space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2.5">
+                <div class="relative flex-1">
+                    <svg class="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text"
+                           x-model="stackSearch"
+                           placeholder="Cari stack (misal: Coolify, Portainer, cPanel, Supabase, WireGuard, FiveM...)"
+                           aria-label="Cari Control Panel atau Aplikasi"
+                           class="w-full rounded-none pl-9 pr-9 py-2.5 text-sm bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric transition-colors">
+                    <button type="button"
+                            x-show="stackSearch !== ''"
+                            @click="stackSearch = ''"
+                            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-muted hover:text-ink px-1 cursor-pointer"
+                            aria-label="Hapus pencarian">✕</button>
+                </div>
+                <div class="font-mono text-[11px] text-muted shrink-0">
+                    Menampilkan <strong class="text-ink" x-text="filteredStacks.length"></strong> dari <span x-text="groupStacks.length"></span> stack
+                </div>
+            </div>
 
-        {{-- App Selection Grid --}}
-        <div x-show="stackType === 'app'" x-transition class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            @php
-                $apps = [
-                    'hermes_agent' => ['name' => 'Hermes Agent', 'desc' => 'Autonomous AI agent', 'logo' => 'hermes_agent.svg'],
-                    'openclaw' => ['name' => 'OpenClaw', 'desc' => 'AI Agent gateway', 'logo' => 'openclaw.svg'],
-                    'omniroute' => ['name' => 'OmniRoute', 'desc' => 'Smart LLM gateway', 'logo' => 'omniroute.svg'],
-                    '9router' => ['name' => '9router', 'desc' => 'Lightweight AI router', 'logo' => '9router.svg'],
-                    'agent_zero' => ['name' => 'Agent Zero', 'desc' => 'Dynamic AI framework', 'logo' => 'agent_zero.svg'],
-                    'n8n' => ['name' => 'n8n Automation', 'desc' => 'Workflow automation', 'logo' => 'n8n.svg'],
-                    'ollama' => ['name' => 'Ollama', 'desc' => 'Run local LLMs', 'logo' => 'ollama.svg'],
-                    'dify_ollama' => ['name' => 'Dify + Ollama', 'desc' => 'AI RAG orchestration', 'logo' => 'dify_ollama.svg'],
-                    'anythingllm' => ['name' => 'AnythingLLM', 'desc' => 'Private RAG chat', 'logo' => 'anythingllm.svg'],
-                    'librechat' => ['name' => 'LibreChat', 'desc' => 'Open-source AI chat', 'logo' => 'librechat.svg'],
-                    'vscode_server' => ['name' => 'VS Code Server', 'desc' => 'Web-based IDE', 'logo' => 'vscode_server.svg'],
-                    'gitea_forgejo' => ['name' => 'Gitea / Forgejo', 'desc' => 'Self-hosted Git', 'logo' => 'gitea_forgejo.svg'],
-                    'uptime_kuma' => ['name' => 'Uptime Kuma', 'desc' => 'Monitoring tool', 'logo' => 'uptime_kuma.svg'],
-                    'netdata_beszel' => ['name' => 'Netdata / Beszel', 'desc' => 'Server metrics', 'logo' => 'netdata_beszel.svg'],
-                    'wordpress' => ['name' => 'WordPress', 'desc' => 'Popular CMS + Nginx', 'logo' => 'wordpress.svg'],
-                    'ghost' => ['name' => 'Ghost CMS', 'desc' => 'Modern publishing', 'logo' => 'ghost.svg'],
-                    'strapi_directus' => ['name' => 'Strapi / Directus', 'desc' => 'Headless CMS', 'logo' => 'strapi_directus.svg'],
-                    'prestashop_bagisto' => ['name' => 'PrestaShop / Bagisto', 'desc' => 'E-Commerce platform', 'logo' => 'prestashop_bagisto.svg'],
-                ];
-            @endphp
-            @foreach($apps as $key => $info)
-                <label class="p-3.5 cursor-pointer transition-colors relative flex flex-col justify-between bg-white"
-                       :class="controlPanel === '{{ $key }}' ? 'border-2 border-electric bg-cream' : 'border border-hairline hover:border-ink/40'">
-                    <input type="radio" name="control_panel" value="{{ $key }}" x-model="controlPanel" class="sr-only">
-                    <div class="w-8 h-8 mb-2.5 flex items-center justify-center">
-                        <img src="{{ asset('images/logos/apps/' . $info['logo']) }}" alt="{{ $info['name'] }}" class="max-h-full max-w-full object-contain">
-                    </div>
-                    <div>
-                        <div class="font-display font-bold text-sm text-ink">{{ $info['name'] }}</div>
-                        <div class="text-[11px] text-muted leading-tight mt-0.5">{{ $info['desc'] }}</div>
-                    </div>
-                </label>
-            @endforeach
+            {{-- Category Filter Chips --}}
+            <div class="flex flex-wrap items-center gap-1.5">
+                <button type="button"
+                        @click="stackCategory = 'all'"
+                        :class="stackCategory === 'all' ? 'bg-ink text-cream border-ink' : 'bg-white text-ink border-hairline hover:border-ink'"
+                        class="px-3 py-1 border font-mono text-[11px] font-bold uppercase tracking-wide transition-colors cursor-pointer">
+                    Semua
+                </button>
+                <template x-if="hasPaidPanelsInGroup">
+                    <button type="button"
+                            @click="stackCategory = '__free'"
+                            :class="stackCategory === '__free' ? 'bg-ink text-cream border-ink' : 'bg-white text-ink border-hairline hover:border-ink'"
+                            class="px-3 py-1 border font-mono text-[11px] font-bold uppercase tracking-wide transition-colors cursor-pointer">
+                        Gratis / Open-Source
+                    </button>
+                </template>
+                <template x-if="hasPaidPanelsInGroup">
+                    <button type="button"
+                            @click="stackCategory = '__paid'"
+                            :class="stackCategory === '__paid' ? 'bg-amber-500 text-ink border-amber-600' : 'bg-white text-amber-900 border-amber-400 hover:bg-amber-50'"
+                            class="px-3 py-1 border font-mono text-[11px] font-bold uppercase tracking-wide transition-colors cursor-pointer">
+                        Berbayar · BYOL
+                    </button>
+                </template>
+                <template x-for="cat in availableStackCategories" :key="cat">
+                    <button type="button"
+                            @click="stackCategory = cat"
+                            :class="stackCategory === cat ? 'bg-electric text-white border-electric' : 'bg-white text-ink border-hairline hover:border-ink'"
+                            class="px-3 py-1 border font-mono text-[11px] font-bold uppercase tracking-wide transition-colors cursor-pointer"
+                            x-text="cat"></button>
+                </template>
+            </div>
+
+            {{-- Stack Selection Grid (Never disabled — @click="handleStackClick(stack)") --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <template x-for="stack in filteredStacks" :key="stack.key">
+                    <button type="button"
+                            @click="handleStackClick(stack)"
+                            :class="controlPanel === stack.key
+                                ? 'border-2 border-electric bg-cream shadow-xs'
+                                : (stack.hardBlockOnRam && planRamGb > 0 && planRamGb < stack.minRamGb
+                                    ? 'border border-red-300 bg-white/80 hover:border-red-500'
+                                    : 'border border-hairline bg-white hover:border-ink/60')"
+                            class="p-3.5 text-left cursor-pointer transition-colors relative flex flex-col justify-between gap-3">
+                        <div class="flex items-start justify-between gap-2 w-full">
+                            <div class="w-10 h-10 rounded-xl bg-white/95 border border-black/10 p-1.5 shrink-0 flex items-center justify-center relative">
+                                <img :src="stack.logoUrl"
+                                     :alt="stack.label"
+                                     loading="lazy"
+                                     class="w-full h-full object-contain">
+                                <template x-if="stack.secondaryLogoUrl">
+                                    <img :src="stack.secondaryLogoUrl"
+                                         :alt="stack.label"
+                                         loading="lazy"
+                                         class="w-4 h-4 rounded-full bg-white border border-black/15 p-0.5 object-contain absolute -bottom-1 -right-1 shadow-sm">
+                                </template>
+                            </div>
+                            <span class="font-mono text-[10px] font-semibold px-1.5 py-0.5 bg-creamDark/70 border border-hairline text-muted uppercase shrink-0"
+                                  x-text="'Min. ' + stack.minRamGb + ' GB'"></span>
+                        </div>
+
+                        <div class="w-full min-w-0">
+                            <div class="font-display font-bold text-sm text-ink truncate" x-text="stack.label"></div>
+                            <div class="text-[11px] text-muted leading-snug mt-0.5 line-clamp-2" x-text="stack.description"></div>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-1 w-full">
+                            <template x-if="stack.requiresLicense">
+                                <span class="px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-amber-100 text-amber-950 border border-amber-400">
+                                    Berbayar · BYOL
+                                </span>
+                            </template>
+                            <template x-if="stack.hardBlockOnRam && planRamGb > 0 && planRamGb < stack.minRamGb">
+                                <span class="px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-red-100 text-red-900 border border-red-400"
+                                      x-text="'Butuh Min. ' + stack.minRamGb + ' GB RAM'"></span>
+                            </template>
+                            <template x-if="!stack.requiresLicense && (stack.warningType === 'activation' || stack.warningType === 'network')">
+                                <span class="px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-sky-100 text-sky-900 border border-sky-300"
+                                      x-text="stack.warningType === 'network' ? 'Info Akses' : 'Info Aktivasi'"></span>
+                            </template>
+                            <template x-if="Array.isArray(stack.udpPorts) && stack.udpPorts.length > 0">
+                                <span class="px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-violet-100 text-violet-900 border border-violet-300">
+                                    TCP+UDP
+                                </span>
+                            </template>
+                            <template x-if="stack.needsWarningConfirmation && acknowledgedWarnings[stack.key]">
+                                <span class="px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-emerald-100 text-emerald-900 border border-emerald-400">
+                                    ✓ Info Disetujui
+                                </span>
+                            </template>
+                        </div>
+                    </button>
+                </template>
+            </div>
+
+            {{-- Empty Search Result State --}}
+            <div x-show="filteredStacks.length === 0" x-cloak class="p-6 border border-dashed border-hairline bg-creamDark/30 text-center space-y-2">
+                <p class="font-mono text-xs text-muted">Tidak ada stack yang cocok dengan filter atau kata kunci Anda.</p>
+                <button type="button"
+                        @click="stackSearch = ''; stackCategory = 'all'"
+                        class="px-3 py-1.5 border border-ink bg-white hover:bg-creamDark font-mono text-[11px] font-bold uppercase text-ink cursor-pointer">
+                    Reset Filter
+                </button>
+            </div>
         </div>
 
         {{-- Fresh OS confirmation --}}

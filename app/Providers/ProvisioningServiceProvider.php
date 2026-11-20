@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\Provisioning\ProviderManager;
+use App\Services\Provisioning\Stacks\StackRegistry;
 use App\Services\Provisioning\Tencent\BalanceGuard;
 use App\Services\Provisioning\Tencent\BillingClient;
 use App\Services\Provisioning\Tencent\LighthouseClient;
@@ -15,6 +16,10 @@ class ProvisioningServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(StackRegistry::class, function () {
+            return new StackRegistry();
+        });
+
         $this->app->singleton(ProviderManager::class, function ($app) {
             return new ProviderManager($app);
         });

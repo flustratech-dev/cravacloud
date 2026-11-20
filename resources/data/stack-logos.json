@@ -1,0 +1,1942 @@
+[
+    {
+        "key": "coolify",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/coolify.svg",
+        "local_path": "images/logos/panels/coolify.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "e19a67cfb6d6287a2528ae300202d5ee23f304a864b640d1dff924ad79ae79d8"
+    },
+    {
+        "key": "dokploy",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/dokploy.svg",
+        "local_path": "images/logos/panels/dokploy.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "362a02db395230f647899ed719fef6c5fbf47f2372ab7c7a256c1603f94e3607"
+    },
+    {
+        "key": "aapanel",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/aapanel.png",
+        "local_path": "images/logos/panels/aapanel.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "dad2c33b8c6fe061643b92ad1665b5f4a06f5c70821d60bd4d31bc765d6156cb"
+    },
+    {
+        "key": "cloudpanel",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/cloudpanel.svg",
+        "local_path": "images/logos/panels/cloudpanel.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "110a86853267c3d2c7d112cd0e2c48925afa17859e78e20af6b26f532083cb95"
+    },
+    {
+        "key": "docker",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/docker.svg",
+        "local_path": "images/logos/panels/docker.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "7de45e1ea203da32a040c257f47cd39a5711b3a200d27ec72dbccbc5efb1590b"
+    },
+    {
+        "key": "cyberpanel",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://raw.githubusercontent.com/usmannasir/cyberpanel/stable/baseTemplate/static/baseTemplate/brand/cyberpanel-symbol.svg",
+        "local_path": "images/logos/panels/cyberpanel.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "b0a33111cc2a3468798fec27bbf52575f8bd3202bbb3c0ccf11382d45730168b"
+    },
+    {
+        "key": "hestiacp",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://raw.githubusercontent.com/hestiacp/hestiacp/main/web/images/logo.svg",
+        "local_path": "images/logos/panels/hestiacp.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "fc92995ca33f50d63a0ef87bb08080510059c3d424286006fa4ad54f9b05c6e3"
+    },
+    {
+        "key": "hermes_agent",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://raw.githubusercontent.com/NousResearch/hermes-agent/main/apps/bootstrap-installer/src-tauri/icons/128x128@2x.png",
+        "local_path": "images/logos/apps/hermes_agent.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "4b75d873f29e3f330c7f9032051555b66218cf11e5a470876f3e0754cb32bc8e"
+    },
+    {
+        "key": "openclaw",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/openclaw.svg",
+        "local_path": "images/logos/apps/openclaw.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "ff1d09f58c3ea5883a8dea01d272c63ecafa041732d5ba088e973a53dcca6542"
+    },
+    {
+        "key": "omniroute",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://raw.githubusercontent.com/cheaper-inference/OmniRoute/main/public/icon-192.svg",
+        "local_path": "images/logos/apps/omniroute.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "c6e8499c30e9643e513c32303fc112829611e47226aedae0d56be26d9b633936"
+    },
+    {
+        "key": "9router",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/9router.png",
+        "local_path": "images/logos/apps/9router.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "86ff64f6ff4d414576eaa94bdb4c03f85cee5432080d53a74de09cf506adc936"
+    },
+    {
+        "key": "agent_zero",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://raw.githubusercontent.com/agent0ai/agent-zero/main/webui/public/favicon.svg",
+        "local_path": "images/logos/apps/agent_zero.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "c1938a2903529c6fe7d86fc768bd953f9864ea14d7b0fe95a714669f64c896fc"
+    },
+    {
+        "key": "n8n",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/n8n.svg",
+        "local_path": "images/logos/apps/n8n.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "45b282108f60b12df6cba68e3fa633d56970eab4d2ac6b1eef43a60b5ea29af5"
+    },
+    {
+        "key": "ollama",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/ollama.svg",
+        "local_path": "images/logos/apps/ollama.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "c2a14336a00c943cbbe1739d4a9d4146b0606c342fd6876defb6e35f918095bf"
+    },
+    {
+        "key": "dify_ollama",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://raw.githubusercontent.com/langgenius/dify/main/web/public/logo/logo-embedded-chat-avatar.png",
+        "local_path": "images/logos/apps/dify_ollama.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "2281d9c4a494d3de11e23a53538edadad075b142c3eae264e28fcebd9773223a"
+    },
+    {
+        "key": "anythingllm",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://raw.githubusercontent.com/Mintplex-Labs/anything-llm/master/frontend/public/favicon.png",
+        "local_path": "images/logos/apps/anythingllm.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "538d36ef4217492336c50fb0dd0f6c1fe0c9010cc7c20991b4bda27ce3809fc4"
+    },
+    {
+        "key": "librechat",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/librechat.svg",
+        "local_path": "images/logos/apps/librechat.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "cf5eb039968dcf9862dbe75a9c9b1ab688dcc23ed1f88b8afd66fddded66816c"
+    },
+    {
+        "key": "vscode_server",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/vscode.svg",
+        "local_path": "images/logos/apps/vscode_server.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "98d2dc1ad1d82b3684880e174a09a5c35737977dfdbe97dbe040ef2d55e10e75"
+    },
+    {
+        "key": "gitea_forgejo",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/gitea.svg",
+        "local_path": "images/logos/apps/gitea_forgejo.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "6e2da0b8fbd4e0eec778714f5009361eb0a339967e06d265f3d7d0d50418d7c7"
+    },
+    {
+        "key": "gitea_forgejo",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/forgejo.svg",
+        "local_path": "images/logos/apps/forgejo.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "ac5a9b943ffa2b0b305a4ea21dd8b7564c8a8ecc08d2e3d61274f7e61973e7a5"
+    },
+    {
+        "key": "uptime_kuma",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/uptime-kuma.svg",
+        "local_path": "images/logos/apps/uptime_kuma.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "f3caa8a8bac253a77fa2ae7e7bc9b062b55a006abd787b111533714152ec744c"
+    },
+    {
+        "key": "netdata_beszel",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/netdata.svg",
+        "local_path": "images/logos/apps/netdata.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "b3a1f13373a691cde24d3b79c39a9b37cb83d1fec10d9798d16a1e879af98955"
+    },
+    {
+        "key": "netdata_beszel",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/beszel.svg",
+        "local_path": "images/logos/apps/beszel.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "ee02dbbb1471cca0f4cce67502307f7c8e6ae4dd55ae1b247382cf1c978c1036"
+    },
+    {
+        "key": "wordpress",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/wordpress.svg",
+        "local_path": "images/logos/apps/wordpress.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "49dae7eb6d790fff860990cf5be51bd53c21d1e33e22c7a99f29583ab073b34a"
+    },
+    {
+        "key": "ghost",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/ghost.png",
+        "local_path": "images/logos/apps/ghost.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "9400d5ffb90e20a93901d914a1055f97fa9b297941ac06df828481d53b8e2565"
+    },
+    {
+        "key": "strapi_directus",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/strapi.svg",
+        "local_path": "images/logos/apps/strapi_directus.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "13e9d4fd8f32b888d22a98a63e7edafe0382db389a02d0ede5546b6576ac9a15"
+    },
+    {
+        "key": "strapi_directus",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/directus.svg",
+        "local_path": "images/logos/apps/directus.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "77a70d7ffc0e1e8f3bd2cd889ea11765eec7fba43740eb8bd00f87ecd8189752"
+    },
+    {
+        "key": "prestashop_bagisto",
+        "role": "primary",
+        "source_tier": "simple-icons",
+        "source_url": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/prestashop.svg",
+        "local_path": "images/logos/apps/prestashop_bagisto.svg",
+        "format": "svg",
+        "brand_color": "#DF0067",
+        "sha256": "138eaa18d2a5b12cea0ddb1cca30dbffac37159de602f02b28b4dc9bd5899afb"
+    },
+    {
+        "key": "prestashop_bagisto",
+        "role": "secondary",
+        "source_tier": "vendor-official",
+        "source_url": "https://avatars.githubusercontent.com/u/43133047?s=256&v=4",
+        "local_path": "images/logos/apps/bagisto.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "ae353aef19a8ad9494d6c7b3f28fe32eb87468db83f062674ac9a155ed58592b"
+    },
+    {
+        "key": "claude_opencode",
+        "role": "primary",
+        "source_tier": "simple-icons",
+        "source_url": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/claude.svg",
+        "local_path": "images/logos/apps/claude_opencode.svg",
+        "format": "svg",
+        "brand_color": "#D97757",
+        "sha256": "5119ef950a0d648b3fd62865791e73f07f32e18ddab84e4f21160f8c641c0f5f"
+    },
+    {
+        "key": "claude_opencode",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/opencode.svg",
+        "local_path": "images/logos/apps/opencode.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "5eeb3a5f14dbbccc03111296ecfd3cd05cc98844150d4f9d77ba921847953380"
+    },
+    {
+        "key": "portainer",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/portainer.svg",
+        "local_path": "images/logos/panels/portainer.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "5d1e07021683d15ea67225c60975729f4ee0ed380f3a0fb21ffb2ad00eb6e85b"
+    },
+    {
+        "key": "easypanel",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://easypanel.io/icon.svg",
+        "local_path": "images/logos/panels/easypanel.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "c190bcff0096fcb2469716580a831d2a2daf3e21825f9a1dff4ee04cc08fe26b"
+    },
+    {
+        "key": "1panel",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/1panel.svg",
+        "local_path": "images/logos/panels/1panel.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "cfa79a4729658e88d9f35826019812a10b5174da9bb534f7854be204c085ab1b"
+    },
+    {
+        "key": "caprover",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/caprover.svg",
+        "local_path": "images/logos/panels/caprover.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "1d6dcdf0c2f4b30839f3fcc1a9fdcc9e657d404b13d4040362d136274971be88"
+    },
+    {
+        "key": "casaos",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/casaos.svg",
+        "local_path": "images/logos/panels/casaos.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "a0930c2dc07ae178d06e290bf3fd3e93460ebf0a6f2a02bb8f6663be08be48ec"
+    },
+    {
+        "key": "serverkit",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://raw.githubusercontent.com/jhd3197/ServerKit/main/frontend/public/favicon.svg",
+        "local_path": "images/logos/panels/serverkit.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "a155b8c76a7810e6b083fab7adcc7edc3c5f96e5b70b2df877b5092fe1a0a3f7"
+    },
+    {
+        "key": "cosmos_cloud",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://raw.githubusercontent.com/azukaar/Cosmos-Server/master/client/src/assets/images/icons/logo.svg",
+        "local_path": "images/logos/panels/cosmos_cloud.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "2b64e7f9c48ab9918ffe255ce776eca59d638e0c249fa3400a0c25dfd15c6d9a"
+    },
+    {
+        "key": "fastpanel",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://avatars.githubusercontent.com/u/46333152?s=256&v=4",
+        "local_path": "images/logos/panels/fastpanel.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "87c9cad84a36a2f11886ce8003a26ca3951cf655f7b15a4829e6ff63d25cd453"
+    },
+    {
+        "key": "webmin",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/webmin.svg",
+        "local_path": "images/logos/panels/webmin.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "0db04bc77707d51697186970c51883c8338bd8d5d66cd68f656d2d2349f8b635"
+    },
+    {
+        "key": "cpanel_whm",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/cpanel.svg",
+        "local_path": "images/logos/panels/cpanel_whm.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "07fce86733e5314504e14d2605e07b03858c6a7b721e51d00d7b2a6f9b7472a9"
+    },
+    {
+        "key": "directadmin",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/directadmin.svg",
+        "local_path": "images/logos/panels/directadmin.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "1fa865edad9b390f5cdb6150d6a84699f3b032f4e8a625e367867eb45f234884"
+    },
+    {
+        "key": "plesk",
+        "role": "primary",
+        "source_tier": "simple-icons",
+        "source_url": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/plesk.svg",
+        "local_path": "images/logos/panels/plesk.svg",
+        "format": "svg",
+        "brand_color": "#52BBE6",
+        "sha256": "44ea2399d9d953fd82f987cf7c5f80851f388d4f8ff4c637a31be8de67fc4a71"
+    },
+    {
+        "key": "lemp_laravel",
+        "role": "primary",
+        "source_tier": "simple-icons",
+        "source_url": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/laravel.svg",
+        "local_path": "images/logos/apps/lemp_laravel.svg",
+        "format": "svg",
+        "brand_color": "#FF2D20",
+        "sha256": "6b2b1b00be7442c47b79588d2ba51069857d4bfee27e1c082b7e80b48606c493"
+    },
+    {
+        "key": "lemp_laravel",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/nginx.svg",
+        "local_path": "images/logos/apps/nginx.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "3860f0d399e48fcaa30f2b21d3cd5e0d693267140f1e28cb2d341981ab8d2f4c"
+    },
+    {
+        "key": "nginx_proxy_manager",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/nginx-proxy-manager.svg",
+        "local_path": "images/logos/apps/nginx_proxy_manager.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "9add6f0b65996f8f1698f926e3df9f7f9ae01bae9a2e9588954366f36ec9f1da"
+    },
+    {
+        "key": "grafana_prometheus",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/grafana.svg",
+        "local_path": "images/logos/apps/grafana_prometheus.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "8f32897073ee93594ab2339482ef21ca3767044055da89e2baf9066d25592df7"
+    },
+    {
+        "key": "grafana_prometheus",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/prometheus.svg",
+        "local_path": "images/logos/apps/prometheus.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "b8718698ad8afa9ea526a6081f1077f61d974a66b067005469665cfaf88162a6"
+    },
+    {
+        "key": "umami",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/umami.svg",
+        "local_path": "images/logos/apps/umami.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "8e86067d4859cb60c48b9f587b79a48ca1139c96099869adfeff25f296ea639c"
+    },
+    {
+        "key": "supabase",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/supabase.svg",
+        "local_path": "images/logos/apps/supabase.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "f705be332477efbb8fd3a9b84bd0a64de5c64d0e0fb424320114a0eb313d7f8c"
+    },
+    {
+        "key": "appwrite",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/appwrite.svg",
+        "local_path": "images/logos/apps/appwrite.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "a6341dc77d8437ff5a252408df446e03d858844b2cd993763f4a23372b4c1e4d"
+    },
+    {
+        "key": "pocketbase",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/pocketbase.png",
+        "local_path": "images/logos/apps/pocketbase.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "837e59b1974c1380f59ac83d2f42a46b4a2fd6931ec361800301fac8852389d7"
+    },
+    {
+        "key": "nocodb",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/nocodb.svg",
+        "local_path": "images/logos/apps/nocodb.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "af5cdd2a8c36ce0afdd3f2954e34d4a95ab0657b6fbd0068e40afddaccaaeb4f"
+    },
+    {
+        "key": "postgresql_pgadmin",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/postgres.svg",
+        "local_path": "images/logos/apps/postgresql_pgadmin.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "8721988212afc5134af28c50601d87e6f3ca648e8e04f66b0453dc1f9126e359"
+    },
+    {
+        "key": "postgresql_pgadmin",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/pgadmin.png",
+        "local_path": "images/logos/apps/pgadmin.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "a4ecc7b8efc39011971f5ad032e49b84684145c4c536521401dd64827d1e0c24"
+    },
+    {
+        "key": "mysql_phpmyadmin",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/mysql.svg",
+        "local_path": "images/logos/apps/mysql_phpmyadmin.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "0ea79a37711ab5450b20e99800366cd224f6abd5715af07e1bf97914d45a85d5"
+    },
+    {
+        "key": "mysql_phpmyadmin",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/phpmyadmin.png",
+        "local_path": "images/logos/apps/phpmyadmin.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "a34a6d248199ae0049033c6e47377ca16e909abfec686ee8029f9ba6160b3543"
+    },
+    {
+        "key": "minio",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/minio.svg",
+        "local_path": "images/logos/apps/minio.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "775c27a9dcbee9f2bd12409a78376c2600612e9c3bea5822ef51e82c8b363c27"
+    },
+    {
+        "key": "open_webui",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/open-webui.svg",
+        "local_path": "images/logos/apps/open_webui.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "54717f2b0d403a6a559c87622d23dfd3cff3538e910ea3dbd8ffbf015aa3ff89"
+    },
+    {
+        "key": "flowise",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/flowise.svg",
+        "local_path": "images/logos/apps/flowise.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "13aa78005262320fb4ecfbe6b60684cdfc71d79be3db76583fe463c221fc773b"
+    },
+    {
+        "key": "wireguard_easy",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/wireguard.svg",
+        "local_path": "images/logos/apps/wireguard_easy.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "900c0e96c80d0afb010fa490cb794de761b39cce26437b1f35a13641cfeb7c89"
+    },
+    {
+        "key": "rustdesk_server",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/rustdesk.svg",
+        "local_path": "images/logos/apps/rustdesk_server.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "f14e275f8b60adde7a026a54a44a4c5b79ff73ddbc21bcc7a338af04563029ce"
+    },
+    {
+        "key": "nextcloud",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/nextcloud.svg",
+        "local_path": "images/logos/apps/nextcloud.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "892404c0c7c74cb22d6c728e967fcf5cb680f7d343db1cdfef92186d44cce6d3"
+    },
+    {
+        "key": "immich",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/immich.svg",
+        "local_path": "images/logos/apps/immich.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "a5d4a43899e63ffc7e97246034f7f63cdfdc410aa803c5713d545290601c4d89"
+    },
+    {
+        "key": "moodle",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/moodle.svg",
+        "local_path": "images/logos/apps/moodle.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "6d8502c882d30238fc650fc556b0e0e5f555002744d42bf818ded70f1872a7b1"
+    },
+    {
+        "key": "odoo",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/odoo.svg",
+        "local_path": "images/logos/apps/odoo.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "956fd9c66c429cbe3988366675be395d18d1f99e053c34517ce5be107a49215e"
+    },
+    {
+        "key": "pterodactyl",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/pterodactyl.svg",
+        "local_path": "images/logos/apps/pterodactyl.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "aae930dcd20682c0003981759be87ae020dcb94fa2712cfe14afbb4e3fad566e"
+    },
+    {
+        "key": "fivem_txadmin",
+        "role": "primary",
+        "source_tier": "simple-icons",
+        "source_url": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/fivem.svg",
+        "local_path": "images/logos/apps/fivem_txadmin.svg",
+        "format": "svg",
+        "brand_color": "#F40552",
+        "sha256": "4f5252e76f3834211d942d6f4dee28d1be0349186913d8c80c278d3b5d1ac1ff"
+    },
+    {
+        "key": "minecraft_paper",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://assets.papermc.io/brand/papermc_logo.256.png",
+        "local_path": "images/logos/apps/minecraft_paper.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "c4faef8c09e0f8b76c03c655af333680c67f7b7ed52507d3c946c5b0cb37f3d9"
+    },
+    {
+        "key": "erpnext",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://raw.githubusercontent.com/frappe/erpnext/develop/erpnext/public/images/erpnext-favicon.svg",
+        "local_path": "images/logos/apps/erpnext.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "31933b902d1bf1df3c2121a30a47a7e4073340c3aff908d038aeb29c22414995"
+    },
+    {
+        "key": "dolibarr",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/dolibarr.png",
+        "local_path": "images/logos/apps/dolibarr.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "86c44b13ebffacc14004cc66f04a3b7c1cda3f6d59bef5f4d4166c0f431507c5"
+    },
+    {
+        "key": "twenty_crm",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://raw.githubusercontent.com/twentyhq/twenty/main/packages/twenty-website/public/images/core/logo.svg",
+        "local_path": "images/logos/apps/twenty_crm.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "fc77d59724400dc8db485ec45e1ce2f0a25cc4890982fadc0ad67e4fdd325f4e"
+    },
+    {
+        "key": "invoice_ninja",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/invoice-ninja.svg",
+        "local_path": "images/logos/apps/invoice_ninja.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "e91b51af21ef1f80e0b61ca7a6acb7bea84ac3ea221a06d5d2e76c282412eae5"
+    },
+    {
+        "key": "akaunting",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/akaunting.svg",
+        "local_path": "images/logos/apps/akaunting.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "6f6524f2c61641b27f1c6d6c6a479b28876442534c32f6940e6845124ed70c02"
+    },
+    {
+        "key": "paperless_ngx",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/paperless-ngx.svg",
+        "local_path": "images/logos/apps/paperless_ngx.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "ac3f690b151bdf14e16bebea52721178b37ff6198660a1258ec9445eafb2b8d0"
+    },
+    {
+        "key": "stirling_pdf",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/stirling-pdf.svg",
+        "local_path": "images/logos/apps/stirling_pdf.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "09b653138e5d13b640ad94ca097b89200337dfb1c7b19dbea038853d12007bdb"
+    },
+    {
+        "key": "bookstack",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/bookstack.svg",
+        "local_path": "images/logos/apps/bookstack.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "875148604f2e828e977c23a9afa04869dd958dd6300650ec3350eff9c242cd64"
+    },
+    {
+        "key": "outline",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/outline.svg",
+        "local_path": "images/logos/apps/outline.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "3f491869d6624953f63943cd005f809b7afd713156b9d4a109e54078e9fbc488"
+    },
+    {
+        "key": "wikijs",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/wikijs.svg",
+        "local_path": "images/logos/apps/wikijs.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "5d6a94a4de7f73e79d9978063c05f9eafb9ad0d38c379870267662bba9e34c59"
+    },
+    {
+        "key": "plane",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/plane.svg",
+        "local_path": "images/logos/apps/plane.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "b26b0a903481eca6ae320e462d92628190492b5d35c111dddbf33a3cd4df4b0d"
+    },
+    {
+        "key": "calcom",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/cal-com.svg",
+        "local_path": "images/logos/apps/calcom.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "7419f0ca71747bff1509d26628098ba4ecdb2d4bacf435765629870a20985eb1"
+    },
+    {
+        "key": "chatwoot",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/chatwoot.svg",
+        "local_path": "images/logos/apps/chatwoot.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "445cdb573e30a244522b5fd748cc058e350be01eef15e3cb8dd3cb47cc128608"
+    },
+    {
+        "key": "typebot",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://raw.githubusercontent.com/baptistearno/typebot.io/main/apps/builder/public/favicon.svg",
+        "local_path": "images/logos/apps/typebot.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "0d5a429dc41045e9715f4a4bb741d454f7d1805ef70eb972faba580adaf1ab95"
+    },
+    {
+        "key": "mattermost",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/mattermost.svg",
+        "local_path": "images/logos/apps/mattermost.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "44c729c1821ae15dac700c89af6dabcb8ccac91a5048a15f96d940c81b862548"
+    },
+    {
+        "key": "listmonk",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/listmonk.svg",
+        "local_path": "images/logos/apps/listmonk.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "99d1d27cc4ce6728e24257a0450594b575e859e4582a1d0399923c4a8aae66ab"
+    },
+    {
+        "key": "discourse",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/discourse.svg",
+        "local_path": "images/logos/apps/discourse.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "e19fb46c48e868a2cf25c9e200cb14d5c09a299e39509e82691b3f62d67244c2"
+    },
+    {
+        "key": "flarum",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/flarum.svg",
+        "local_path": "images/logos/apps/flarum.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "5f721e35e866be4590e40989d49220bd6e73e9d96dd4ad64a37b395816d56ea1"
+    },
+    {
+        "key": "vaultwarden",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/vaultwarden.svg",
+        "local_path": "images/logos/apps/vaultwarden.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "afa3af723b4de7f502d2cc962352842a5cb41026bb5940a9f970cb5271b9472b"
+    },
+    {
+        "key": "adguard_home",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/adguard-home.svg",
+        "local_path": "images/logos/apps/adguard_home.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "4a65b23ae16bf700f35139e2c10a5f731a32530f2db832abd5612be2523b1f9f"
+    },
+    {
+        "key": "pihole",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/pi-hole.svg",
+        "local_path": "images/logos/apps/pihole.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "44944e34a721797c3271cfc6b15dff81cd6fbbf66c7c96da53a34ed39be06ea5"
+    },
+    {
+        "key": "authentik",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/authentik.svg",
+        "local_path": "images/logos/apps/authentik.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "ccee0489803413294b901233fd6c41a317ad38332927cb1a8464c692543eaa7d"
+    },
+    {
+        "key": "keycloak",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/keycloak.svg",
+        "local_path": "images/logos/apps/keycloak.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "8d59646b79576fbc1428ef1f9a69d6a9555fff31addd3c4814c01f3780ab1b96"
+    },
+    {
+        "key": "guacamole",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/apache-guacamole.svg",
+        "local_path": "images/logos/apps/guacamole.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "5cc08c6e41a00116f9e86e1962f8c3c90076fbbe23bc8772b23e463e5e52adb9"
+    },
+    {
+        "key": "openvpn",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/openvpn.svg",
+        "local_path": "images/logos/apps/openvpn.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "8cfaea990be8c0df5601eec1a577a47036e71416cd5a3b74807578fc166aa623"
+    },
+    {
+        "key": "headscale",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/headscale.svg",
+        "local_path": "images/logos/apps/headscale.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "2ed74a8eeaa6944da4c27d2f5e6e17bfeb925cf971dea30e700b327855f7d737"
+    },
+    {
+        "key": "metabase",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/metabase.svg",
+        "local_path": "images/logos/apps/metabase.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "fae6d1f817af8363e83c7281ab322b28e58d039f03d48ebe394d9d6bee3ac095"
+    },
+    {
+        "key": "plausible",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/plausible.svg",
+        "local_path": "images/logos/apps/plausible.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "fbf19761f05fc2133e2bdfd52dc91e0f9f5979a2145e33705a3cf9c85db883d3"
+    },
+    {
+        "key": "matomo",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/matomo.svg",
+        "local_path": "images/logos/apps/matomo.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "67bbf7245f4efcbcdd2b6ad3b5dce2b085a6ece562fad2e942bb7eaa963f0316"
+    },
+    {
+        "key": "meilisearch",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/meilisearch.svg",
+        "local_path": "images/logos/apps/meilisearch.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "f08d5015112ceb7bf5997e6e9ccc7f7cb00fb918f2145950df59ba0d43b4339e"
+    },
+    {
+        "key": "qdrant",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/qdrant.svg",
+        "local_path": "images/logos/apps/qdrant.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "31ba9ceadab1f6391dcdb4158965609a5e641faa354dd59e1752698f9230bf24"
+    },
+    {
+        "key": "redis_insight",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/redis.svg",
+        "local_path": "images/logos/apps/redis_insight.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "9c3d4a6458094687a5b035b1d890b808b3d6d06584625e0cbe38054d24e3b86d"
+    },
+    {
+        "key": "mongodb",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/mongodb.svg",
+        "local_path": "images/logos/apps/mongodb.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "8883073943d486b2fa1926d1ddff0c042a9e03de6b7d0ee3e9ab008f4338bbc9"
+    },
+    {
+        "key": "mongodb",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/mongo-express.svg",
+        "local_path": "images/logos/apps/mongo_express.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "59e60badf63de642a502c06df5479d9ad60a920c4b480629d81a10edd8074d38"
+    },
+    {
+        "key": "ispconfig",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/ispconfig.svg",
+        "local_path": "images/logos/panels/ispconfig.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "3fa4d811ef8b0e25cc6cf648a07884d76330848c2acc87fc9825a2253303fdf1"
+    },
+    {
+        "key": "froxlor",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/froxlor.svg",
+        "local_path": "images/logos/panels/froxlor.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "caf0e8d0d97c9d383b79f94f2479d584c8145de2f2240f226298d4da09e29e01"
+    },
+    {
+        "key": "keyhelp",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://demo.keyhelp.de/theme/default/assets/img/favicon/apple-touch-icon.png",
+        "local_path": "images/logos/panels/keyhelp.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "422eefb6e9946f10b80cca4387ffb53a81abc9ec0174a5eb4945807d1fb36efb"
+    },
+    {
+        "key": "cockpit",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/cockpit.svg",
+        "local_path": "images/logos/panels/cockpit.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "7207dadb280ca13a37e16e8d15e0628327b1bc61673830f641ac7641bc2708ca"
+    },
+    {
+        "key": "yunohost",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/yunohost.svg",
+        "local_path": "images/logos/panels/yunohost.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "1fa49abc533878fca385f4b45ac9cb80d0766f2e769574d26306baf101f4e346"
+    },
+    {
+        "key": "dockge",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://raw.githubusercontent.com/louislam/dockge/master/frontend/public/icon.svg",
+        "local_path": "images/logos/panels/dockge.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "7a3efe93b10886916e97f0defa660369d9846b3ac2ff3dcf60e02053cecdbc21"
+    },
+    {
+        "key": "webuzo",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://webuzo.com/assets/img/brand/icon-64.png",
+        "local_path": "images/logos/panels/webuzo.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "f74648c7415571d85ed784e9d038ca0d0278a1b73419af21c22ab5637d65af42"
+    },
+    {
+        "key": "enhance",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/enhance.svg",
+        "local_path": "images/logos/panels/enhance.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "0a001d71b067a14b4b01ddafa8f08a24c91b0c5b7e7f8410a917260cf4f74555"
+    },
+    {
+        "key": "nodejs_pm2",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/nodejs.svg",
+        "local_path": "images/logos/apps/nodejs_pm2.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "a38f1f19900a97d0e89b6210ab1c901aacf0148d580379cbb9d0706132b3fadd"
+    },
+    {
+        "key": "nodejs_pm2",
+        "role": "secondary",
+        "source_tier": "simple-icons",
+        "source_url": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/pm2.svg",
+        "local_path": "images/logos/apps/pm2.svg",
+        "format": "svg",
+        "brand_color": "#2B037A",
+        "sha256": "861701705fae1990319534b23c632fc6242105f654c565806b5c3d1b0e71b227"
+    },
+    {
+        "key": "python_fastapi",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/fastapi.svg",
+        "local_path": "images/logos/apps/python_fastapi.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "9781386e06dbff9295c8ba56970a9b33dc869636d9efe065354c50c45710dc3d"
+    },
+    {
+        "key": "python_fastapi",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/python.svg",
+        "local_path": "images/logos/apps/python.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "38a2dbbae6c06ef6d2dcf9d02a11338505d0a0c7c3f2c376b8d86908d81cfbc5"
+    },
+    {
+        "key": "golang_caddy",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/golang.svg",
+        "local_path": "images/logos/apps/golang_caddy.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "33e31a3d049683755ceb07b4a6abe830b2ee02e6ffeee408fe705ef078d3849e"
+    },
+    {
+        "key": "traefik",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/traefik.svg",
+        "local_path": "images/logos/apps/traefik.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "2c5f633eb532e02147a12f0e8971222129f52a19d7f29d5354fdbef4a00ed0c7"
+    },
+    {
+        "key": "caddy",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/caddy.svg",
+        "local_path": "images/logos/apps/caddy.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "c59f2d66b5c4038625a38b19e9d27de63d639dc80e56865ff8f92d7d4da3941f"
+    },
+    {
+        "key": "haproxy",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/haproxy.svg",
+        "local_path": "images/logos/apps/haproxy.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "ec71f5b26b248ae4759f2d5586f54eb6257906835252024de1330f9f23ce665c"
+    },
+    {
+        "key": "coder",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/coder.svg",
+        "local_path": "images/logos/apps/coder.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "4872816f14cb59a4da0d95d0c64c2637c1e6703b9a0a465b322afbe7d0a8bb08"
+    },
+    {
+        "key": "it_tools",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/it-tools.svg",
+        "local_path": "images/logos/apps/it_tools.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "f29068eb90c8f43d68517e98259cd1a0a63eab74bbeb92ad47d62ba47dd81930"
+    },
+    {
+        "key": "hoppscotch",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/hoppscotch.svg",
+        "local_path": "images/logos/apps/hoppscotch.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "65f3a60876488bf1f9720899123621fad53e92b2635d0052b1f7bd2d4c3f3c46"
+    },
+    {
+        "key": "posthog",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/posthog.svg",
+        "local_path": "images/logos/apps/posthog.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "e4ebb5e6b53b37491a7898177d6f520223c4cc893a8ff0625c70394bccc6cdf6"
+    },
+    {
+        "key": "gitlab_ce",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/gitlab.svg",
+        "local_path": "images/logos/apps/gitlab_ce.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "f7142d76fac3c23b08ae67b9994a06fa7df9e776781df6b5fb1ba030f9a12111"
+    },
+    {
+        "key": "jenkins",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/jenkins.svg",
+        "local_path": "images/logos/apps/jenkins.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "2353e89d742e759fb2ad8459195d2ca12633241802e452637366ba6aa68fb651"
+    },
+    {
+        "key": "woodpecker_ci",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/woodpecker-ci.png",
+        "local_path": "images/logos/apps/woodpecker_ci.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "288fc9454081f572ea2ebb32384be40d0d990b2cd5a24eb63a4c4c73232a3504"
+    },
+    {
+        "key": "dozzle",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/dozzle.svg",
+        "local_path": "images/logos/apps/dozzle.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "55486bbdb0ef7e2dd83f85bb10d0f732a92f70d83e714953d883bc77b611a77a"
+    },
+    {
+        "key": "watchtower",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/watchtower.svg",
+        "local_path": "images/logos/apps/watchtower.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "92108f9ae377b4b34ef4b89537e24c6432d49b28d8ce7433c3dcb56273e9b896"
+    },
+    {
+        "key": "glitchtip",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/glitchtip.svg",
+        "local_path": "images/logos/apps/glitchtip.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "cd0f4132d67878cce1c8b9fb52621052898e58500b00f35d3ae7ed664109484c"
+    },
+    {
+        "key": "gatus",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/gatus.svg",
+        "local_path": "images/logos/apps/gatus.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "901e072cafd30c2d59a1710774a973e9837069d52e37fe969574fdbb342b4501"
+    },
+    {
+        "key": "gatus",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/healthchecks-dark.svg",
+        "local_path": "images/logos/apps/healthchecks.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "68fb0910ceeac82a450124f2b219a0d38c5a915c77c3293657fc1f0f6af1bafa"
+    },
+    {
+        "key": "baserow",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/baserow.svg",
+        "local_path": "images/logos/apps/baserow.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "55457ff82cbe405f893acd13511915847cda7ad332e190a419b9e3c3c639040f"
+    },
+    {
+        "key": "grist",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/grist.svg",
+        "local_path": "images/logos/apps/grist.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "d423e9a928e1161e056ab0c90a531f463ecf59297a33f159cf077f139cac80e0"
+    },
+    {
+        "key": "clickhouse",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/clickhouse.svg",
+        "local_path": "images/logos/apps/clickhouse.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "548db18bea4b24f7417611b936ac71e361113816d61b136f09032069b781de97"
+    },
+    {
+        "key": "rabbitmq",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/rabbitmq.svg",
+        "local_path": "images/logos/apps/rabbitmq.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "74fdd0176ad71014e63aa25969831cca00f8407b79820cd197169a0504860c6d"
+    },
+    {
+        "key": "influxdb",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/influxdb.svg",
+        "local_path": "images/logos/apps/influxdb.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "22489cee4b8d9289dc86865f8394d8479f18c97ea5c3956cf52ab274ec3eca5f"
+    },
+    {
+        "key": "langfuse",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://raw.githubusercontent.com/langfuse/langfuse/main/web/public/icon.svg",
+        "local_path": "images/logos/apps/langfuse.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "daeef880d58644fab4fd9ba5d292086c6d69756a39cff94d510f8ddc35312bf3"
+    },
+    {
+        "key": "litellm",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://docs.litellm.ai/img/brand/litellm-monogram-blue.svg",
+        "local_path": "images/logos/apps/litellm.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "69eaed389008a423e98590466c98b80f4ab7ffec47f4bda53ee0db3890775ba0"
+    },
+    {
+        "key": "activepieces",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/activepieces.svg",
+        "local_path": "images/logos/apps/activepieces.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "9a3a61f2310013101c3ab938221e6cc05684be0a8a06a53602afee3d61b2918d"
+    },
+    {
+        "key": "localai",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/localai.svg",
+        "local_path": "images/logos/apps/localai.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "b169a6930ee68b2ab2c59fd9b16177c7668d9dbc4647e168a4e307c3c1e3006e"
+    },
+    {
+        "key": "whisper_asr",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/openai.svg",
+        "local_path": "images/logos/apps/whisper_asr.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "8a6030406f34ee761c3d60dd95cc49af8c3ca1c9f45b61a3d8648d60c91cba62"
+    },
+    {
+        "key": "libretranslate",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/libretranslate.svg",
+        "local_path": "images/logos/apps/libretranslate.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "6b26795fb755ec545cc46a11162f89f2b1f98e07d405c84bde3122f8508e21a8"
+    },
+    {
+        "key": "changedetection",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/changedetection.svg",
+        "local_path": "images/logos/apps/changedetection.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "dcf826ff17a505c00fe8c256a5781679c8b22b761d6ecc85ae8fc244adf77561"
+    },
+    {
+        "key": "searxng",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/searxng.svg",
+        "local_path": "images/logos/apps/searxng.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "e0f4c72fe58055043d04446350e7d3e6a25105e507519b1ceacffd5b9aa89593"
+    },
+    {
+        "key": "woocommerce",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/woocommerce.svg",
+        "local_path": "images/logos/apps/woocommerce.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "89075f9f1e27d51ff3bda422b1073bad34b145f3a09da419738e288b7d5ec00b"
+    },
+    {
+        "key": "drupal",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/drupal.svg",
+        "local_path": "images/logos/apps/drupal.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "b6b0f595bf655c2fe726c813170667a6c44fc52039426f6dad46ca69cabeeb23"
+    },
+    {
+        "key": "joomla",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/joomla.svg",
+        "local_path": "images/logos/apps/joomla.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "27ffbbe17e835a80ef750ad8887f1b6aa169b0568d5f4e403e73dd2cf9975e85"
+    },
+    {
+        "key": "payload_cms",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/payload.svg",
+        "local_path": "images/logos/apps/payload_cms.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "ea755fd0b8d84168a3d19d524ef9e6aa8e70127e89449c931c41c6e89de0ef71"
+    },
+    {
+        "key": "medusajs",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/medusa.svg",
+        "local_path": "images/logos/apps/medusajs.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "0a6ecbcaab2857abec013a74bafe5c3e10c9b4f6192b5025b8170550cd25010e"
+    },
+    {
+        "key": "magento",
+        "role": "primary",
+        "source_tier": "simple-icons",
+        "source_url": "https://cdn.jsdelivr.net/npm/simple-icons@9.21.0/icons/magento.svg",
+        "local_path": "images/logos/apps/magento.svg",
+        "format": "svg",
+        "brand_color": "#EE672F",
+        "sha256": "672b29d7af3d64b4e58a0bf1b2fcd72189c65010398080f251953a5a634bb9bb"
+    },
+    {
+        "key": "owncast",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/owncast.svg",
+        "local_path": "images/logos/apps/owncast.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "4efe920039541ad2fa19c74083f0de996d2b3647c13b8fea1617ebd3a88d3dad"
+    },
+    {
+        "key": "espocrm",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/espocrm.svg",
+        "local_path": "images/logos/apps/espocrm.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "619d38fbb2f8bf9534bbe483dc3f1c5faf2b78a084882a904c8f7585a036bd8b"
+    },
+    {
+        "key": "firefly_iii",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/firefly-iii.svg",
+        "local_path": "images/logos/apps/firefly_iii.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "a33e8d30d625552152a529aeeb8a772ba2aa8b56d0116139ec5d32c5f3e40b57"
+    },
+    {
+        "key": "kimai",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/kimai.svg",
+        "local_path": "images/logos/apps/kimai.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "938e27e2aef4696f70ac5d602ffc72ee18e08b1d35fefbb961eb1fdb15e102a2"
+    },
+    {
+        "key": "mautic",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/mautic.svg",
+        "local_path": "images/logos/apps/mautic.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "b5bb074e6188e8c1bee5542083ca75858933e6fd5c3b5e40b79c10548420db98"
+    },
+    {
+        "key": "snipe_it",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/snipe-it.png",
+        "local_path": "images/logos/apps/snipe_it.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "7bd4df3523cbf4878206ac3bad62430c7d4e883786d2eedac2dbe5e2f7b1011a"
+    },
+    {
+        "key": "glpi",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/glpi.svg",
+        "local_path": "images/logos/apps/glpi.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "6d92bb891522dcd0ab74787991645d536c30cf374a5c627e442b6acbcb20c14d"
+    },
+    {
+        "key": "vikunja",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/vikunja.svg",
+        "local_path": "images/logos/apps/vikunja.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "1d360d3537390470b74763d4e444735956c968151e5ab6c4cd8d64dae9a9e5ab"
+    },
+    {
+        "key": "redmine",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/redmine.svg",
+        "local_path": "images/logos/apps/redmine.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "861be1c4e7843818a45cbd1c2cae673169a784861dbec78e772bae0364e92dbf"
+    },
+    {
+        "key": "memos",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/memos.svg",
+        "local_path": "images/logos/apps/memos.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "6dfc53a3ec35389c8377dc593ff83d8d466aa539ad11027a3eaf0b1991213f58"
+    },
+    {
+        "key": "affine",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/affine.svg",
+        "local_path": "images/logos/apps/affine.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "d6eab5f94280620c257adb4d9031704e0b8879b4aa35d140c630793f4f6aadf0"
+    },
+    {
+        "key": "cryptpad",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/cryptpad.svg",
+        "local_path": "images/logos/apps/cryptpad.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "16a86b783b3687df8bb8fccc1e52f3f3a307aeb36ddd59ebec8ad1cd8dad622a"
+    },
+    {
+        "key": "rocketchat",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/rocket-chat.svg",
+        "local_path": "images/logos/apps/rocketchat.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "ac3df9b46d5885a15c22cb1fa13a3ed5d70ce74953653e63fdd1ee009fbc02a2"
+    },
+    {
+        "key": "zulip",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/zulip.svg",
+        "local_path": "images/logos/apps/zulip.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "a77ee6f1caa6394b2c76e5006ff6a42c81ce596439ef28d7c1d5e955a191d27b"
+    },
+    {
+        "key": "matrix_synapse",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/matrix.svg",
+        "local_path": "images/logos/apps/matrix_synapse.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "ae2c8bfac3c8925274aab73264772ecc7ea04c5fa4f7d08a223b81f31d4a2563"
+    },
+    {
+        "key": "matrix_synapse",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/element.svg",
+        "local_path": "images/logos/apps/element.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "dadef7649160a6b19b8e288e31da2b960091ba049f6f140e785b8be8388dc3c6"
+    },
+    {
+        "key": "mastodon",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/mastodon.svg",
+        "local_path": "images/logos/apps/mastodon.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "c5d0bbb046587569e575ebda4ae9f32da308f6ecfebe0b84ed0c615b974bc969"
+    },
+    {
+        "key": "ntfy",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/ntfy.svg",
+        "local_path": "images/logos/apps/ntfy.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "5e1155b02e8d819eb9024b1244dd636a773930918d88ac917602275fb9c42991"
+    },
+    {
+        "key": "ntfy",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/gotify.svg",
+        "local_path": "images/logos/apps/gotify.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "96fb5f819f183a582d64dc78258050edacf4656ad4bdbb92c7b6b325f197df93"
+    },
+    {
+        "key": "owncloud",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/owncloud.svg",
+        "local_path": "images/logos/apps/owncloud.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "89cea673abf2ee62daf7d229ea055222ae63b988d3e0bd5ab140f25873d8262f"
+    },
+    {
+        "key": "seafile",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/seafile.svg",
+        "local_path": "images/logos/apps/seafile.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "1eb18fcb41a54af918a2f6ec6d91c160fdbf89642425810f48e57297cfded769"
+    },
+    {
+        "key": "filebrowser",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/filebrowser.png",
+        "local_path": "images/logos/apps/filebrowser.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "f5f62aec54286a16f33c8505ae9f2025ee369eeb786ee5512a639d01d40f0044"
+    },
+    {
+        "key": "syncthing",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/syncthing.svg",
+        "local_path": "images/logos/apps/syncthing.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "65d1430f7522bea0507259929f0033d7c62539d14757d7c6f5b62574eb4da2d3"
+    },
+    {
+        "key": "photoprism",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/photoprism.svg",
+        "local_path": "images/logos/apps/photoprism.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "71a0103298dcef3ce8ca27c2d3375bd80804f7962efe74848205944bdcc5f001"
+    },
+    {
+        "key": "jellyfin",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/jellyfin.svg",
+        "local_path": "images/logos/apps/jellyfin.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "7f53cf083dbb3119ec8c5acbd8049c5033227617e461540f70591ac109124306"
+    },
+    {
+        "key": "plex",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/plex.png",
+        "local_path": "images/logos/apps/plex.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "cf497f6727c4d9146cb7a3fe9e7797c15297f29df12e472eeeca7823e7b34697"
+    },
+    {
+        "key": "navidrome",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/navidrome.svg",
+        "local_path": "images/logos/apps/navidrome.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "cd8911581c1173c0696dadaeb02f9bb2eb1ff3b6bdf5c64c49b90f7cb70274cf"
+    },
+    {
+        "key": "navidrome",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/audiobookshelf.svg",
+        "local_path": "images/logos/apps/audiobookshelf.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "48a539c267b88e3898f8e127dacef04e6625a5e99f8d334c392a8aa65668a8e8"
+    },
+    {
+        "key": "home_assistant",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/home-assistant.svg",
+        "local_path": "images/logos/apps/home_assistant.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "146b366b8c09502742025c4bca4e029e8e4a1b277db837d59a23b93940ebe0e0"
+    },
+    {
+        "key": "linkwarden",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/linkwarden.png",
+        "local_path": "images/logos/apps/linkwarden.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "348a74061ce407bf1dee41ebc74b2b48cbca7060a807556e15147ba380afb68e"
+    },
+    {
+        "key": "freshrss",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/freshrss.svg",
+        "local_path": "images/logos/apps/freshrss.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "c9fed1ab6f9e271538e041ff3f70117bf01cec9c162239534fb6a7b6bfa1c2b5"
+    },
+    {
+        "key": "netbird",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/netbird.png",
+        "local_path": "images/logos/apps/netbird.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "a99512ff59a3b2ad6d8c4519a10a0d603097c1eff8379d1c6805441addde11cb"
+    },
+    {
+        "key": "kasm_workspaces",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/kasm-workspaces.svg",
+        "local_path": "images/logos/apps/kasm_workspaces.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "37988c5b9008cfe17886dfc897f46cc42c1f3cdb64eb63ff205baffec016031b"
+    },
+    {
+        "key": "homarr",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/homarr.svg",
+        "local_path": "images/logos/apps/homarr.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "8de597a0eb1cf186a0bc2f274ea4f15055bd25dadceabb81e0ab1b08cfabc73a"
+    },
+    {
+        "key": "homarr",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/homepage.png",
+        "local_path": "images/logos/apps/homepage.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "8973bb95a4062acf4d8144fa7447f15a97c163f0514b53a69c83d47f29e63027"
+    },
+    {
+        "key": "openspeedtest",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/openspeedtest.svg",
+        "local_path": "images/logos/apps/openspeedtest.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "dcb488ff5e71516c9f71e305bad6bff1b8b9ae5afd4b12698583248570477f8b"
+    },
+    {
+        "key": "openspeedtest",
+        "role": "secondary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/speedtest-tracker.png",
+        "local_path": "images/logos/apps/speedtest_tracker.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "ca371a83d72c0458c72b70efba02b4471ec462e58387c64915850ae203f51748"
+    },
+    {
+        "key": "crafty_controller",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/crafty-controller.svg",
+        "local_path": "images/logos/apps/crafty_controller.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "c809985ef794384ab5decde99076da6e957ff1aa8743f86e110ba57060d96d50"
+    },
+    {
+        "key": "minecraft_bedrock",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/svg/minecraft.svg",
+        "local_path": "images/logos/apps/minecraft_bedrock.svg",
+        "format": "svg",
+        "brand_color": null,
+        "sha256": "5a8e08843823e780820c21aa9bc8916d7fcf731fd13aca02b3a81435409ce20f"
+    },
+    {
+        "key": "palworld_server",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/palworld.png",
+        "local_path": "images/logos/apps/palworld_server.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "a88d83f86cfecc13d5e63add47efa674b0b115aa86a16a8e92215de59895dece"
+    },
+    {
+        "key": "valheim_server",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/valheim.png",
+        "local_path": "images/logos/apps/valheim_server.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "bc0c214d09b0d31e197136955635da0dbf3a2900830a5c01f75bab063483e891"
+    },
+    {
+        "key": "terraria_tshock",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/terraria.png",
+        "local_path": "images/logos/apps/terraria_tshock.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "91f8b33ba0e87053b42ef598b4aa97e9052034d4b53da43949721a169f969bf1"
+    },
+    {
+        "key": "cs2_server",
+        "role": "primary",
+        "source_tier": "dashboard-icons",
+        "source_url": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/counter-strike-2.png",
+        "local_path": "images/logos/apps/cs2_server.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "1570fa9b7f7ef4a4e3ad22bd0eac069055a433ca92841857150415c3051d1ad7"
+    },
+    {
+        "key": "rust_server",
+        "role": "primary",
+        "source_tier": "vendor-official",
+        "source_url": "https://rust.facepunch.com/apple-touch-icon.png",
+        "local_path": "images/logos/apps/rust_server.png",
+        "format": "png",
+        "brand_color": null,
+        "sha256": "8056c9ffbd07a0f36e7df6cc347c2d39496b4d0cb3ae09b2952d18eb3dce9c3c"
+    }
+]

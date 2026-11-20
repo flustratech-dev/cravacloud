@@ -11,6 +11,7 @@ use App\Models\TicketMessage;
 use App\Models\User;
 use App\Models\VpsInstance;
 use App\Jobs\Provisioning\ReinstallVpsJob;
+use App\Services\Provisioning\Stacks\StackRegistry;
 use App\Services\Provisioning\VpsLifecycleDispatcher;
 use App\Services\RenewalService;
 use App\Services\SettingsService;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class DashboardController extends Controller
 {
@@ -225,6 +227,8 @@ class DashboardController extends Controller
             'os' => ['required', 'string', Rule::in(array_keys($osOptions))],
             'confirm_hostname' => ['required', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'warning_acknowledged' => ['nullable', 'boolean'],
+            'license_acknowledged' => ['nullable', 'boolean'],
         ];
         if (!$vps->hasFixedStack()) {
             $rules['control_panel'] = ['required', 'string', Rule::in(array_keys($stackOptions))];
@@ -244,12 +248,35 @@ class DashboardController extends Controller
         }
 
         $controlPanel = $vps->hasFixedStack() ? $vps->control_panel : $validated['control_panel'];
+        $stackRegistry = app(StackRegistry::class);
 
         if (app(VpsLifecycleDispatcher::class)->supports($vps)
-            && ! app(\App\Services\Provisioning\Stacks\StackRegistry::class)->supportsOs($validated['os'], (string) $controlPanel)) {
+            && ! $stackRegistry->supportsOs($validated['os'], (string) $controlPanel)) {
             return back()->withInput()->withErrors([
                 'control_panel' => 'Kombinasi sistem operasi dan stack tersebut belum didukung untuk reinstall otomatis. Pilih OS Ubuntu/Debian atau hubungi support.',
             ]);
+        }
+
+        $stackDef = $stackRegistry->get((string) $controlPanel);
+        if (!$vps->hasFixedStack() && $stackDef !== null) {
+            $instanceRam = (int) ($vps->ram ?: ($vps->order?->vpsSpec?->ram ?? 0));
+            if ($stackDef->hardBlockOnRam && $instanceRam > 0 && $instanceRam < $stackDef->minRamGb) {
+                throw ValidationException::withMessages([
+                    'control_panel' => "Stack {$stackDef->label} membutuhkan minimal {$stackDef->minRamGb} GB RAM. Server ini hanya memiliki {$instanceRam} GB RAM.",
+                ]);
+            }
+
+            if ($stackDef->requiresLicense && ! $request->boolean('license_acknowledged')) {
+                throw ValidationException::withMessages([
+                    'license_acknowledged' => "Panel {$stackDef->label} tidak termasuk lisensi berbayar (BYOL). Harap konfirmasi pemahaman Anda sebelum melanjutkan.",
+                ]);
+            }
+
+            if ($stackDef->needsWarningConfirmation() && ! $request->boolean('warning_acknowledged')) {
+                throw ValidationException::withMessages([
+                    'warning_acknowledged' => "Harap baca dan konfirmasi informasi penting untuk stack {$stackDef->label} sebelum melanjutkan.",
+                ]);
+            }
         }
 
         $osLabel = $osOptions[$validated['os']];
@@ -270,12 +297,28 @@ class DashboardController extends Controller
 
         $isAutoProvisioned = app(VpsLifecycleDispatcher::class)->supports($vps);
 
+        $requestData = ['os' => $validated['os'], 'control_panel' => $controlPanel];
+        if ($stackDef !== null && $stackDef->needsWarningConfirmation()) {
+            $ackMeta = [
+                'warning_acknowledged' => $request->boolean('warning_acknowledged'),
+                'license_acknowledged' => $stackDef->requiresLicense ? $request->boolean('license_acknowledged') : false,
+                'acknowledged_stack' => $stackDef->key,
+                'acknowledged_at' => now()->toIso8601String(),
+            ];
+            $requestData = array_merge($requestData, $ackMeta);
+
+            if ($vps->order) {
+                $orderMeta = is_array($vps->order->metadata) ? $vps->order->metadata : [];
+                $vps->order->update(['metadata' => array_merge($orderMeta, $ackMeta)]);
+            }
+        }
+
         $result = $this->openServiceRequest(
             vps: $vps,
             type: SupportTicket::TYPE_REINSTALL,
             subject: ($isAutoProvisioned ? 'Reinstall OS Otomatis - ' : 'Permintaan Reinstall OS - ') . $serverName,
             message: implode("\n", $lines),
-            requestData: ['os' => $validated['os'], 'control_panel' => $controlPanel],
+            requestData: $requestData,
             activityAction: 'reinstall_requested',
             activityDescription: $isAutoProvisioned
                 ? "Reinstall OS otomatis ({$osLabel}, stack {$stackLabel}) dimulai."

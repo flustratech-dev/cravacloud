@@ -1,40 +1,47 @@
 #!/usr/bin/env bash
-# CravaCloud stack installer: dify_ollama (idempotent — safe to re-run via TAT retry).
-# Dify (official docker compose) + a private Ollama container for local RAG.
-# Dify's SECRET_KEY and DB passwords are generated on-server; nothing secret is
-# echoed to stdout / TAT TaskResult (D6). Ollama stays on the internal network
-# (no extra inbound port). The Dify admin account is created on first-run web setup.
+# CravaCloud stack installer: dify_ollama (idempotent, _common.sh hardened).
+# Official Dify docker compose + private Ollama container.
+# Dify SECRET_KEY is generated on-server into root-only .env (D6 zero-echo).
 set -euo pipefail
+# {{common}}
+
 MARKER=/var/lib/cravacloud/.installed-{{stack}}
-[ -f "$MARKER" ] && { echo "already installed"; exit 0; }
+if [ -f "$MARKER" ] \
+    && [ -d /opt/crava-dify/docker ] \
+    && docker inspect --format '{{.State.Running}}' crava-dify-ollama 2>/dev/null | grep -qx true \
+    && ss -tln 2>/dev/null | grep -qE ':80([[:space:]]|$)'; then
+    echo "CRAVA_INSTALL_OK {{stack}}"
+    exit 0
+fi
+
 mkdir -p /var/lib/cravacloud
 exec > >(tee -a /var/log/cravacloud-install.log) 2>&1
 export DEBIAN_FRONTEND=noninteractive
 
-echo "== [1/5] Base dependencies =="
-apt-get update -y
-apt-get install -y ca-certificates curl gnupg ufw openssl git
+crava_require_os ubuntu debian
 
-echo "== [2/5] Docker =="
-if ! command -v docker >/dev/null 2>&1; then
-    curl -fsSL https://get.docker.com | sh
-fi
-systemctl enable --now docker
+echo "== [1/5] Dependencies & 2 GB Swap =="
+crava_pkg_install ca-certificates curl gnupg ufw openssl git
+crava_ensure_swap 2048
 
-echo "== [3/5] Dify (official compose) =="
+echo "== [2/5] Docker Engine =="
+crava_ensure_docker
+
+echo "== [3/5] Dify (Official Compose) =="
 APP_DIR=/opt/crava-dify
 if [ ! -d "$APP_DIR/docker" ]; then
     git clone --depth 1 https://github.com/langgenius/dify.git "$APP_DIR"
 fi
 cd "$APP_DIR/docker"
 if [ ! -f .env ]; then
-    cp .env.example .env
     umask 077
+    cp .env.example .env
     printf '\nSECRET_KEY=%s\n' "$(openssl rand -hex 32)" >> .env
+    chmod 600 .env
 fi
 docker compose up -d
 
-echo "== [4/5] Private Ollama (internal network only) =="
+echo "== [4/5] Private Ollama (Internal Network) =="
 if ! docker ps -a --format '{{.Names}}' | grep -qx crava-dify-ollama; then
     docker volume create dify_ollama_data >/dev/null
     docker run -d --name crava-dify-ollama --restart unless-stopped \
@@ -43,8 +50,13 @@ if ! docker ps -a --format '{{.Names}}' | grep -qx crava-dify-ollama; then
         ollama/ollama:latest
 fi
 
-echo "== [5/5] Firewall + finalize =="
-for p in 22 80 443; do ufw allow "$p"/tcp || true; done
+echo "== [5/5] Readiness Gate & Firewall =="
+crava_wait_container crava-dify-ollama 120
+if ! crava_wait_port 80 180; then
+    docker compose -f "$APP_DIR/docker/docker-compose.yaml" logs --tail 40 >&2 || true
+    exit 1
+fi
+crava_ufw_allow 22/tcp 80/tcp 443/tcp
 mkdir -p /var/lib/cravacloud && touch "$MARKER"
 echo "CRAVA_INSTALL_OK {{stack}}"
 echo "Secret Dify disimpan di /opt/crava-dify/docker/.env (root-only)."

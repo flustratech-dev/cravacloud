@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Provisioning\Stacks\StackRegistry;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -120,21 +121,16 @@ class Order extends Model
 
     public function getControlPanelLabelAttribute(): string
     {
+        if ($this->control_panel === 'hermes_omniroute') {
+            return 'Hermes + OmniRoute';
+        }
+
         return self::stackLabels()[$this->control_panel] ?? str_replace('_', ' ', ucfirst((string) $this->control_panel));
     }
 
     public static function stackLabels(): array
     {
-        return [
-            'none' => 'Tanpa Control Panel', 'coolify' => 'Coolify', 'dokploy' => 'Dokploy', 'aapanel' => 'aaPanel',
-            'cloudpanel' => 'CloudPanel', 'docker' => 'Docker', 'cyberpanel' => 'CyberPanel', 'hestiacp' => 'HestiaCP',
-            'hermes_agent' => 'Hermes Agent', 'openclaw' => 'OpenClaw', 'omniroute' => 'OmniRoute', '9router' => '9router',
-            'agent_zero' => 'Agent Zero', 'n8n' => 'n8n', 'ollama' => 'Ollama', 'anythingllm' => 'AnythingLLM',
-            'librechat' => 'LibreChat', 'vscode_server' => 'Visual Studio Code Server', 'gitea_forgejo' => 'Gitea / Forgejo',
-            'uptime_kuma' => 'Uptime Kuma', 'netdata_beszel' => 'Netdata / Beszel', 'wordpress' => 'WordPress', 'ghost' => 'Ghost',
-            'strapi_directus' => 'Strapi / Directus', 'prestashop_bagisto' => 'PrestaShop / Bagisto',
-            'claude_opencode' => 'Claude Code & OpenCode CLI Stack',
-            'dify_ollama' => 'Dify AI + Ollama Private RAG Studio',
+        return app(StackRegistry::class)->labels() + [
             'managed_database' => 'Dedicated Managed Database Server',
         ];
     }

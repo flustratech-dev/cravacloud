@@ -1,40 +1,66 @@
 #!/usr/bin/env bash
-# CravaCloud stack installer: hermes_agent (idempotent — safe to re-run via TAT retry).
-# White-label AI agent bundle published by CravaCloud. The image reference is
-# read from /opt/crava-hermes/image.env so it can be pinned per release.
-# Provider API keys are entered by the customer in the web UI after install (D6).
+# CravaCloud stack installer: hermes_agent (idempotent, _common.sh hardened).
+# Official NousResearch Hermes Agent container (nousresearch/hermes-agent:latest).
+# API_SERVER_KEY is generated on-server into root-only .env (D6 zero-echo).
 set -euo pipefail
+# {{common}}
+
 MARKER=/var/lib/cravacloud/.installed-{{stack}}
-[ -f "$MARKER" ] && { echo "already installed"; exit 0; }
+if [ -f "$MARKER" ] && docker inspect --format '{{.State.Running}}' crava-hermes 2>/dev/null | grep -qx true; then
+    echo "CRAVA_INSTALL_OK {{stack}}"
+    exit 0
+fi
+
 mkdir -p /var/lib/cravacloud
 exec > >(tee -a /var/log/cravacloud-install.log) 2>&1
 export DEBIAN_FRONTEND=noninteractive
 
-echo "== [1/4] Base dependencies =="
-apt-get update -y
-apt-get install -y ca-certificates curl gnupg ufw
+crava_require_os ubuntu debian
 
-echo "== [2/4] Docker =="
-if ! command -v docker >/dev/null 2>&1; then
-    curl -fsSL https://get.docker.com | sh
-fi
-systemctl enable --now docker
+echo "== [1/4] Dependencies & 2 GB Swap =="
+crava_pkg_install ca-certificates curl gnupg ufw openssl
+crava_ensure_swap 2048
 
-echo "== [3/4] Hermes Agent =="
+echo "== [2/4] Docker Engine =="
+crava_ensure_docker
+
+echo "== [3/4] Hermes Agent (NousResearch Official) =="
 APP_DIR=/opt/crava-hermes
-mkdir -p "$APP_DIR"
-[ -f "$APP_DIR/image.env" ] || printf 'HERMES_IMAGE=registry.cravacloud.id/hermes-agent:latest\n' > "$APP_DIR/image.env"
-# shellcheck disable=SC1091
-. "$APP_DIR/image.env"
-if ! docker ps -a --format '{{.Names}}' | grep -qx crava-hermes; then
-    docker volume create hermes_data >/dev/null
-    docker run -d --name crava-hermes --restart unless-stopped \
-        -p 8000:8000 \
-        -v hermes_data:/app/data \
-        "$HERMES_IMAGE"
+mkdir -p "$APP_DIR/data"
+if [ ! -f "$APP_DIR/.env" ]; then
+    umask 077
+    printf 'API_SERVER_KEY=%s\n' "$(openssl rand -hex 24)" > "$APP_DIR/.env"
+    chmod 600 "$APP_DIR/.env"
 fi
 
-echo "== [4/4] Firewall + finalize =="
-for p in 22 8000; do ufw allow "$p"/tcp || true; done
+cat > "$APP_DIR/compose.yml" <<'YAML'
+services:
+  hermes:
+    image: nousresearch/hermes-agent:latest
+    container_name: crava-hermes
+    restart: unless-stopped
+    ports:
+      - "8000:8642"
+    environment:
+      HERMES_UID: "1000"
+      HERMES_GID: "1000"
+      API_SERVER_ENABLED: "true"
+      API_SERVER_HOST: "0.0.0.0"
+      API_SERVER_PORT: "8642"
+      API_SERVER_KEY: ${API_SERVER_KEY}
+    volumes:
+      - hermes_data:/opt/data
+    command: ["gateway", "run"]
+volumes:
+  hermes_data:
+YAML
+
+docker compose --env-file "$APP_DIR/.env" -f "$APP_DIR/compose.yml" up -d
+
+echo "== [4/4] Readiness Gate & Firewall =="
+crava_wait_container crava-hermes 120
+crava_wait_port 8000 120
+crava_ufw_allow 22/tcp 8000/tcp
 mkdir -p /var/lib/cravacloud && touch "$MARKER"
 echo "CRAVA_INSTALL_OK {{stack}}"
+echo "Kredensial API server tersimpan di /opt/crava-hermes/.env (root-only)."

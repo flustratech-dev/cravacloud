@@ -20,7 +20,7 @@
 <div class="space-y-6" x-data="{
     activeTab: '{{ $defaultTab }}',
     renewalModal: false,
-    reinstallModal: {{ $errors->hasAny(['os', 'control_panel', 'confirm_hostname', 'notes']) ? 'true' : 'false' }},
+    reinstallModal: {{ $errors->hasAny(['os', 'control_panel', 'confirm_hostname', 'notes', 'warning_acknowledged', 'license_acknowledged']) ? 'true' : 'false' }},
     rebootGuideModal: false,
     unreachableModal: {{ $errors->has('description') ? 'true' : 'false' }},
     passwordLoading: false,
@@ -1339,13 +1339,163 @@ WEB_MANAGER_URL={{ $webMgrUrl }} (CloudBeaver)
         @php
             $reinstallOsOptions = $vps->reinstallOsOptions();
             $reinstallStackOptions = $vps->reinstallStackOptions();
-            $reinstallStackOsMap = $isAutomated ? app(\App\Services\Provisioning\Stacks\StackRegistry::class)->supportedOsMap() : [];
+            $reinstallStackRegistry = app(\App\Services\Provisioning\Stacks\StackRegistry::class);
+            $reinstallStackOsMap = $isAutomated ? $reinstallStackRegistry->supportedOsMap() : [];
+            $reinstallCatalog = $reinstallStackRegistry->uiCatalog(allowedKeys: array_keys($reinstallStackOptions), checkoutOnly: false);
             $selectedOs = old('os', array_key_exists((string) $vps->os, $reinstallOsOptions) ? $vps->os : array_key_first($reinstallOsOptions));
-            $selectedStack = old('control_panel', $vps->control_panel);
+            $selectedStack = old('control_panel', array_key_exists((string) $vps->control_panel, $reinstallStackOptions) ? $vps->control_panel : (array_key_first($reinstallStackOptions) ?? 'none'));
+            $selectedStackDef = $reinstallStackRegistry->get((string) $selectedStack);
+            $initialStackType = match ($selectedStackDef?->uiGroup) {
+                'panel' => 'control_panel',
+                'app' => 'app',
+                default => 'none',
+            };
+            $initialAck = (old('warning_acknowledged') || old('license_acknowledged') || ($selectedStackDef && $selectedStackDef->needsWarningConfirmation() && (string) $selectedStack === (string) $vps->control_panel))
+                ? [(string) $selectedStack => true]
+                : [];
+            $vpsPlanRamGb = (int) ($vps->ram ?: ($vps->order?->vpsSpec?->ram ?? 0));
+            $vpsPlanName = (string) ($vps->order?->vpsSpec?->name ?? ($vps->hostname ?: 'VPS Ini'));
         @endphp
         <!-- Modal: Request / Auto Reinstall OS -->
-        <div x-show="reinstallModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60" style="display: none;">
-            <div class="bg-white border-2 border-ink p-6 max-w-md w-full max-h-[90vh] overflow-y-auto" @click.away="reinstallModal = false">
+        <div x-show="reinstallModal"
+             x-cloak
+             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60"
+             style="display: none;"
+             x-data="{
+                 isAutomated: @js((bool) $isAutomated),
+                 hasFixedStack: @js((bool) $vps->hasFixedStack()),
+                 reinstallOs: @js((string) $selectedOs),
+                 reinstallStack: @js((string) $selectedStack),
+                 stackType: @js($initialStackType),
+                 stackSearch: '',
+                 stackCategory: 'all',
+                 stackOsMap: @js($reinstallStackOsMap),
+                 allOs: @js($reinstallOsOptions),
+                 stackCatalog: @js($reinstallCatalog),
+                 planRamGb: @js($vpsPlanRamGb),
+                 planName: @js($vpsPlanName),
+                 acknowledgedWarnings: @js($initialAck),
+                 warningModalOpen: false,
+                 warningModalStack: null,
+                 warningModalMode: 'license',
+                 compatibleOs() {
+                     if (!this.isAutomated) return this.allOs;
+                     const allowed = this.stackOsMap[this.reinstallStack];
+                     if (!Array.isArray(allowed) || allowed.length === 0) return this.allOs;
+                     const out = {};
+                     for (const [k, v] of Object.entries(this.allOs)) {
+                         if (allowed.includes(k)) out[k] = v;
+                     }
+                     return Object.keys(out).length ? out : this.allOs;
+                 },
+                 syncOs() {
+                     if (!this.isAutomated) return;
+                     const c = this.compatibleOs();
+                     if (!c[this.reinstallOs]) {
+                         this.reinstallOs = c.ubuntu2404 ? 'ubuntu2404' : Object.keys(c)[0];
+                     }
+                 },
+                 selectedStackDef() {
+                     return this.stackCatalog.find((s) => s.key === this.reinstallStack) || null;
+                 },
+                 activeUiGroup() {
+                     if (this.stackType === 'control_panel') return 'panel';
+                     if (this.stackType === 'app') return 'app';
+                     return 'none';
+                 },
+                 groupStacks() {
+                     return this.stackCatalog.filter((s) => s.uiGroup === this.activeUiGroup());
+                 },
+                 hasPaidPanelsInGroup() {
+                     return this.groupStacks().some((s) => Boolean(s.requiresLicense));
+                 },
+                 availableStackCategories() {
+                     const cats = [];
+                     for (const item of this.groupStacks()) {
+                         if (item.category && !cats.includes(item.category)) {
+                             cats.push(item.category);
+                         }
+                     }
+                     return cats;
+                 },
+                 filteredStacks() {
+                     const q = (this.stackSearch || '').trim().toLowerCase();
+                     const cat = this.stackCategory || 'all';
+                     return this.groupStacks().filter((s) => {
+                         if (cat === '__free' && s.requiresLicense) return false;
+                         if (cat === '__paid' && !s.requiresLicense) return false;
+                         if (cat !== 'all' && cat !== '__free' && cat !== '__paid' && s.category !== cat) return false;
+                         if (q === '') return true;
+                         return (s.label || '').toLowerCase().includes(q)
+                             || (s.key || '').toLowerCase().includes(q)
+                             || (s.description || '').toLowerCase().includes(q)
+                             || (s.category || '').toLowerCase().includes(q);
+                     });
+                 },
+                 isWarningAcknowledged() {
+                     const def = this.selectedStackDef();
+                     if (!def || !def.needsWarningConfirmation) return true;
+                     return Boolean(this.acknowledgedWarnings[def.key]);
+                 },
+                 isLicenseAcknowledged() {
+                     const def = this.selectedStackDef();
+                     if (!def || !def.requiresLicense) return false;
+                     return Boolean(this.acknowledgedWarnings[def.key]);
+                 },
+                 handleStackClick(stack) {
+                     if (!stack) return;
+                     if (stack.hardBlockOnRam && this.planRamGb > 0 && this.planRamGb < (stack.minRamGb || 2)) {
+                         this.warningModalStack = stack;
+                         this.warningModalMode = 'ram';
+                         this.warningModalOpen = true;
+                         return;
+                     }
+                     if (stack.needsWarningConfirmation && !this.acknowledgedWarnings[stack.key]) {
+                         this.warningModalStack = stack;
+                         this.warningModalMode = stack.requiresLicense ? 'license' : (stack.warningType || 'activation');
+                         this.warningModalOpen = true;
+                         return;
+                     }
+                     this.reinstallStack = stack.key;
+                     this.syncOs();
+                 },
+                 confirmStackWarning() {
+                     if (!this.warningModalStack) return;
+                     const key = this.warningModalStack.key;
+                     this.acknowledgedWarnings = { ...this.acknowledgedWarnings, [key]: true };
+                     this.reinstallStack = key;
+                     this.warningModalOpen = false;
+                     this.warningModalStack = null;
+                     this.syncOs();
+                 },
+                 closeStackWarning() {
+                     this.warningModalOpen = false;
+                     this.warningModalStack = null;
+                 },
+                 selectStack(type) {
+                     this.stackType = type;
+                     this.stackSearch = '';
+                     this.stackCategory = 'all';
+                     if (type === 'none') {
+                         this.reinstallStack = 'none';
+                         this.syncOs();
+                         return;
+                     }
+                     const targetGroup = type === 'control_panel' ? 'panel' : 'app';
+                     const currentDef = this.selectedStackDef();
+                     if (currentDef && currentDef.uiGroup === targetGroup) {
+                         return;
+                     }
+                     const candidate = this.stackCatalog.find((s) => s.uiGroup === targetGroup && !s.needsWarningConfirmation && (!s.hardBlockOnRam || this.planRamGb === 0 || this.planRamGb >= (s.minRamGb || 2)))
+                         || this.stackCatalog.find((s) => s.uiGroup === targetGroup);
+                     if (candidate) {
+                         this.handleStackClick(candidate);
+                     }
+                 }
+             }"
+             x-init="syncOs()">
+            <div class="bg-white border-2 border-ink p-6 {{ $vps->hasFixedStack() ? 'max-w-md' : 'max-w-2xl' }} w-full max-h-[90vh] overflow-y-auto"
+                 @click.away="if (!warningModalOpen) reinstallModal = false">
                 @if($isAutomated)
                     <h3 class="font-display text-lg font-bold text-ink mb-1">Reinstall OS Otomatis</h3>
                     <p class="text-xs text-muted mb-3">
@@ -1361,31 +1511,7 @@ WEB_MANAGER_URL={{ $webMgrUrl }} (CloudBeaver)
                     Seluruh data di server akan terhapus permanen. Backup data Anda sebelum melanjutkan.
                 </p>
 
-                <form action="{{ route('dashboard.vps.request-reinstall', $vps->id) }}" method="POST" class="space-y-4 text-xs"
-                      @if($isAutomated)
-                          x-data="{
-                              reinstallOs: @js((string) $selectedOs),
-                              reinstallStack: @js((string) $selectedStack),
-                              stackOsMap: @js($reinstallStackOsMap),
-                              allOs: @js($reinstallOsOptions),
-                              compatibleOs() {
-                                  const allowed = this.stackOsMap[this.reinstallStack];
-                                  if (!Array.isArray(allowed) || allowed.length === 0) return this.allOs;
-                                  const out = {};
-                                  for (const [k, v] of Object.entries(this.allOs)) {
-                                      if (allowed.includes(k)) out[k] = v;
-                                  }
-                                  return Object.keys(out).length ? out : this.allOs;
-                              },
-                              syncOs() {
-                                  const c = this.compatibleOs();
-                                  if (!c[this.reinstallOs]) {
-                                      this.reinstallOs = c.ubuntu2404 ? 'ubuntu2404' : Object.keys(c)[0];
-                                  }
-                              }
-                          }"
-                          x-init="syncOs()"
-                      @endif>
+                <form action="{{ route('dashboard.vps.request-reinstall', $vps->id) }}" method="POST" class="space-y-4 text-xs">
                     @csrf
                     <div>
                         <label class="font-mono text-[11px] font-bold uppercase text-ink block mb-1.5">Sistem Operasi Baru</label>
@@ -1396,7 +1522,7 @@ WEB_MANAGER_URL={{ $webMgrUrl }} (CloudBeaver)
                                 </template>
                             </select>
                         @else
-                            <select name="os" required class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm border border-hairline bg-white text-ink font-mono focus:outline-none focus:border-electric">
+                            <select name="os" x-model="reinstallOs" required class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm border border-hairline bg-white text-ink font-mono focus:outline-none focus:border-electric">
                                 @foreach($reinstallOsOptions as $osKey => $osName)
                                     <option value="{{ $osKey }}" @selected((string) $selectedOs === (string) $osKey)>{{ $osName }}</option>
                                 @endforeach
@@ -1414,12 +1540,142 @@ WEB_MANAGER_URL={{ $webMgrUrl }} (CloudBeaver)
                                 {{ $vps->control_panel_label }} (bawaan paket, dipasang ulang)
                             </p>
                         @else
-                            <select name="control_panel" @if($isAutomated) x-model="reinstallStack" @change="syncOs()" @endif required class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm border border-hairline bg-white text-ink font-mono focus:outline-none focus:border-electric">
-                                @foreach($reinstallStackOptions as $stackKey => $stackName)
-                                    <option value="{{ $stackKey }}" @selected((string) $selectedStack === (string) $stackKey)>{{ $stackName }}</option>
-                                @endforeach
-                            </select>
+                            <input type="hidden" name="control_panel" :value="reinstallStack">
+                            <input type="hidden" name="warning_acknowledged" :value="isWarningAcknowledged() ? '1' : '0'">
+                            <input type="hidden" name="license_acknowledged" :value="isLicenseAcknowledged() ? '1' : '0'">
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-px bg-hairline border border-hairline mb-3">
+                                <button type="button" @click="selectStack('none')"
+                                        :class="stackType === 'none' ? 'bg-ink text-cream' : 'bg-white text-ink hover:bg-creamDark/50'"
+                                        class="py-2 px-3 font-mono text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer text-center">
+                                    OS Bersih
+                                </button>
+                                <button type="button" @click="selectStack('control_panel')"
+                                        :class="stackType === 'control_panel' ? 'bg-ink text-cream' : 'bg-white text-ink hover:bg-creamDark/50'"
+                                        class="py-2 px-3 font-mono text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer text-center">
+                                    Control Panel
+                                </button>
+                                <button type="button" @click="selectStack('app')"
+                                        :class="stackType === 'app' ? 'bg-ink text-cream' : 'bg-white text-ink hover:bg-creamDark/50'"
+                                        class="py-2 px-3 font-mono text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer text-center">
+                                    1-Click Apps
+                                </button>
+                            </div>
+
+                            <div x-show="stackType === 'control_panel' || stackType === 'app'" class="space-y-3">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                                    <div class="relative flex-1">
+                                        <input type="text"
+                                               x-model="stackSearch"
+                                               placeholder="Cari stack..."
+                                               aria-label="Cari stack reinstall"
+                                               class="w-full rounded-none px-3 py-2 text-xs bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric">
+                                        <button type="button"
+                                                x-show="stackSearch !== ''"
+                                                @click="stackSearch = ''"
+                                                class="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-mono text-muted hover:text-ink cursor-pointer">✕</button>
+                                    </div>
+                                    <span class="font-mono text-[10px] text-muted shrink-0"
+                                          x-text="filteredStacks().length + '/' + groupStacks().length + ' stack'"></span>
+                                </div>
+
+                                <div class="flex flex-wrap items-center gap-1">
+                                    <button type="button"
+                                            @click="stackCategory = 'all'"
+                                            :class="stackCategory === 'all' ? 'bg-ink text-cream border-ink' : 'bg-white text-ink border-hairline hover:border-ink'"
+                                            class="px-2 py-0.5 border font-mono text-[10px] font-bold uppercase cursor-pointer">
+                                        Semua
+                                    </button>
+                                    <template x-if="hasPaidPanelsInGroup()">
+                                        <button type="button"
+                                                @click="stackCategory = '__free'"
+                                                :class="stackCategory === '__free' ? 'bg-ink text-cream border-ink' : 'bg-white text-ink border-hairline hover:border-ink'"
+                                                class="px-2 py-0.5 border font-mono text-[10px] font-bold uppercase cursor-pointer">
+                                            Gratis
+                                        </button>
+                                    </template>
+                                    <template x-if="hasPaidPanelsInGroup()">
+                                        <button type="button"
+                                                @click="stackCategory = '__paid'"
+                                                :class="stackCategory === '__paid' ? 'bg-amber-500 text-ink border-amber-600' : 'bg-white text-amber-900 border-amber-400'"
+                                                class="px-2 py-0.5 border font-mono text-[10px] font-bold uppercase cursor-pointer">
+                                            Berbayar · BYOL
+                                        </button>
+                                    </template>
+                                    <template x-for="cat in availableStackCategories()" :key="cat">
+                                        <button type="button"
+                                                @click="stackCategory = cat"
+                                                :class="stackCategory === cat ? 'bg-electric text-white border-electric' : 'bg-white text-ink border-hairline hover:border-ink'"
+                                                class="px-2 py-0.5 border font-mono text-[10px] font-bold uppercase cursor-pointer"
+                                                x-text="cat"></button>
+                                    </template>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-1">
+                                    <template x-for="stack in filteredStacks()" :key="stack.key">
+                                        <button type="button"
+                                                @click="handleStackClick(stack)"
+                                                :class="reinstallStack === stack.key
+                                                    ? 'border-2 border-electric bg-cream'
+                                                    : (stack.hardBlockOnRam && planRamGb > 0 && planRamGb < stack.minRamGb
+                                                        ? 'border border-red-300 bg-white/80 hover:border-red-500'
+                                                        : 'border border-hairline bg-white hover:border-ink')"
+                                                class="p-2.5 text-left cursor-pointer transition-colors flex items-start gap-2.5">
+                                            <div class="w-10 h-10 rounded-xl bg-white/95 border border-black/10 p-1.5 shrink-0 flex items-center justify-center relative">
+                                                <img :src="stack.logoUrl"
+                                                     :alt="stack.label"
+                                                     loading="lazy"
+                                                     class="w-full h-full object-contain">
+                                                <template x-if="stack.secondaryLogoUrl">
+                                                    <img :src="stack.secondaryLogoUrl"
+                                                         :alt="stack.label"
+                                                         loading="lazy"
+                                                         class="w-4 h-4 rounded-full bg-white border border-black/15 p-0.5 object-contain absolute -bottom-1 -right-1 shadow-sm">
+                                                </template>
+                                            </div>
+                                            <div class="min-w-0 flex-1 space-y-1">
+                                                <div class="flex items-center justify-between gap-1.5">
+                                                    <span class="font-display font-bold text-xs text-ink truncate" x-text="stack.label"></span>
+                                                    <span class="font-mono text-[9px] text-muted border border-hairline px-1 bg-creamDark/60 shrink-0"
+                                                          x-text="'Min. ' + stack.minRamGb + 'G'"></span>
+                                                </div>
+                                                <p class="text-[11px] text-muted leading-tight line-clamp-1" x-text="stack.description"></p>
+                                                <div class="flex flex-wrap gap-1">
+                                                    <template x-if="stack.requiresLicense">
+                                                        <span class="px-1 py-0.5 font-mono text-[9px] font-bold uppercase bg-amber-100 text-amber-950 border border-amber-400">BYOL</span>
+                                                    </template>
+                                                    <template x-if="stack.hardBlockOnRam && planRamGb > 0 && planRamGb < stack.minRamGb">
+                                                        <span class="px-1 py-0.5 font-mono text-[9px] font-bold uppercase bg-red-100 text-red-900 border border-red-400"
+                                                              x-text="'Butuh Min. ' + stack.minRamGb + ' GB'"></span>
+                                                    </template>
+                                                    <template x-if="!stack.requiresLicense && (stack.warningType === 'activation' || stack.warningType === 'network')">
+                                                        <span class="px-1 py-0.5 font-mono text-[9px] font-bold uppercase bg-sky-100 text-sky-900 border border-sky-300"
+                                                              x-text="stack.warningType === 'network' ? 'Info Akses' : 'Info Aktivasi'"></span>
+                                                    </template>
+                                                    <template x-if="Array.isArray(stack.udpPorts) && stack.udpPorts.length > 0">
+                                                        <span class="px-1 py-0.5 font-mono text-[9px] font-bold uppercase bg-violet-100 text-violet-900 border border-violet-300">TCP+UDP</span>
+                                                    </template>
+                                                    <template x-if="stack.needsWarningConfirmation && acknowledgedWarnings[stack.key]">
+                                                        <span class="px-1 py-0.5 font-mono text-[9px] font-bold uppercase bg-emerald-100 text-emerald-900 border border-emerald-400">✓ Disetujui</span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div x-show="stackType === 'none'" class="p-3 border border-hairline bg-creamDark/40 font-mono text-[11px] text-ink/80">
+                                Server akan dipasang ulang dengan OS Linux bersih tanpa control panel atau aplikasi tambahan.
+                            </div>
+
                             @error('control_panel')
+                                <p class="mt-1 font-mono text-red-700 font-bold">{{ $message }}</p>
+                            @enderror
+                            @error('warning_acknowledged')
+                                <p class="mt-1 font-mono text-red-700 font-bold">{{ $message }}</p>
+                            @enderror
+                            @error('license_acknowledged')
                                 <p class="mt-1 font-mono text-red-700 font-bold">{{ $message }}</p>
                             @enderror
                         @endif
@@ -1465,6 +1721,8 @@ WEB_MANAGER_URL={{ $webMgrUrl }} (CloudBeaver)
                     </div>
                 </form>
             </div>
+
+            @include('components.stack-warning-modal', ['context' => 'reinstall'])
         </div>
     @endif
 

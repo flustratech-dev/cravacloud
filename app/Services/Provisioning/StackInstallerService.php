@@ -7,6 +7,7 @@ use App\Models\VpsInstance;
 use App\Services\Provisioning\Exceptions\ProviderException;
 use App\Services\Provisioning\Stacks\StackDefinition;
 use App\Services\Provisioning\Stacks\StackRegistry;
+use App\Services\Provisioning\Stacks\StackScriptBuilder;
 use App\Services\Provisioning\Tencent\ResolvesRegion;
 use App\Services\Provisioning\Tencent\TatClient;
 use RuntimeException;
@@ -24,10 +25,14 @@ class StackInstallerService
 {
     use ResolvesRegion;
 
+    private readonly StackScriptBuilder $builder;
+
     public function __construct(
         private readonly TatClient $tat,
         private readonly StackRegistry $registry,
+        ?StackScriptBuilder $builder = null,
     ) {
+        $this->builder = $builder ?? new StackScriptBuilder();
     }
 
     public function registry(): StackRegistry
@@ -91,25 +96,10 @@ class StackInstallerService
     }
 
     /**
-     * Load the bash template and substitute non-secret placeholders only.
+     * Load the bash template, inject _common.sh helpers, and substitute non-secret placeholders only.
      */
     public function renderScript(StackDefinition $definition, VpsInstance $instance): string
     {
-        if (! $definition->script) {
-            throw new RuntimeException("Stack [{$definition->key}] has no install script.");
-        }
-
-        $path = resource_path('provisioning/stacks/'.$definition->script);
-        if (! is_file($path)) {
-            throw new RuntimeException("Install script missing: {$path}");
-        }
-
-        $content = (string) file_get_contents($path);
-
-        return str_replace(
-            ['{{stack}}', '{{order_id}}', '{{hostname}}'],
-            [$definition->key, (string) $instance->order_id, (string) $instance->hostname],
-            $content,
-        );
+        return $this->builder->build($definition, $instance);
     }
 }

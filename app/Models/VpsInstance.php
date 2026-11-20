@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\Provisioning\Stacks\StackDefinition;
+use App\Services\Provisioning\Stacks\StackRegistry;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +23,10 @@ class VpsInstance extends Model
 
     public function getControlPanelLabelAttribute(): string
     {
+        if ($this->control_panel === 'hermes_omniroute') {
+            return 'Hermes + OmniRoute';
+        }
+
         return Order::stackLabels()[$this->control_panel] ?? str_replace('_', ' ', ucfirst((string) $this->control_panel));
     }
 
@@ -487,16 +493,16 @@ class VpsInstance extends Model
         return Order::operatingSystems()[$this->provider] ?? Order::osLabels();
     }
 
-    /** Pilihan stack untuk reinstall (key => label). */
+    /** Pilihan stack untuk reinstall (key => label), diturunkan dari StackRegistry. */
     public function reinstallStackOptions(): array
     {
         if ($this->hasFixedStack()) {
             return [(string) $this->control_panel => $this->control_panel_label];
         }
 
-        // Stack khusus paket AI/Database tidak ditawarkan untuk VPS biasa.
-        return collect(Order::stackLabels())
-            ->except(['managed_database', 'claude_opencode', 'dify_ollama'])
+        return collect(app(StackRegistry::class)->all())
+            ->filter(fn (StackDefinition $definition) => $definition->visibleOnCheckout)
+            ->mapWithKeys(fn (StackDefinition $definition) => [$definition->key => $definition->label])
             ->all();
     }
 

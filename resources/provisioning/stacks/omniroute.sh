@@ -1,52 +1,76 @@
 #!/usr/bin/env bash
-# CravaCloud stack installer: omniroute (idempotent — safe to re-run via TAT retry).
-# Proxy connector: ALL traffic leaves OUTBOUND through the central CravaCloud
-# gateway 43.173.51.90:20129. NO additional inbound firewall port is opened on
-# the customer VPS (only SSH 22 remains). The connector token is provisioned
-# on-server into a root-only file and NEVER echoed to stdout / TAT TaskResult (D6).
+# CravaCloud stack installer: omniroute (idempotent, _common.sh hardened).
+# Official npm package `omniroute` (cheaper-inference/OmniRoute) bound strictly
+# to loopback 127.0.0.1:20128. NO extra inbound firewall port is opened (SSH 22 only).
 set -euo pipefail
+# {{common}}
+
 MARKER=/var/lib/cravacloud/.installed-{{stack}}
-[ -f "$MARKER" ] && { echo "already installed"; exit 0; }
+if [ -f "$MARKER" ] && systemctl is-active --quiet crava-omniroute.service; then
+    echo "CRAVA_INSTALL_OK {{stack}}"
+    exit 0
+fi
+
 mkdir -p /var/lib/cravacloud
 exec > >(tee -a /var/log/cravacloud-install.log) 2>&1
 export DEBIAN_FRONTEND=noninteractive
 
-GATEWAY_HOST=43.173.51.90
-GATEWAY_PORT=20129
+crava_require_os ubuntu debian rocky centos
 
-echo "== [1/4] Base dependencies =="
-if command -v apt-get >/dev/null 2>&1; then
-    apt-get update -y
-    apt-get install -y ca-certificates curl gnupg ufw openssl
-else
-    dnf install -y ca-certificates curl openssl || yum install -y ca-certificates curl openssl
+echo "== [1/4] Dependencies, Node.js 22 LTS & 2 GB Swap =="
+crava_pkg_install ca-certificates curl gnupg openssl
+if command -v ufw >/dev/null 2>&1; then
+    true
+elif [ "$CRAVA_PKG_MGR" = "apt" ]; then
+    crava_pkg_install ufw
+fi
+crava_ensure_swap 2048
+
+NODE_MAJOR=0
+if command -v node >/dev/null 2>&1; then
+    NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+fi
+if [ "$NODE_MAJOR" -lt 22 ]; then
+    crava_wait_pkg_lock 120
+    if [ "$CRAVA_PKG_MGR" = "apt" ]; then
+        curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+        apt-get install -y nodejs
+    else
+        curl -fsSL https://rpm.nodesource.com/setup_22.x | bash -
+        dnf install -y nodejs || yum install -y nodejs
+    fi
 fi
 
-echo "== [2/4] Connector binary =="
+echo "== [2/4] Install OmniRoute (Official npm) =="
+npm install -g omniroute
+
+echo "== [3/4] Loopback Systemd Service =="
 APP_DIR=/opt/crava-omniroute
-mkdir -p "$APP_DIR"
-[ -f "$APP_DIR/release.env" ] || printf 'OMNIROUTE_URL=https://registry.cravacloud.id/releases/omniroute-linux-amd64\n' > "$APP_DIR/release.env"
-# shellcheck disable=SC1091
-. "$APP_DIR/release.env"
-if [ ! -x "$APP_DIR/omniroute" ]; then
-    curl -fsSL "$OMNIROUTE_URL" -o "$APP_DIR/omniroute"
-    chmod 0755 "$APP_DIR/omniroute"
-fi
-
-echo "== [3/4] Outbound systemd service =="
+mkdir -p "$APP_DIR/data"
 if [ ! -f "$APP_DIR/connector.env" ]; then
     umask 077
-    printf 'CONNECTOR_TOKEN=%s\n' "$(openssl rand -hex 24)" > "$APP_DIR/connector.env"
+    {
+        printf 'HOST=127.0.0.1\n'
+        printf 'PORT=20128\n'
+        printf 'DASHBOARD_PORT=20128\n'
+        printf 'DATA_DIR=%s/data\n' "$APP_DIR"
+        printf 'JWT_SECRET=%s\n' "$(openssl rand -hex 32)"
+        printf 'INITIAL_PASSWORD=%s\n' "$(openssl rand -hex 16)"
+    } > "$APP_DIR/connector.env"
+    chmod 600 "$APP_DIR/connector.env"
 fi
+
 cat > /etc/systemd/system/crava-omniroute.service <<UNIT
 [Unit]
-Description=CravaCloud OmniRoute outbound proxy connector
+Description=CravaCloud OmniRoute LLM Gateway (Loopback Only)
 After=network-online.target
 Wants=network-online.target
 
 [Service]
+Type=simple
+WorkingDirectory=$APP_DIR
 EnvironmentFile=$APP_DIR/connector.env
-ExecStart=$APP_DIR/omniroute --gateway ${GATEWAY_HOST}:${GATEWAY_PORT} --mode outbound
+ExecStart=/usr/bin/env omniroute
 Restart=always
 RestartSec=5
 NoNewPrivileges=true
@@ -54,11 +78,14 @@ NoNewPrivileges=true
 [Install]
 WantedBy=multi-user.target
 UNIT
+
 systemctl daemon-reload
 systemctl enable --now crava-omniroute.service
 
-echo "== [4/4] Firewall (SSH only — no extra inbound) + finalize =="
-ufw allow 22/tcp || true
+echo "== [4/4] Readiness Gate & Firewall (SSH only) =="
+crava_wait_service crava-omniroute.service 120
+crava_wait_port 20128 120
+crava_ufw_allow 22/tcp
 mkdir -p /var/lib/cravacloud && touch "$MARKER"
 echo "CRAVA_INSTALL_OK {{stack}}"
-echo "Connector token disimpan di /opt/crava-omniroute/connector.env (root-only)."
+echo "Konfigurasi loopback & kredensial awal tersimpan di /opt/crava-omniroute/connector.env (root-only)."

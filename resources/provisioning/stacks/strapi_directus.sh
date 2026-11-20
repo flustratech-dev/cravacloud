@@ -1,24 +1,30 @@
 #!/usr/bin/env bash
-# CravaCloud stack installer: strapi_directus (idempotent — safe to re-run via TAT retry).
-# Deploys Directus (headless CMS) + PostgreSQL via docker compose. All secrets
-# (DB password, app KEY/SECRET, admin password) are generated on-server into a
-# root-only .env and NEVER echoed to stdout / TAT TaskResult (D6).
+# CravaCloud stack installer: strapi_directus (idempotent, _common.sh hardened).
+# Deploys Directus (headless CMS) + PostgreSQL via docker compose (D6 zero-echo secrets).
 set -euo pipefail
+# {{common}}
+
 MARKER=/var/lib/cravacloud/.installed-{{stack}}
-[ -f "$MARKER" ] && { echo "already installed"; exit 0; }
+if [ -f "$MARKER" ] \
+    && [ -f /opt/crava-directus/compose.yml ] \
+    && docker compose -f /opt/crava-directus/compose.yml ps --status running 2>/dev/null | grep -q directus \
+    && ss -tln 2>/dev/null | grep -qE ':8055([[:space:]]|$)'; then
+    echo "CRAVA_INSTALL_OK {{stack}}"
+    exit 0
+fi
+
 mkdir -p /var/lib/cravacloud
 exec > >(tee -a /var/log/cravacloud-install.log) 2>&1
 export DEBIAN_FRONTEND=noninteractive
 
-echo "== [1/4] Base dependencies =="
-apt-get update -y
-apt-get install -y ca-certificates curl gnupg ufw openssl
+crava_require_os ubuntu debian
 
-echo "== [2/4] Docker =="
-if ! command -v docker >/dev/null 2>&1; then
-    curl -fsSL https://get.docker.com | sh
-fi
-systemctl enable --now docker
+echo "== [1/4] Dependencies & 2 GB Swap =="
+crava_pkg_install ca-certificates curl gnupg ufw openssl
+crava_ensure_swap 2048
+
+echo "== [2/4] Docker Engine =="
+crava_ensure_docker
 
 echo "== [3/4] Directus + PostgreSQL =="
 APP_DIR=/opt/crava-directus
@@ -32,6 +38,7 @@ if [ ! -f "$APP_DIR/.env" ]; then
         printf 'ADMIN_EMAIL=admin@{{hostname}}\n'
         printf 'ADMIN_PASSWORD=%s\n' "$(openssl rand -hex 16)"
     } > "$APP_DIR/.env"
+    chmod 600 "$APP_DIR/.env"
 fi
 cat > "$APP_DIR/compose.yml" <<'YAML'
 services:
@@ -68,8 +75,12 @@ volumes:
 YAML
 docker compose --env-file "$APP_DIR/.env" -f "$APP_DIR/compose.yml" up -d
 
-echo "== [4/4] Firewall + finalize =="
-for p in 22 8055; do ufw allow "$p"/tcp || true; done
+echo "== [4/4] Readiness Gate & Firewall =="
+if ! crava_wait_port 8055 180; then
+    docker compose --env-file "$APP_DIR/.env" -f "$APP_DIR/compose.yml" logs --tail 40 >&2 || true
+    exit 1
+fi
+crava_ufw_allow 22/tcp 8055/tcp
 mkdir -p /var/lib/cravacloud && touch "$MARKER"
 echo "CRAVA_INSTALL_OK {{stack}}"
 echo "Kredensial admin & DB disimpan di /opt/crava-directus/.env (root-only)."

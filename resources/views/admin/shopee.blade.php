@@ -22,6 +22,7 @@
     activeMsgTab: 'ready',
     specs: @js($specs),
     operatingSystems: @js($operatingSystems),
+    stackLabels: @js($stackLabels),
 
     // Modals
     copyModalOpen: false,
@@ -150,29 +151,29 @@
             extractedCount++;
         }
 
-        // Control Panel / Stack
-        if (lowerText.includes('coolify')) {
-            this.controlPanel = 'coolify';
-        } else if (lowerText.includes('dokploy')) {
-            this.controlPanel = 'dokploy';
-        } else if (lowerText.includes('aapanel')) {
-            this.controlPanel = 'aapanel';
-        } else if (lowerText.includes('cloudpanel')) {
-            this.controlPanel = 'cloudpanel';
-        } else if (lowerText.includes('docker')) {
-            this.controlPanel = 'docker';
-        } else if (lowerText.includes('cyberpanel')) {
-            this.controlPanel = 'cyberpanel';
-        } else if (lowerText.includes('hestiacp')) {
-            this.controlPanel = 'hestiacp';
-        } else if (lowerText.includes('wordpress') || lowerText.includes('wp')) {
-            this.controlPanel = 'wordpress';
-        } else if (lowerText.includes('n8n')) {
-            this.controlPanel = 'n8n';
-        } else if (lowerText.includes('ollama')) {
-            this.controlPanel = 'ollama';
-        } else if (lowerText.includes('dify')) {
-            this.controlPanel = 'dify_ollama';
+        // Control Panel / Stack (dynamic dari StackRegistry / Order::stackLabels())
+        const stackAliases = { wp: 'wordpress', dify: 'dify_ollama', managed_db: 'managed_database' };
+        let matchedStack = null;
+        for (const [alias, targetKey] of Object.entries(stackAliases)) {
+            if (this.stackLabels && this.stackLabels[targetKey] && new RegExp('\\b' + alias + '\\b', 'i').test(lowerText)) {
+                matchedStack = targetKey;
+                break;
+            }
+        }
+        if (!matchedStack && this.stackLabels) {
+            const entries = Object.entries(this.stackLabels)
+                .filter(([k]) => k !== 'none')
+                .sort((a, b) => Math.max(b[0].length, (b[1] || '').length) - Math.max(a[0].length, (a[1] || '').length));
+            for (const [key, label] of entries) {
+                const keyNorm = key.replace(/_/g, ' ');
+                if (lowerText.includes(key.toLowerCase()) || lowerText.includes(keyNorm) || (label && lowerText.includes(label.toLowerCase()))) {
+                    matchedStack = key;
+                    break;
+                }
+            }
+        }
+        if (matchedStack) {
+            this.controlPanel = matchedStack;
         }
 
         // Spec Match

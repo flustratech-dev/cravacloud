@@ -471,15 +471,9 @@
                                 <div>
                                     <label class="{{ $labelClass }}">Default Stack / Panel</label>
                                     <select name="default_stack" x-model="createDefaultStack" class="{{ $inputClass }}">
-                                        <option value="none">Tanpa Stack (OS Bersih)</option>
-                                        <option value="coolify">Coolify</option>
-                                        <option value="dokploy">Dokploy</option>
-                                        <option value="aapanel">aaPanel</option>
-                                        <option value="cloudpanel">CloudPanel</option>
-                                        <option value="docker">Docker</option>
-                                        <option value="managed_database">Managed Database</option>
-                                        <option value="vscode_server">VS Code Server</option>
-                                        <option value="ollama">Ollama AI</option>
+                                        @foreach(\App\Models\Order::stackLabels() as $stackKey => $stackLabel)
+                                            <option value="{{ $stackKey }}">{{ $stackLabel }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                                 <div>
@@ -635,15 +629,9 @@
                                 <div>
                                     <label class="{{ $labelClass }}">Default Stack / Panel</label>
                                     <select name="default_stack" x-model="editData.default_stack" class="{{ $inputClass }}">
-                                        <option value="none">Tanpa Stack (OS Bersih)</option>
-                                        <option value="coolify">Coolify</option>
-                                        <option value="dokploy">Dokploy</option>
-                                        <option value="aapanel">aaPanel</option>
-                                        <option value="cloudpanel">CloudPanel</option>
-                                        <option value="docker">Docker</option>
-                                        <option value="managed_database">Managed Database</option>
-                                        <option value="vscode_server">VS Code Server</option>
-                                        <option value="ollama">Ollama AI</option>
+                                        @foreach(\App\Models\Order::stackLabels() as $stackKey => $stackLabel)
+                                            <option value="{{ $stackKey }}">{{ $stackLabel }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                                 <div>

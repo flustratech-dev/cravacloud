@@ -174,7 +174,7 @@ class TencentLighthouseProvider implements VpsProviderContract, SupportsStackIns
 
         // --- Step 6: firewall diff (revision 5 — never duplicate defaults) -
         if (! $this->reached($checkpoint, 'firewall')) {
-            $this->openPorts($instanceId, $definition->ports, $region, $stackKey);
+            $this->openPorts($instanceId, $definition->ports, $region, $stackKey, $definition->udpPorts);
             $checkpoint = 'firewall';
             $this->checkpoint($task, $output, $checkpoint, 60, 'Mengamankan jaringan');
         }
@@ -607,7 +607,7 @@ class TencentLighthouseProvider implements VpsProviderContract, SupportsStackIns
 
         // --- Step 5: firewall diff for the stack (never duplicate defaults) -
         if (! $this->reached($checkpoint, 'reinstall_firewall', $seq)) {
-            $this->openPorts($instanceId, $definition->ports, $region, $stackKey);
+            $this->openPorts($instanceId, $definition->ports, $region, $stackKey, $definition->udpPorts);
             $checkpoint = 'reinstall_firewall';
             $this->checkpoint($task, $output, $checkpoint, 80, 'Mengamankan jaringan');
         }
@@ -921,33 +921,75 @@ class TencentLighthouseProvider implements VpsProviderContract, SupportsStackIns
     }
 
     /**
-     * Firewall diff (revision 5): open only ports not already covered.
-     * Existing comma-separated port ranges are expanded so a default rule
-     * like "80,443" counts as covering both ports.
+     * Firewall diff (revision 5 + Batch 0 TCP/UDP & port ranges):
+     * open only ports/ranges not already covered by existing ACCEPT rules.
+     *
+     * @param array<int, int|string> $ports
+     * @param array<int, int|string> $udpPorts
      */
-    private function openPorts(string $instanceId, array $ports, string $region, string $stackKey): void
+    private function openPorts(string $instanceId, array $ports, string $region, string $stackKey, array $udpPorts = []): void
     {
         $resp = $this->lighthouse->describeFirewallRules($instanceId, $region);
         $existing = $resp['FirewallRuleSet'] ?? [];
 
-        $wanted = array_map(fn (int $port) => [
-            'Protocol' => 'TCP',
-            'Port' => (string) $port,
-            'CidrBlock' => '0.0.0.0/0',
-            'Action' => 'ACCEPT',
-            'FirewallRuleDescription' => 'crava-'.$stackKey,
-        ], $ports);
-
-        $missing = $this->diffRules($existing, $wanted);
+        $missing = self::buildMissingFirewallRules($existing, $ports, $udpPorts, $stackKey);
 
         if ($missing !== []) {
             $this->lighthouse->createFirewallRules($instanceId, $missing, $region);
         }
     }
 
-    private function diffRules(array $existing, array $wanted): array
+    /**
+     * Build missing Tencent Lighthouse firewall rules for TCP & UDP ports/ranges.
+     *
+     * @param array<int, array<string, mixed>> $existing
+     * @param array<int, int|string> $tcpPorts
+     * @param array<int, int|string> $udpPorts
+     * @return array<int, array<string, string>>
+     */
+    public static function buildMissingFirewallRules(array $existing, array $tcpPorts, array $udpPorts, string $stackKey): array
     {
+        $wanted = [];
+
+        foreach ($tcpPorts as $port) {
+            $portStr = trim((string) $port);
+            if ($portStr !== '') {
+                $wanted[] = [
+                    'Protocol' => 'TCP',
+                    'Port' => $portStr,
+                    'CidrBlock' => '0.0.0.0/0',
+                    'Action' => 'ACCEPT',
+                    'FirewallRuleDescription' => 'crava-'.$stackKey,
+                ];
+            }
+        }
+
+        foreach ($udpPorts as $port) {
+            $portStr = trim((string) $port);
+            if ($portStr !== '') {
+                $wanted[] = [
+                    'Protocol' => 'UDP',
+                    'Port' => $portStr,
+                    'CidrBlock' => '0.0.0.0/0',
+                    'Action' => 'ACCEPT',
+                    'FirewallRuleDescription' => 'crava-'.$stackKey,
+                ];
+            }
+        }
+
+        return self::diffRules($existing, $wanted);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $existing
+     * @param array<int, array<string, string>> $wanted
+     * @return array<int, array<string, string>>
+     */
+    private static function diffRules(array $existing, array $wanted): array
+    {
+        /** @var array<string, array<int, array{0: int, 1: int}>> $covered */
         $covered = [];
+
         foreach ($existing as $rule) {
             $action = strtoupper((string) ($rule['Action'] ?? 'ACCEPT'));
             if ($action !== 'ACCEPT') {
@@ -955,24 +997,126 @@ class TencentLighthouseProvider implements VpsProviderContract, SupportsStackIns
             }
             $protocol = strtoupper((string) ($rule['Protocol'] ?? 'TCP'));
             $cidr = (string) ($rule['CidrBlock'] ?? '0.0.0.0/0');
-            foreach (explode(',', (string) ($rule['Port'] ?? '')) as $port) {
-                $port = trim($port);
-                if ($port !== '') {
-                    $covered["{$protocol}|{$port}|{$cidr}"] = true;
-                }
+            $intervals = self::parsePortSpec((string) ($rule['Port'] ?? ''));
+            if ($intervals === []) {
+                continue;
+            }
+
+            $protocols = $protocol === 'ALL' ? ['TCP', 'UDP'] : [$protocol];
+            foreach ($protocols as $proto) {
+                $key = "{$proto}|{$cidr}";
+                $covered[$key] = self::mergeIntervals(array_merge($covered[$key] ?? [], $intervals));
             }
         }
 
         $missing = [];
         foreach ($wanted as $rule) {
-            $key = strtoupper($rule['Protocol'] ?? 'TCP').'|'.($rule['Port'] ?? '').'|'.($rule['CidrBlock'] ?? '0.0.0.0/0');
-            if (! isset($covered[$key])) {
+            $protocol = strtoupper((string) ($rule['Protocol'] ?? 'TCP'));
+            $cidr = (string) ($rule['CidrBlock'] ?? '0.0.0.0/0');
+            $wantedIntervals = self::parsePortSpec((string) ($rule['Port'] ?? ''));
+            if ($wantedIntervals === []) {
+                continue;
+            }
+
+            $protocols = $protocol === 'ALL' ? ['TCP', 'UDP'] : [$protocol];
+            $allCovered = true;
+            foreach ($protocols as $proto) {
+                $existingIntervals = $covered["{$proto}|{$cidr}"] ?? [];
+                foreach ($wantedIntervals as $interval) {
+                    if (! self::intervalCovered($interval[0], $interval[1], $existingIntervals)) {
+                        $allCovered = false;
+                        break 2;
+                    }
+                }
+            }
+
+            if (! $allCovered) {
                 $missing[] = $rule;
-                $covered[$key] = true; // never request the same port twice
+                foreach ($protocols as $proto) {
+                    $key = "{$proto}|{$cidr}";
+                    $covered[$key] = self::mergeIntervals(array_merge($covered[$key] ?? [], $wantedIntervals));
+                }
             }
         }
 
         return $missing;
+    }
+
+    /**
+     * Parse "80", "80,443", "2456-2458", "80,8000-8100", or "ALL" into [start, end] intervals.
+     *
+     * @return array<int, array{0: int, 1: int}>
+     */
+    private static function parsePortSpec(string $portSpec): array
+    {
+        $intervals = [];
+        foreach (explode(',', $portSpec) as $segment) {
+            $segment = trim($segment);
+            if ($segment === '') {
+                continue;
+            }
+            if (strtoupper($segment) === 'ALL') {
+                $intervals[] = [1, 65535];
+                continue;
+            }
+            if (str_contains($segment, '-')) {
+                [$lo, $hi] = array_pad(explode('-', $segment, 2), 2, null);
+                if (is_numeric($lo) && is_numeric($hi)) {
+                    $start = max(1, min(65535, (int) $lo));
+                    $end = max(1, min(65535, (int) $hi));
+                    $intervals[] = $start <= $end ? [$start, $end] : [$end, $start];
+                }
+                continue;
+            }
+            if (is_numeric($segment)) {
+                $port = (int) $segment;
+                if ($port >= 1 && $port <= 65535) {
+                    $intervals[] = [$port, $port];
+                }
+            }
+        }
+
+        return $intervals;
+    }
+
+    /**
+     * @param array<int, array{0: int, 1: int}> $intervals
+     * @return array<int, array{0: int, 1: int}>
+     */
+    private static function mergeIntervals(array $intervals): array
+    {
+        if ($intervals === []) {
+            return [];
+        }
+
+        usort($intervals, fn (array $a, array $b) => $a[0] <=> $b[0] ?: $a[1] <=> $b[1]);
+        $merged = [$intervals[0]];
+        $count = count($intervals);
+
+        for ($i = 1; $i < $count; $i++) {
+            $lastIdx = count($merged) - 1;
+            if ($intervals[$i][0] <= $merged[$lastIdx][1] + 1) {
+                $merged[$lastIdx][1] = max($merged[$lastIdx][1], $intervals[$i][1]);
+            } else {
+                $merged[] = $intervals[$i];
+            }
+        }
+
+        return $merged;
+    }
+
+    /**
+     * @param array<int, array{0: int, 1: int}> $mergedIntervals
+     */
+    private static function intervalCovered(int $start, int $end, array $mergedIntervals): bool
+    {
+        foreach ($mergedIntervals as [$lo, $hi]) {
+            if ($lo <= $start && $hi >= $end) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** OS family → default login user (config services.tencent.default_users). */

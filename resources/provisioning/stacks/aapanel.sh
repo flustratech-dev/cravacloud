@@ -1,30 +1,40 @@
 #!/usr/bin/env bash
-# CravaCloud stack installer: aapanel (idempotent — safe to re-run via TAT retry).
-# Admin credentials are set by the customer on first-run web setup (D6: no
-# plaintext panel credentials travel through TAT).
+# CravaCloud stack installer: aapanel (idempotent, _common.sh hardened).
+# Admin credentials are configured by the customer on first-run web setup (D6).
 set -euo pipefail
+# {{common}}
+
 MARKER=/var/lib/cravacloud/.installed-{{stack}}
-[ -f "$MARKER" ] && { echo "already installed"; exit 0; }
+if [ -f "$MARKER" ] && [ -d /www/server/panel ] && ss -tln 2>/dev/null | grep -qE ':8888([[:space:]]|$)'; then
+    echo "CRAVA_INSTALL_OK {{stack}}"
+    exit 0
+fi
+
 mkdir -p /var/lib/cravacloud
 exec > >(tee -a /var/log/cravacloud-install.log) 2>&1
 export DEBIAN_FRONTEND=noninteractive
 
-echo "== [1/3] Base dependencies =="
-if command -v apt-get >/dev/null 2>&1; then
-    apt-get update -y
-    apt-get install -y ca-certificates curl wget gnupg ufw
-else
-    dnf install -y ca-certificates curl wget ufw || yum install -y ca-certificates curl wget
-fi
+crava_require_os ubuntu debian rocky centos
 
-echo "== [2/3] aaPanel =="
+echo "== [1/4] Dependencies & 2 GB Swap =="
+crava_pkg_install ca-certificates curl wget
+if [ "$CRAVA_PKG_MGR" = "apt" ]; then
+    crava_pkg_install gnupg ufw
+fi
+crava_ensure_swap 2048
+
+echo "== [2/4] aaPanel =="
 if [ ! -d /www/server/panel ]; then
-    curl -sSO https://www.aapanel.com/script/install_7.0_en.sh
-    bash install_7.0_en.sh aapanel
-    rm -f install_7.0_en.sh
+    crava_wait_pkg_lock 120
+    curl -fsSL https://www.aapanel.com/script/install_7.0_en.sh -o /tmp/aapanel-install.sh
+    printf 'y\n' | bash /tmp/aapanel-install.sh aapanel
+    rm -f /tmp/aapanel-install.sh
 fi
 
-echo "== [3/3] Firewall + finalize =="
-for p in 22 80 443 8888 888 20 21; do ufw allow "$p"/tcp || true; done
+echo "== [3/4] Readiness Gate =="
+crava_wait_port 8888 180
+
+echo "== [4/4] Firewall & Finalize =="
+crava_ufw_allow 22/tcp 80/tcp 443/tcp 8888/tcp 888/tcp 20/tcp 21/tcp
 mkdir -p /var/lib/cravacloud && touch "$MARKER"
 echo "CRAVA_INSTALL_OK {{stack}}"

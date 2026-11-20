@@ -554,6 +554,8 @@
             </button>
         </div>
     </div>
+
+    @include('components.stack-warning-modal', ['context' => 'checkout'])
 </div>
 
 <script>
@@ -573,12 +575,20 @@ function checkoutState() {
         showRootPassword: false,
         stackType: 'none',
         controlPanel: 'none',
+        stackSearch: '',
+        stackCategory: 'all',
+        acknowledgedWarnings: {},
+        warningModalOpen: false,
+        warningModalStack: null,
+        warningModalMode: 'license',
         datacenter: 'indonesia',
         os: 'ubuntu2404',
         dbEngine: 'postgres',
         dbManager: 'cloudbeaver',
         operatingSystems: {{ Js::from(\App\Models\Order::checkoutOperatingSystems()) }},
         stackSupportedOs: {{ Js::from($stackSupportedOs ?? app(\App\Services\Provisioning\Stacks\StackRegistry::class)->supportedOsMap()) }},
+        stackCatalog: {{ Js::from($stackCatalog ?? app(\App\Services\Provisioning\Stacks\StackRegistry::class)->uiCatalog(checkoutOnly: true)) }},
+        stackLabels: {{ Js::from($stackLabels ?? \App\Models\Order::stackLabels()) }},
         paymentMethod: 'online_payment',
         selectedPaymentImage: 'qris.svg',
         paymentMethods: {
@@ -692,19 +702,63 @@ function checkoutState() {
         get totalPrice() {
             return this.currentBaseMonthlyPrice;
         },
+        get planRamGb() {
+            return this.currentSpec ? parseInt(this.currentSpec.ram || 0, 10) : 0;
+        },
+        get planName() {
+            return this.currentSpec ? (this.currentSpec.name || 'Paket VPS') : 'Paket VPS';
+        },
+        get selectedStackDef() {
+            return this.stackCatalog.find((s) => s.key === this.controlPanel) || null;
+        },
+        get isWarningAcknowledged() {
+            const def = this.selectedStackDef;
+            if (!def || !def.needsWarningConfirmation) return true;
+            return Boolean(this.acknowledgedWarnings[def.key]);
+        },
+        get isLicenseAcknowledged() {
+            const def = this.selectedStackDef;
+            if (!def || !def.requiresLicense) return false;
+            return Boolean(this.acknowledgedWarnings[def.key]);
+        },
+        get activeUiGroup() {
+            if (this.stackType === 'control_panel') return 'panel';
+            if (this.stackType === 'app') return 'app';
+            return 'none';
+        },
+        get groupStacks() {
+            return this.stackCatalog.filter((s) => s.uiGroup === this.activeUiGroup);
+        },
+        get hasPaidPanelsInGroup() {
+            return this.groupStacks.some((s) => Boolean(s.requiresLicense));
+        },
+        get availableStackCategories() {
+            const cats = [];
+            for (const item of this.groupStacks) {
+                if (item.category && !cats.includes(item.category)) {
+                    cats.push(item.category);
+                }
+            }
+            return cats;
+        },
+        get filteredStacks() {
+            const q = (this.stackSearch || '').trim().toLowerCase();
+            const cat = this.stackCategory || 'all';
+            return this.groupStacks.filter((s) => {
+                if (cat === '__free' && s.requiresLicense) return false;
+                if (cat === '__paid' && !s.requiresLicense) return false;
+                if (cat !== 'all' && cat !== '__free' && cat !== '__paid' && s.category !== cat) return false;
+                if (q === '') return true;
+                return (s.label || '').toLowerCase().includes(q)
+                    || (s.key || '').toLowerCase().includes(q)
+                    || (s.description || '').toLowerCase().includes(q)
+                    || (s.category || '').toLowerCase().includes(q);
+            });
+        },
         get controlPanelLabel() {
-            const labels = {
-                none: 'Tanpa Control Panel', coolify: 'Coolify', dokploy: 'Dokploy', aapanel: 'aaPanel',
-                cloudpanel: 'CloudPanel', docker: 'Docker', cyberpanel: 'CyberPanel', hestiacp: 'HestiaCP',
-                hermes_agent: 'Hermes Agent', openclaw: 'OpenClaw', omniroute: 'OmniRoute', '9router': '9router',
-                agent_zero: 'Agent Zero', n8n: 'n8n', ollama: 'Ollama', anythingllm: 'AnythingLLM',
-                librechat: 'LibreChat', vscode_server: 'Visual Studio Code Server', gitea_forgejo: 'Gitea / Forgejo',
-                uptime_kuma: 'Uptime Kuma', netdata_beszel: 'Netdata / Beszel', wordpress: 'WordPress',
-                ghost: 'Ghost', strapi_directus: 'Strapi / Directus', prestashop_bagisto: 'PrestaShop / Bagisto',
-                claude_opencode: 'Claude Code & OpenCode CLI', dify_ollama: 'Dify AI + Ollama RAG',
-                managed_database: 'Dedicated Managed Database'
-            };
-            return labels[this.controlPanel] || 'Tanpa Control Panel';
+            return this.stackLabels[this.controlPanel]
+                || this.stackCatalog.find((s) => s.key === this.controlPanel)?.label
+                || 'Tanpa Control Panel';
         },
         get compatibleOperatingSystems() {
             const all = this.operatingSystems || {};
@@ -763,12 +817,20 @@ function checkoutState() {
                 }
                 const stack = params.get('stack');
                 if (stack && !this.isDirectCheckout) {
-                    if (['coolify', 'dokploy', 'aapanel', 'cloudpanel', 'docker', 'cyberpanel', 'hestiacp'].includes(stack)) {
-                        this.stackType = 'control_panel';
-                        this.controlPanel = stack;
-                    } else if (['hermes_agent', 'openclaw', 'omniroute', '9router', 'agent_zero', 'n8n', 'ollama', 'dify_ollama', 'anythingllm', 'librechat', 'vscode_server', 'gitea_forgejo', 'uptime_kuma', 'netdata_beszel', 'wordpress', 'ghost', 'strapi_directus', 'prestashop_bagisto', 'managed_database'].includes(stack)) {
-                        this.stackType = 'app';
-                        this.controlPanel = stack;
+                    const found = this.stackCatalog.find((s) => s.key === stack);
+                    if (found) {
+                        this.stackType = found.uiGroup === 'panel' ? 'control_panel' : (found.uiGroup === 'app' ? 'app' : 'none');
+                        if (found.uiGroup === 'none' || (found.hardBlockOnRam && this.planRamGb > 0 && this.planRamGb < (found.minRamGb || 2))) {
+                            this.controlPanel = 'none';
+                            if (found.uiGroup !== 'none') {
+                                this.handleStackClick(found);
+                            }
+                        } else if (found.needsWarningConfirmation && !this.acknowledgedWarnings[found.key]) {
+                            this.controlPanel = 'none';
+                            this.handleStackClick(found);
+                        } else {
+                            this.controlPanel = found.key;
+                        }
                     } else if (stack === 'debian12') {
                         this.stackType = 'none';
                         this.controlPanel = 'none';
@@ -848,6 +910,7 @@ function checkoutState() {
                     provider: this.provider,
                     vpsName: this.vpsName,
                     controlPanel: this.controlPanel,
+                    acknowledgedWarnings: this.acknowledgedWarnings,
                     datacenter: this.datacenter,
                     os: this.os,
                     dbEngine: this.dbEngine,
@@ -888,18 +951,24 @@ function checkoutState() {
                         this.vpsName = draft.vpsName;
                     }
                 }
+                if (draft.acknowledgedWarnings && typeof draft.acknowledgedWarnings === 'object') {
+                    this.acknowledgedWarnings = draft.acknowledgedWarnings;
+                }
                 if (draft.controlPanel && !this.isDirectCheckout) {
                     if (draft.controlPanel === 'managed_database') {
                         this.controlPanel = 'none';
                         this.stackType = 'none';
                     } else {
-                        this.controlPanel = draft.controlPanel;
-                        if (draft.controlPanel === 'none') {
+                        const found = this.stackCatalog.find((s) => s.key === draft.controlPanel);
+                        if (!found || found.uiGroup === 'none') {
+                            this.controlPanel = 'none';
                             this.stackType = 'none';
-                        } else if (['coolify', 'dokploy', 'aapanel', 'cloudpanel', 'docker', 'cyberpanel', 'hestiacp'].includes(draft.controlPanel)) {
-                            this.stackType = 'control_panel';
+                        } else if (found.hardBlockOnRam && this.planRamGb > 0 && this.planRamGb < (found.minRamGb || 2)) {
+                            this.controlPanel = 'none';
+                            this.stackType = 'none';
                         } else {
-                            this.stackType = 'app';
+                            this.controlPanel = found.key;
+                            this.stackType = found.uiGroup === 'panel' ? 'control_panel' : 'app';
                         }
                     }
                 }
@@ -993,9 +1062,62 @@ function checkoutState() {
             }
         },
 
+        handleStackClick(stack) {
+            if (!stack) return;
+            if (stack.hardBlockOnRam && this.planRamGb > 0 && this.planRamGb < (stack.minRamGb || 2)) {
+                this.warningModalStack = stack;
+                this.warningModalMode = 'ram';
+                this.warningModalOpen = true;
+                return;
+            }
+            if (stack.needsWarningConfirmation && !this.acknowledgedWarnings[stack.key]) {
+                this.warningModalStack = stack;
+                this.warningModalMode = stack.requiresLicense ? 'license' : (stack.warningType || 'activation');
+                this.warningModalOpen = true;
+                return;
+            }
+            this.controlPanel = stack.key;
+        },
+
+        confirmStackWarning() {
+            if (!this.warningModalStack) return;
+            const key = this.warningModalStack.key;
+            this.acknowledgedWarnings = { ...this.acknowledgedWarnings, [key]: true };
+            this.controlPanel = key;
+            this.warningModalOpen = false;
+            this.warningModalStack = null;
+            this.saveDraft();
+        },
+
+        closeStackWarning() {
+            this.warningModalOpen = false;
+            this.warningModalStack = null;
+        },
+
         selectStack(type) {
             this.stackType = type;
-            this.controlPanel = type === 'none' ? 'none' : (type === 'control_panel' ? 'coolify' : 'hermes_agent');
+            this.stackSearch = '';
+            this.stackCategory = 'all';
+            if (type === 'none') {
+                this.controlPanel = 'none';
+                return;
+            }
+            const targetGroup = type === 'control_panel' ? 'panel' : 'app';
+            const currentDef = this.selectedStackDef;
+            if (currentDef && currentDef.uiGroup === targetGroup) {
+                return;
+            }
+            const candidate = this.stackCatalog.find((s) => s.uiGroup === targetGroup && !s.needsWarningConfirmation && (!s.hardBlockOnRam || this.planRamGb === 0 || this.planRamGb >= (s.minRamGb || 2)))
+                || this.stackCatalog.find((s) => s.uiGroup === targetGroup);
+            if (candidate) {
+                if (candidate.hardBlockOnRam && this.planRamGb > 0 && this.planRamGb < (candidate.minRamGb || 2)) {
+                    this.handleStackClick(candidate);
+                } else if (candidate.needsWarningConfirmation && !this.acknowledgedWarnings[candidate.key]) {
+                    this.handleStackClick(candidate);
+                } else {
+                    this.controlPanel = candidate.key;
+                }
+            }
         },
 
         formatRupiah(number) {
@@ -1083,6 +1205,17 @@ function checkoutState() {
                 showAlert('Silakan pilih paket VPS terlebih dahulu');
                 return false;
             }
+            const def = this.selectedStackDef;
+            if (def) {
+                if (def.hardBlockOnRam && this.planRamGb > 0 && this.planRamGb < (def.minRamGb || 2)) {
+                    this.handleStackClick(def);
+                    return false;
+                }
+                if (def.needsWarningConfirmation && !this.acknowledgedWarnings[def.key]) {
+                    this.handleStackClick(def);
+                    return false;
+                }
+            }
             return true;
         },
 
@@ -1167,6 +1300,8 @@ function checkoutState() {
                     control_panel: this.controlPanel,
                     datacenter_location: this.datacenter,
                     os: this.os,
+                    warning_acknowledged: this.isWarningAcknowledged ? 1 : 0,
+                    license_acknowledged: this.isLicenseAcknowledged ? 1 : 0,
                     payment_method: this.paymentMethod,
                     db_engine: this.isDatabasePackage ? this.dbEngine : null,
                     db_manager: this.isDatabasePackage ? this.dbManager : null,

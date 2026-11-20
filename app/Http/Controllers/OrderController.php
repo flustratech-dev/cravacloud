@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
@@ -47,9 +48,19 @@ class OrderController extends Controller
         $hasExplicitSpec = !empty($spec_id) || $request->has('spec_id');
         $selectedSpecId = $spec_id ?? $request->query('spec_id', $defaultSpec->id ?? 1);
         $selectedSpec = $specs->firstWhere('id', $selectedSpecId) ?? $defaultSpec;
-        $stackSupportedOs = app(StackRegistry::class)->supportedOsMap();
+        $stackRegistry = app(StackRegistry::class);
+        $stackSupportedOs = $stackRegistry->supportedOsMap();
+        $stackCatalog = $stackRegistry->uiCatalog(checkoutOnly: true);
+        $stackLabels = Order::stackLabels();
 
-        return view('order.checkout', compact('specs', 'selectedSpec', 'hasExplicitSpec', 'stackSupportedOs'));
+        return view('order.checkout', compact(
+            'specs',
+            'selectedSpec',
+            'hasExplicitSpec',
+            'stackSupportedOs',
+            'stackCatalog',
+            'stackLabels'
+        ));
     }
 
     public function quickLogin(Request $request)
@@ -133,9 +144,11 @@ class OrderController extends Controller
             ]);
         }
 
+        $stackRegistry = app(StackRegistry::class);
+
         $validated = $request->validate([
             'vps_spec_id' => 'required|exists:vps_specs,id',
-            'control_panel' => 'required|in:none,coolify,dokploy,aapanel,cloudpanel,docker,cyberpanel,hestiacp,hermes_agent,openclaw,omniroute,9router,agent_zero,n8n,ollama,anythingllm,librechat,vscode_server,gitea_forgejo,uptime_kuma,netdata_beszel,wordpress,ghost,strapi_directus,prestashop_bagisto,claude_opencode,dify_ollama,managed_database',
+            'control_panel' => ['required', 'string', Rule::in($stackRegistry->checkoutKeys(includeManagedDb: true))],
             'provider' => 'nullable|string|max:50',
             'datacenter_location' => 'required|in:singapore,indonesia',
             'os' => 'required|string',
@@ -145,6 +158,8 @@ class OrderController extends Controller
             'payment_method' => 'required|string|in:online_payment,midtrans_snap,qris,bca_va,mandiri_va,bni_va,bri_va,cimb_va,permata_va,other_va,bsi_va,danamon_va,seabank_va,credit_card,gopay,shopeepay,ovo,dana,indomaret,akulaku',
             'db_engine' => 'nullable|string|in:postgres,mysql,redis,mongodb,vector',
             'db_manager' => 'nullable|string|in:cloudbeaver,cli_only',
+            'warning_acknowledged' => 'nullable|boolean',
+            'license_acknowledged' => 'nullable|boolean',
             // Guest fields if not logged in
             'full_name' => 'nullable|string|max:255',
             'username' => 'nullable|string|min:3|max:50|alpha_dash|unique:users,username',
@@ -191,7 +206,7 @@ class OrderController extends Controller
         ])->validate();
 
         if (! $isAiPackage && ! $isDbPackage
-            && ! app(StackRegistry::class)->supportsOs($validated['os'], $validated['control_panel'])) {
+            && ! $stackRegistry->supportsOs($validated['os'], $validated['control_panel'])) {
             $compatMessage = 'Kombinasi sistem operasi dan stack tersebut belum didukung. Silakan pilih OS yang kompatibel atau Tanpa Control Panel.';
             if ($request->expectsJson()) {
                 return response()->json([
@@ -200,6 +215,27 @@ class OrderController extends Controller
                 ], 422);
             }
             return back()->withInput()->withErrors(['os' => $compatMessage]);
+        }
+
+        $stackDef = $stackRegistry->get($validated['control_panel']);
+        if (! $isAiPackage && ! $isDbPackage && $stackDef !== null) {
+            if ($stackDef->hardBlockOnRam && (int) $spec->ram < $stackDef->minRamGb) {
+                throw ValidationException::withMessages([
+                    'control_panel' => "Stack {$stackDef->label} membutuhkan minimal {$stackDef->minRamGb} GB RAM. Paket {$spec->name} hanya memiliki {$spec->ram} GB RAM.",
+                ]);
+            }
+
+            if ($stackDef->requiresLicense && ! $request->boolean('license_acknowledged')) {
+                throw ValidationException::withMessages([
+                    'license_acknowledged' => "Panel {$stackDef->label} tidak termasuk lisensi berbayar (BYOL). Harap konfirmasi pemahaman Anda sebelum melanjutkan.",
+                ]);
+            }
+
+            if ($stackDef->needsWarningConfirmation() && ! $request->boolean('warning_acknowledged')) {
+                throw ValidationException::withMessages([
+                    'warning_acknowledged' => "Harap baca dan konfirmasi informasi penting untuk stack {$stackDef->label} sebelum melanjutkan.",
+                ]);
+            }
         }
 
         $user = Auth::user();
@@ -312,10 +348,20 @@ class OrderController extends Controller
         $termsIp = $request->ip();
         $termsAgent = $request->userAgent();
 
+        $orderMetadata = null;
+        if ($stackDef !== null && ($stackDef->needsWarningConfirmation() || $request->boolean('warning_acknowledged') || $request->boolean('license_acknowledged'))) {
+            $orderMetadata = [
+                'warning_acknowledged' => $request->boolean('warning_acknowledged'),
+                'license_acknowledged' => $stackDef->requiresLicense ? $request->boolean('license_acknowledged') : false,
+                'acknowledged_stack' => $stackDef->key,
+                'acknowledged_at' => now()->toIso8601String(),
+            ];
+        }
+
         // Bungkus dalam transaction agar order + invoice + status history atomic.
         $order = DB::transaction(function () use (
             $user, $organization, $spec, $validated, $cycle, $netAmount, $setupFee,
-            $termsVersion, $termsIp, $termsAgent, $datacenterRegion
+            $termsVersion, $termsIp, $termsAgent, $datacenterRegion, $orderMetadata
         ) {
             $order = Order::create([
                 'customer_id' => $user->id,
@@ -351,6 +397,7 @@ class OrderController extends Controller
                 'expires_at' => null,
                 'last_status_change_at' => now(),
                 'terms_version' => $termsVersion,
+                'metadata' => $orderMetadata,
             ]);
 
             // Baris ini adalah alat bukti. Tanpa versi yang tersimpan, kita tidak
