@@ -130,17 +130,12 @@ class Order extends Model
 
     public static function stackLabels(): array
     {
-        return app(StackRegistry::class)->labels() + [
-            'managed_database' => 'Dedicated Managed Database Server',
-        ];
+        return app(StackRegistry::class)->labels();
     }
 
     public function isAiPackage(): bool
     {
-        if ($this->vpsSpec) {
-            return $this->vpsSpec->isAiPackage();
-        }
-        return in_array($this->control_panel, ['vscode_server', 'hermes_agent', 'hermes_omniroute', 'claude_opencode', 'dify_ollama', 'anythingllm', 'ollama'], true);
+        return (bool) ($this->vpsSpec && $this->vpsSpec->isAiPackage());
     }
 
     public function isDatabasePackage(): bool

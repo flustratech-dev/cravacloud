@@ -3,8 +3,7 @@
         <div>
             <h2 class="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">Informasi Akun &amp; Kontak Server</h2>
         </div>
-        <span class="w-8 h-8 bg-electric text-white font-mono text-xs font-bold flex items-center justify-center shrink-0"
-              x-text="isDirectCheckout ? '01' : '02'"></span>
+        <span class="w-8 h-8 bg-electric text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">02</span>
     </div>
 
     {{-- Authenticated User Card --}}
@@ -34,7 +33,7 @@
 
             <div class="p-4 bg-white border border-hairline space-y-2.5">
                 <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block">
-                    Nomor WhatsApp (Notifikasi Provisioning &amp; Invoice)
+                    Nomor WhatsApp (Kontak Darurat &amp; Bantuan)
                 </label>
                 <div class="flex items-center">
                     <span class="px-3.5 py-2.5 bg-creamDark border border-r-0 border-hairline text-xs font-mono font-bold text-ink select-none">+62</span>
@@ -43,41 +42,14 @@
                            placeholder="812xxxx (Aktif WhatsApp)"
                            class="flex-1 rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric transition-colors">
                 </div>
-                <p class="font-mono text-[11px] text-muted">Nomor ini digunakan untuk pengiriman notifikasi akses SSH &amp; peringatan masa aktif server.</p>
+                <p class="font-mono text-[11px] text-muted">Nomor ini digunakan sebagai kontak darurat/verifikasi akun dan bantuan CS. Notifikasi layanan dikirim melalui email.</p>
             </div>
-
-            <template x-if="isDirectCheckout">
-                <div class="p-4 bg-white border border-hairline space-y-2.5">
-                    <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block">
-                        Hostname / Nama Instance Layanan
-                    </label>
-                    <input type="text"
-                           x-model="vpsName"
-                           placeholder="contoh: cv-ai-agent-01"
-                           class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric transition-colors">
-                    <p class="font-mono text-[11px] text-muted">Identitas server Anda di panel manajemen. Hanya huruf, angka, dan tanda hubung (`-`).</p>
-                </div>
-            </template>
         </div>
     </template>
 
     {{-- Guest Flow: Register vs Quick Login --}}
     <template x-if="!isLoggedIn">
         <div class="space-y-6">
-            {{-- Direct Checkout Hostname Input --}}
-            <template x-if="isDirectCheckout">
-                <div class="p-4 bg-creamDark/40 border border-hairline space-y-2">
-                    <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block">
-                        Hostname / Nama Instance Layanan <span class="text-red-600">*</span>
-                    </label>
-                    <input type="text"
-                           x-model="vpsName"
-                           placeholder="contoh: cv-ai-agent-01"
-                           class="w-full rounded-none px-3.5 py-2.5 text-base sm:text-sm bg-white border border-hairline text-ink font-mono focus:outline-none focus:border-electric transition-colors">
-                    <p class="font-mono text-[11px] text-muted">Identitas unik instance server Anda (huruf, angka, atau tanda `-`).</p>
-                </div>
-            </template>
-
             {{-- Segmented Auth Tabs --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-px bg-hairline border border-hairline">
                 <button type="button"
@@ -133,7 +105,7 @@
 
                     <div>
                         <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block mb-1.5">
-                            Nomor WhatsApp <span class="text-muted font-normal">(Notifikasi Server)</span>
+                            Nomor WhatsApp <span class="text-muted font-normal">(Kontak Darurat / Bantuan)</span>
                         </label>
                         <input type="text"
                                x-model="registerPhone"

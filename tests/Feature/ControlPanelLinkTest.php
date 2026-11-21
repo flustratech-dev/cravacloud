@@ -214,7 +214,7 @@ class ControlPanelLinkTest extends TestCase
         $this->assertNull($vps->fresh()->panel_url);
     }
 
-    public function test_admin_instances_category_ignores_panel_link(): void
+    public function test_admin_instances_displays_panel_link_for_cloud_vps(): void
     {
         $customer = $this->customer();
         $vps = $this->runningVps($customer, [
@@ -222,12 +222,14 @@ class ControlPanelLinkTest extends TestCase
             'app_url' => 'https://coolify.pelanggan.id',
         ]);
 
-        // VPS biasa dengan link panel tetap masuk kategori Cloud VPS, bukan AI Agent.
-        $this->actingAs($this->admin())->get('/admin/instances?category=vps')
+        // VPS dengan link panel tetap Cloud VPS biasa (bukan paket AI lama) dan muncul di filter manual.
+        $this->assertFalse($vps->isAiPackage());
+        $this->actingAs($this->admin())->get('/admin/instances?provider=manual')
             ->assertOk()
-            ->assertSee($vps->hostname);
+            ->assertSee($vps->hostname)
+            ->assertSee('https://coolify.pelanggan.id');
 
-        $this->actingAs($this->admin())->get('/admin/instances?category=ai')
+        $this->actingAs($this->admin())->get('/admin/instances?provider=tencent')
             ->assertOk()
             ->assertDontSee($vps->hostname);
     }

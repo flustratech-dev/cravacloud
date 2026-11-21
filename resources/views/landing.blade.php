@@ -101,19 +101,6 @@
     $enterpriseCards = collect($enterpriseDefaults)->map($hydratePlan);
     $starterS = $starterCards->firstWhere('name', 'Starter S') ?? $starterCards->first();
     $starterXs = $starterCards->firstWhere('name', 'Starter XS') ?? $starterCards->first();
-
-    $templateNamesLower = $starterCards->merge($enterpriseCards)->pluck('name')->map(fn ($n) => strtolower($n))->all();
-    $legacyRetiredNames = ['student basic', 'standard', 'premium', 'startup', 'business', 'mahasiswa basic'];
-    $extraSpecs = ($vpsSpecs ?? collect())->filter(function ($s) use ($templateNamesLower, $legacyRetiredNames) {
-        $lname = strtolower((string) $s->name);
-        if (in_array($lname, $templateNamesLower, true)) {
-            return false;
-        }
-        if (in_array($lname, $legacyRetiredNames, true) && !$s->is_active) {
-            return false;
-        }
-        return true;
-    })->values();
 @endphp
 
 <main class="max-w-[1380px] mx-auto px-5 sm:px-10 lg:px-14 relative">
@@ -562,46 +549,6 @@
                 </div>
             </div>
         @endforeach
-
-        @if($extraSpecs->isNotEmpty())
-            <div id="pricing-custom" class="mt-14">
-                <div class="pb-4 mb-6 border-b border-hairline text-center">
-                    <h3 class="font-display font-bold text-xl sm:text-2xl text-electric uppercase tracking-tight">
-                        PAKET VPS TAMBAHAN
-                    </h3>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 border-t border-l border-hairline">
-                    @foreach($extraSpecs as $idx => $extra)
-                        @php
-                            $extraPrice = 'Rp ' . number_format((float) $extra->sell_price, 0, ',', '.');
-                        @endphp
-                        <div class="bg-cream hover:bg-white border-r border-b border-hairline p-7 flex flex-col transition-colors">
-                            <div>
-                                @if(!$extra->is_active)
-                                    <span class="inline-block mb-2 bg-amber-200 text-amber-950 font-mono font-bold px-2 py-0.5 text-[10px]">MAINTENANCE</span>
-                                @endif
-                                <h4 class="font-display font-bold text-xl text-ink uppercase">{{ $extra->name }}</h4>
-                                <div class="mt-4 flex items-baseline flex-wrap gap-x-1.5">
-                                    <span class="font-display font-extrabold text-2xl xl:text-[28px] tracking-tight text-ink whitespace-nowrap">{{ $extraPrice }}</span>
-                                    <span class="text-xs font-mono text-muted">/bulan</span>
-                                </div>
-                                <a href="{{ route('checkout', $extra->id) }}"
-                                   class="mt-5 w-full border border-ink bg-transparent hover:bg-ink hover:text-white text-ink text-xs font-mono font-semibold uppercase py-3.5 px-4 flex items-center justify-between transition-colors">
-                                    <span>{{ $extra->is_active ? 'Pilih Paket' : 'Sedang Pemeliharaan' }}</span>
-                                    <span>↗</span>
-                                </a>
-                            </div>
-                            <ul class="mt-6 pt-6 border-t border-hairline space-y-3 text-xs font-mono text-ink/90">
-                                <li class="flex justify-between"><span class="text-muted">vCPU</span><span class="font-bold">{{ $extra->cpu }} vCPU</span></li>
-                                <li class="flex justify-between"><span class="text-muted">RAM</span><span class="font-bold">{{ $extra->ram }} GB</span></li>
-                                <li class="flex justify-between"><span class="text-muted">Penyimpanan</span><span class="font-bold">{{ $extra->disk }} GB NVMe SSD</span></li>
-                                <li class="flex justify-between"><span class="text-muted">Network Speed</span><span class="font-bold">{{ $extra->bandwidth }} Mbps</span></li>
-                            </ul>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
 
     </section>
 

@@ -2,11 +2,10 @@
 
 namespace App\Notifications;
 
-use App\Channels\WhatsAppChannel;
 use App\Models\VpsInstance;
 use App\Models\VpsSpec;
-use App\Services\WhatsAppMessage;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -15,24 +14,19 @@ use Illuminate\Notifications\Notification;
  * White-label: only CravaCloud plan names and the new resource figures; the
  * upstream vendor / bundle id never appears.
  */
-class VpsUpgradedNotification extends Notification
+class VpsUpgradedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     use \App\Notifications\Concerns\UsesMailIdentity;
 
     public function __construct(public VpsInstance $instance, public ?VpsSpec $spec = null)
     {
+        $this->onQueue('notifications');
     }
 
     public function via(object $notifiable): array
     {
-        $channels = ['mail', 'database'];
-
-        if (config('whatsapp.enabled') && ! empty($notifiable->phone)) {
-            $channels[] = WhatsAppChannel::class;
-        }
-
-        return $channels;
+        return ['mail', 'database'];
     }
 
     private function serverName(): string
@@ -81,27 +75,5 @@ class VpsUpgradedNotification extends Notification
             'ram' => $this->instance->ram,
             'disk' => $this->instance->disk,
         ];
-    }
-
-    public function toWhatsApp(object $notifiable): ?WhatsAppMessage
-    {
-        $appUrl = rtrim((string) config('app.url', 'https://cravacloud.id'), '/');
-
-        return WhatsAppMessage::create(implode("\n", [
-            'Halo *'.($notifiable->full_name ?? 'Pelanggan CravaCloud').'*,',
-            '',
-            '🚀 *UPGRADE SERVER BERHASIL*',
-            "Server: `{$this->serverName()}`",
-            "Paket baru: *{$this->planName()}*",
-            '',
-            "• CPU: `{$this->instance->cpu} vCPU`",
-            "• RAM: `{$this->instance->ram} GB`",
-            "• Disk: `{$this->instance->disk} GB`",
-            '',
-            'Masa aktif tidak berubah; sumber daya bertambah untuk sisa periode berjalan.',
-            "{$appUrl}/dashboard/vps/{$this->instance->id}",
-            '',
-            '_CravaCloud Solutions_',
-        ]));
     }
 }

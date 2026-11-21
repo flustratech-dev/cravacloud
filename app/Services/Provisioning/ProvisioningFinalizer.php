@@ -114,6 +114,12 @@ class ProvisioningFinalizer
             Log::warning('provisioning.log_activity_failed', ['instance_id' => $instance->id, 'error' => $e->getMessage()]);
         }
 
+        try {
+            app(\App\Services\SubscriptionSyncService::class)->ensureForInstance($instance->fresh());
+        } catch (\Throwable $e) {
+            Log::warning('provisioning.subscription_sync_failed', ['instance_id' => $instance->id, 'error' => $e->getMessage()]);
+        }
+
         // Kirim notifikasi kredensial server VPS ke pelanggan (white-label).
         try {
             $customer = $instance->customer;
@@ -166,12 +172,32 @@ class ProvisioningFinalizer
             }
         }
 
-        // Kirim alert darurat ke admin jika provisioning otomatis gagal.
+        // Kirim alert darurat (Email + WA) ke admin jika provisioning otomatis gagal.
         try {
             foreach (MailIdentity::adminRecipients() as $adminEmail) {
                 Notification::route('mail', $adminEmail)
                     ->notify(new AdminProvisioningFailedNotification($task, $error));
             }
+
+            app(\App\Services\AdminAlertService::class)->alert(
+                'provisioning.failed',
+                [
+                    'title' => "Provisioning Gagal — Task #{$task->id}",
+                    'order_id' => $order?->id,
+                    'send_email' => false,
+                    'email_sent_override' => true,
+                    'details' => [
+                        'Task' => "#{$task->id} ({$task->kind})",
+                        'Order' => '#' . ($order?->id ?? '-'),
+                        'Instance' => $instance?->hostname ?? '-',
+                        'Error' => \Illuminate\Support\Str::limit($error, 160),
+                    ],
+                    'body' => $error,
+                    'action_url' => url('/admin/monitoring?tab=tasks&status=failed'),
+                ],
+                dedupeKey: 'task-' . $task->id,
+                cooldownSeconds: 3600
+            );
         } catch (\Throwable $e) {
             Log::error('provisioning.notify_admin_failed', [
                 'task_id' => $task->id,

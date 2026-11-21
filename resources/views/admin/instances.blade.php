@@ -4,63 +4,69 @@
 @if(!empty($day2Caps))
     @include('dashboard.partials.day2-panel-script')
 @endif
-<div class="space-y-6">
+<div class="space-y-6" x-data="{
+    terminateModal: false,
+    terminateTarget: { id: null, hostname: '', action: '' },
+    terminateConfirmText: '',
+    terminateReason: '',
+    openTerminate(id, hostname, actionUrl) {
+        this.terminateTarget = { id, hostname, action: actionUrl };
+        this.terminateConfirmText = '';
+        this.terminateReason = '';
+        this.terminateModal = true;
+    }
+}">
     <!-- Stat Summary Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-hairline border border-hairline">
         <div class="bg-white p-5">
             <span class="font-mono text-[10px] text-muted font-bold uppercase tracking-widest">Total Cloud Instances</span>
-            <p class="font-display text-2xl font-bold text-ink mt-1">{{ $categoryCounts['all'] ?? 0 }}</p>
-            <span class="text-[11px] text-muted mt-0.5 block">Semua node aktif</span>
+            <p class="font-display text-2xl font-bold text-ink mt-1">{{ $providerCounts['all'] ?? 0 }}</p>
+            <span class="text-[11px] text-muted mt-0.5 block">Seluruh node VPS</span>
         </div>
 
         <div class="bg-white p-5">
-            <span class="font-mono text-[10px] text-muted font-bold uppercase tracking-widest">Cloud VPS Standar</span>
-            <p class="font-display text-2xl font-bold text-ink mt-1">{{ $categoryCounts['vps'] ?? 0 }}</p>
-            <span class="text-[11px] text-muted mt-0.5 block">Compute &amp; VM node</span>
+            <span class="font-mono text-[10px] text-muted font-bold uppercase tracking-widest">Running (Online)</span>
+            <p class="font-display text-2xl font-bold text-electric mt-1">{{ $statusCounts['running'] ?? 0 }}</p>
+            <span class="text-[11px] text-muted mt-0.5 block">Beroperasi normal</span>
         </div>
 
         <div class="bg-white p-5">
-            <span class="font-mono text-[10px] text-muted font-bold uppercase tracking-widest">AI Agent & Workstation</span>
-            <p class="font-display text-2xl font-bold text-ink mt-1">{{ $categoryCounts['ai'] ?? 0 }}</p>
-            <span class="text-[11px] text-muted mt-0.5 block">Hermes, VSCode, Ollama</span>
+            <span class="font-mono text-[10px] text-muted font-bold uppercase tracking-widest">Tencent Auto-Cloud</span>
+            <p class="font-display text-2xl font-bold text-ink mt-1">{{ $providerCounts['tencent'] ?? 0 }}</p>
+            <span class="text-[11px] text-muted mt-0.5 block">Lifecycle &amp; Day-2 otomatis</span>
         </div>
 
         <div class="bg-white p-5">
-            <span class="font-mono text-[10px] text-muted font-bold uppercase tracking-widest">Managed Database</span>
-            <p class="font-display text-2xl font-bold text-ink mt-1">{{ $categoryCounts['database'] ?? 0 }}</p>
-            <span class="text-[11px] text-muted mt-0.5 block">PostgreSQL, MySQL, Redis</span>
+            <span class="font-mono text-[10px] text-muted font-bold uppercase tracking-widest">Perlu Perhatian</span>
+            <p class="font-display text-2xl font-bold text-ink mt-1">{{ $providerCounts['attention'] ?? 0 }}</p>
+            <span class="text-[11px] text-muted mt-0.5 block">Stopped, suspended, atau error</span>
         </div>
     </div>
 
-    <!-- Category Tabs and Search Filters -->
+    <!-- Provider Tabs and Search Filters -->
     <div class="space-y-3">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <!-- Category Pills -->
+            <!-- Provider Pills -->
             <div class="flex flex-wrap items-center gap-1.5 font-mono text-xs pb-1 md:pb-0">
-                <a href="{{ route('admin.instances', array_merge(request()->except(['category', 'page']), ['category' => 'all'])) }}"
-                   class="px-3.5 py-2 transition-colors whitespace-nowrap {{ ($category ?? 'all') === 'all' ? 'bg-ink text-cream font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
-                    Semua Instance ({{ $categoryCounts['all'] ?? 0 }})
+                <a href="{{ route('admin.instances', array_merge(request()->except(['provider', 'page']), ['provider' => 'all'])) }}"
+                   class="px-3.5 py-2 transition-colors whitespace-nowrap {{ ($provider ?? 'all') === 'all' ? 'bg-ink text-cream font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
+                    Semua Instance ({{ $providerCounts['all'] ?? 0 }})
                 </a>
 
-                <a href="{{ route('admin.instances', array_merge(request()->except(['category', 'page']), ['category' => 'vps'])) }}"
-                   class="px-3.5 py-2 transition-colors whitespace-nowrap {{ ($category ?? '') === 'vps' ? 'bg-ink text-cream font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
-                    Cloud VPS ({{ $categoryCounts['vps'] ?? 0 }})
+                <a href="{{ route('admin.instances', array_merge(request()->except(['provider', 'page']), ['provider' => 'tencent'])) }}"
+                   class="px-3.5 py-2 transition-colors whitespace-nowrap {{ ($provider ?? '') === 'tencent' ? 'bg-ink text-cream font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
+                    Tencent Auto ({{ $providerCounts['tencent'] ?? 0 }})
                 </a>
 
-                <a href="{{ route('admin.instances', array_merge(request()->except(['category', 'page']), ['category' => 'ai'])) }}"
-                   class="px-3.5 py-2 transition-colors whitespace-nowrap {{ ($category ?? '') === 'ai' ? 'bg-ink text-cream font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
-                    AI Agent & Workstation ({{ $categoryCounts['ai'] ?? 0 }})
-                </a>
-
-                <a href="{{ route('admin.instances', array_merge(request()->except(['category', 'page']), ['category' => 'database'])) }}"
-                   class="px-3.5 py-2 transition-colors whitespace-nowrap {{ ($category ?? '') === 'database' ? 'bg-ink text-cream font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
-                    Managed Database ({{ $categoryCounts['database'] ?? 0 }})
+                <a href="{{ route('admin.instances', array_merge(request()->except(['provider', 'page']), ['provider' => 'manual'])) }}"
+                   class="px-3.5 py-2 transition-colors whitespace-nowrap {{ ($provider ?? '') === 'manual' ? 'bg-ink text-cream font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
+                    Manual Legacy ({{ $providerCounts['manual'] ?? 0 }})
                 </a>
             </div>
 
             <!-- Search and Status Filter Form -->
             <form method="GET" action="{{ route('admin.instances') }}" class="flex flex-wrap items-center gap-2">
-                <input type="hidden" name="category" value="{{ $category ?? 'all' }}">
+                <input type="hidden" name="provider" value="{{ $provider ?? 'all' }}">
 
                 <select name="status" class="px-3 py-2 border border-hairline text-xs font-mono bg-white text-ink focus:outline-none focus:border-electric">
                     <option value="all" {{ ($status ?? 'all') === 'all' ? 'selected' : '' }}>Semua Status</option>
@@ -68,20 +74,22 @@
                     <option value="stopped" {{ ($status ?? '') === 'stopped' ? 'selected' : '' }}>Stopped ({{ $statusCounts['stopped'] ?? 0 }})</option>
                     <option value="provisioning" {{ ($status ?? '') === 'provisioning' ? 'selected' : '' }}>Provisioning ({{ $statusCounts['provisioning'] ?? 0 }})</option>
                     <option value="suspended" {{ ($status ?? '') === 'suspended' ? 'selected' : '' }}>Suspended ({{ $statusCounts['suspended'] ?? 0 }})</option>
+                    <option value="reinstalling" {{ ($status ?? '') === 'reinstalling' ? 'selected' : '' }}>Reinstalling</option>
+                    <option value="error" {{ ($status ?? '') === 'error' ? 'selected' : '' }}>Error ({{ $statusCounts['error'] ?? 0 }})</option>
                     <option value="terminated" {{ ($status ?? '') === 'terminated' ? 'selected' : '' }}>Terminated ({{ $statusCounts['terminated'] ?? 0 }})</option>
                 </select>
 
                 <input type="text"
                        name="search"
                        value="{{ $search ?? '' }}"
-                       placeholder="Cari Hostname, IP, Pelanggan, App..."
+                       placeholder="Cari Hostname, IP, Pelanggan, Stack..."
                        class="w-48 sm:w-64 px-3 py-2 text-xs border border-hairline bg-white text-ink placeholder-muted focus:outline-none focus:border-electric">
 
                 <button type="submit" class="px-4 py-2 bg-ink hover:bg-electric text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
                     Cari
                 </button>
 
-                @if(!empty($search) || ($status ?? 'all') !== 'all' || ($category ?? 'all') !== 'all')
+                @if(!empty($search) || ($status ?? 'all') !== 'all' || ($provider ?? 'all') !== 'all')
                     <a href="{{ route('admin.instances') }}" class="px-3 py-2 bg-white border border-hairline hover:border-ink text-ink font-mono text-xs font-medium transition-colors">
                         Reset
                     </a>
@@ -106,29 +114,25 @@
             <table class="w-full text-left text-xs">
                 <thead class="bg-creamDark/60 text-muted font-mono text-[10px] font-bold uppercase tracking-widest border-b border-hairline">
                     <tr>
-                        <th class="px-5 py-3">Hostname &amp; Kategori</th>
+                        <th class="px-5 py-3">Hostname &amp; Provider</th>
                         <th class="px-5 py-3">Pelanggan</th>
-                        <th class="px-5 py-3">Layanan &amp; Akses</th>
+                        <th class="px-5 py-3">OS &amp; 1-Click Stack</th>
                         <th class="px-5 py-3">Jaringan &amp; Node</th>
                         <th class="px-5 py-3">Spesifikasi</th>
                         <th class="px-5 py-3">Status</th>
-                        <th class="px-5 py-3 text-right">Ubah Status</th>
+                        <th class="px-5 py-3 text-right">Aksi Lifecycle</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-hairline">
                     @forelse($instances as $instance)
                         <tr class="hover:bg-creamDark/30 transition-colors">
-                            <!-- Hostname & Kategori -->
+                            <!-- Hostname & Provider -->
                             <td class="px-5 py-3.5">
                                 <div class="flex items-center gap-1.5 flex-wrap">
                                     <span class="font-bold text-ink block font-mono">{{ $instance->hostname }}</span>
-                                    @if($instance->isAiPackage())
-                                        <span class="px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-creamDark text-ink border border-hairline">
-                                            AI Agent
-                                        </span>
-                                    @elseif($instance->isDatabasePackage())
-                                        <span class="px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-creamDark text-ink border border-hairline">
-                                            Managed DB
+                                    @if($instance->order?->vpsSpec?->name)
+                                        <span class="px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-white text-ink border border-hairline">
+                                            {{ $instance->order->vpsSpec->name }}
                                         </span>
                                     @else
                                         <span class="px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-white text-ink border border-hairline">
@@ -139,6 +143,32 @@
                                 <span class="text-muted font-mono text-[11px] block mt-0.5">
                                     #VX-{{ str_pad($instance->id, 5, '0', STR_PAD_LEFT) }}
                                 </span>
+                                <div class="flex flex-wrap items-center gap-1 mt-1">
+                                    @if(($instance->provider ?? 'manual') === 'tencent')
+                                        <span class="px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase bg-ink text-cream">
+                                            Tencent
+                                        </span>
+                                        @if($instance->provider_resource_id)
+                                            <span class="font-mono text-[10px] text-muted">{{ $instance->provider_resource_id }}</span>
+                                        @endif
+                                    @else
+                                        <span class="px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase bg-creamDark text-ink border border-hairline">
+                                            Manual
+                                        </span>
+                                    @endif
+                                    @if($instance->renew_pending)
+                                        <span class="px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase bg-ink text-cream border border-ink">
+                                            RENEW PENDING
+                                        </span>
+                                    @endif
+                                </div>
+                                @if($instance->region_code || $instance->last_reconciled_at)
+                                    <span class="font-mono text-[10px] text-muted block mt-0.5">
+                                        @if($instance->region_code){{ $instance->region_code }}@endif
+                                        @if($instance->region_code && $instance->last_reconciled_at) &middot; @endif
+                                        @if($instance->last_reconciled_at)Sync {{ $instance->last_reconciled_at->diffForHumans() }}@endif
+                                    </span>
+                                @endif
                             </td>
 
                             <!-- Pelanggan -->
@@ -148,42 +178,16 @@
                                 <span class="text-muted text-[11px] block truncate max-w-[170px]">{{ $instance->customer->email }}</span>
                             </td>
 
-                            <!-- Layanan & Akses -->
+                            <!-- OS & 1-Click Stack -->
                             <td class="px-5 py-3.5">
-                                @if($instance->isAiPackage())
-                                    <span class="font-semibold text-ink block">
-                                        {{ $instance->app_name ?: ($instance->control_panel_label ?: 'AI Workstation') }}
-                                    </span>
-                                    <span class="text-muted text-[11px] block">{{ $instance->os_label }}</span>
-                                    @if($instance->app_url)
-                                        <a href="{{ $instance->app_url }}" target="_blank" rel="noopener" class="text-[11px] text-electric hover:underline font-mono block truncate max-w-[190px] mt-0.5">
-                                            Web GUI: {{ $instance->app_url }}
-                                        </a>
-                                    @endif
-                                @elseif($instance->isDatabasePackage())
-                                    <span class="font-semibold text-ink font-mono block">
-                                        {{ strtoupper($instance->db_engine ?: 'PostgreSQL') }} :{{ $instance->db_port_resolved }}
-                                    </span>
-                                    <span class="text-muted font-mono text-[11px] block">
-                                        DB: {{ $instance->db_name ?: 'cravadb_production' }}
-                                    </span>
-                                    @if($instance->web_manager_url_resolved)
-                                        <a href="{{ $instance->web_manager_url_resolved }}" target="_blank" rel="noopener" class="text-[11px] text-electric hover:underline font-mono block truncate max-w-[190px] mt-0.5">
-                                            Web Manager: {{ $instance->web_manager_url_resolved }}
-                                        </a>
-                                    @else
-                                        <span class="text-muted text-[11px] block">Akses Remote Port Direct</span>
-                                    @endif
-                                @else
-                                    <span class="font-medium text-ink block">{{ $instance->os_label }}</span>
-                                    <span class="text-muted text-[11px] block">{{ $instance->control_panel_label ?: 'Standard SSH' }}</span>
-                                    @if($instance->panel_url)
-                                        <a href="{{ $instance->panel_url }}" target="_blank" rel="noopener" class="text-[11px] text-electric hover:underline font-mono block truncate max-w-[190px] mt-0.5">
-                                            Panel: {{ $instance->panel_url }}
-                                        </a>
-                                    @elseif($instance->control_panel && $instance->control_panel !== 'none')
-                                        <span class="text-[11px] font-semibold text-muted block mt-0.5">Link panel belum diisi</span>
-                                    @endif
+                                <span class="font-medium text-ink block">{{ $instance->os_label }}</span>
+                                <span class="text-muted text-[11px] block">{{ $instance->control_panel_label ?: 'Standard SSH' }}</span>
+                                @if($instance->panel_url)
+                                    <a href="{{ $instance->panel_url }}" target="_blank" rel="noopener" class="text-[11px] text-electric hover:underline font-mono block truncate max-w-[190px] mt-0.5">
+                                        Panel: {{ $instance->panel_url }}
+                                    </a>
+                                @elseif($instance->control_panel && $instance->control_panel !== 'none')
+                                    <span class="text-[11px] font-semibold text-muted block mt-0.5">Link panel belum diisi</span>
                                 @endif
 
                                 {{-- Link yang disimpan di sini yang tampil di dashboard pelanggan. --}}
@@ -208,7 +212,7 @@
                                 <details class="mt-1 text-[11px] font-sans">
                                     <summary class="cursor-pointer text-muted hover:text-ink font-mono font-medium">Ubah username SSH</summary>
                                     <form action="{{ route('admin.instances.ssh-username', $instance->id) }}" method="POST" class="mt-1.5 flex items-center gap-1.5"
-                                          data-confirm="Ubah username SSH {{ $instance->hostname ?? $instance->id }}? Pelanggan akan menerima email & WA pemberitahuan.">
+                                          data-confirm="Ubah username SSH {{ $instance->hostname ?? $instance->id }}? Pelanggan akan menerima email & notifikasi dasbor.">
                                         @csrf
                                         <input type="text" name="ssh_username" value="{{ $instance->ssh_user }}" required maxlength="32"
                                                pattern="[A-Za-z_][A-Za-z0-9._\-]{0,31}" autocomplete="off" spellcheck="false"
@@ -246,30 +250,91 @@
                                 <span class="px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase border {{ $instance->status === 'running' ? 'border-electric bg-electric text-white' : 'border-hairline bg-creamDark text-ink' }}">
                                     {{ $instance->status }}
                                 </span>
+                                @if($instance->latestProvisioningTask && in_array($instance->latestProvisioningTask->status, ['pending', 'running', 'failed'], true))
+                                    <span class="block mt-1 font-mono text-[10px] text-muted">
+                                        Task {{ $instance->latestProvisioningTask->kind }}: {{ $instance->latestProvisioningTask->status }} ({{ (int) $instance->latestProvisioningTask->progress }}%)
+                                    </span>
+                                @endif
                             </td>
 
-                            <!-- Ubah Status -->
-                            <td class="px-5 py-3.5 text-right">
-                                <form action="{{ route('admin.instances.status', $instance->id) }}" method="POST" class="inline-flex items-center gap-1.5">
-                                    @csrf
-                                    <select name="status" class="px-2.5 py-1.5 border border-hairline text-xs font-mono bg-white text-ink focus:outline-none focus:border-electric">
-                                        <option value="running" {{ $instance->status === 'running' ? 'selected' : '' }}>Running</option>
-                                        <option value="stopped" {{ $instance->status === 'stopped' ? 'selected' : '' }}>Stopped</option>
-                                        <option value="provisioning" {{ $instance->status === 'provisioning' ? 'selected' : '' }}>Provisioning</option>
-                                        <option value="error" {{ $instance->status === 'error' ? 'selected' : '' }}>Error</option>
-                                        <option value="suspended" {{ $instance->status === 'suspended' ? 'selected' : '' }}>Suspended</option>
-                                        <option value="terminated" {{ $instance->status === 'terminated' ? 'selected' : '' }}>Terminated</option>
-                                    </select>
-                                    <button type="submit" class="px-3 py-1.5 bg-ink hover:bg-electric text-white font-mono text-xs font-bold uppercase transition-colors cursor-pointer">
-                                        Simpan
-                                    </button>
-                                </form>
+                            <!-- Ubah Status & Aksi -->
+                            <td class="px-5 py-3.5 text-right space-y-1.5">
+                                @if(($instance->provider ?? 'manual') === 'tencent')
+                                    <div class="inline-flex flex-wrap items-center justify-end gap-1">
+                                        <form action="{{ route('admin.instances.sync-upstream', $instance->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="px-2.5 py-1 bg-creamDark hover:border-ink border border-hairline text-ink font-mono text-[10px] font-bold uppercase cursor-pointer">
+                                                Sync Upstream
+                                            </button>
+                                        </form>
+                                        @if($instance->status === 'suspended')
+                                            <form action="{{ route('admin.instances.unsuspend', $instance->id) }}" method="POST" class="inline"
+                                                  data-confirm="Aktifkan kembali instance Tencent {{ $instance->hostname }}?">
+                                                @csrf
+                                                <button type="submit" class="px-2.5 py-1 bg-electric hover:bg-electricHover text-white font-mono text-[10px] font-bold uppercase cursor-pointer">
+                                                    Unsuspend
+                                                </button>
+                                            </form>
+                                        @elseif($instance->status !== 'terminated')
+                                            <form action="{{ route('admin.instances.suspend', $instance->id) }}" method="POST" class="inline"
+                                                  data-confirm="Suspend & matikan sementara instance Tencent {{ $instance->hostname }} di upstream?">
+                                                @csrf
+                                                <button type="submit" class="px-2.5 py-1 bg-white border border-ink hover:bg-creamDark text-ink font-mono text-[10px] font-bold uppercase cursor-pointer">
+                                                    Suspend
+                                                </button>
+                                            </form>
+                                        @endif
+                                        @if($instance->status !== 'terminated')
+                                            <button type="button"
+                                                    @click="openTerminate({{ $instance->id }}, {{ Js::from($instance->hostname ?: ('VPS-' . $instance->id)) }}, {{ Js::from(route('admin.instances.terminate', $instance->id)) }})"
+                                                    class="px-2.5 py-1 bg-ink hover:bg-electric text-cream font-mono text-[10px] font-bold uppercase cursor-pointer">
+                                                Terminate
+                                            </button>
+                                        @endif
+                                    </div>
+                                    <details class="text-[10px] text-right">
+                                        <summary class="cursor-pointer font-mono text-muted hover:text-ink">Override DB Manual (Darurat)</summary>
+                                        <div class="mt-1.5 p-2 border border-ink bg-creamDark/60 text-left text-[10px] text-ink space-y-1.5">
+                                            <p class="font-mono font-bold uppercase">Peringatan: Override ini hanya mengubah status di database lokal tanpa memanggil API upstream.</p>
+                                            <form action="{{ route('admin.instances.status', $instance->id) }}" method="POST" class="flex items-center justify-end gap-1.5">
+                                                @csrf
+                                                <select name="status" class="px-2 py-1 border border-hairline text-[11px] font-mono bg-white text-ink focus:outline-none focus:border-electric">
+                                                    <option value="running" {{ $instance->status === 'running' ? 'selected' : '' }}>Running</option>
+                                                    <option value="stopped" {{ $instance->status === 'stopped' ? 'selected' : '' }}>Stopped</option>
+                                                    <option value="provisioning" {{ $instance->status === 'provisioning' ? 'selected' : '' }}>Provisioning</option>
+                                                    <option value="error" {{ $instance->status === 'error' ? 'selected' : '' }}>Error</option>
+                                                    <option value="suspended" {{ $instance->status === 'suspended' ? 'selected' : '' }}>Suspended</option>
+                                                    <option value="terminated" {{ $instance->status === 'terminated' ? 'selected' : '' }}>Terminated</option>
+                                                </select>
+                                                <button type="submit" class="px-2.5 py-1 bg-ink hover:bg-electric text-white font-mono text-[11px] font-bold uppercase transition-colors cursor-pointer">
+                                                    Simpan
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </details>
+                                @else
+                                    <form action="{{ route('admin.instances.status', $instance->id) }}" method="POST" class="inline-flex items-center gap-1.5">
+                                        @csrf
+                                        <select name="status" class="px-2.5 py-1.5 border border-hairline text-xs font-mono bg-white text-ink focus:outline-none focus:border-electric">
+                                            <option value="running" {{ $instance->status === 'running' ? 'selected' : '' }}>Running</option>
+                                            <option value="stopped" {{ $instance->status === 'stopped' ? 'selected' : '' }}>Stopped</option>
+                                            <option value="provisioning" {{ $instance->status === 'provisioning' ? 'selected' : '' }}>Provisioning</option>
+                                            <option value="reinstalling" {{ $instance->status === 'reinstalling' ? 'selected' : '' }}>Reinstalling</option>
+                                            <option value="error" {{ $instance->status === 'error' ? 'selected' : '' }}>Error</option>
+                                            <option value="suspended" {{ $instance->status === 'suspended' ? 'selected' : '' }}>Suspended</option>
+                                            <option value="terminated" {{ $instance->status === 'terminated' ? 'selected' : '' }}>Terminated</option>
+                                        </select>
+                                        <button type="submit" class="px-3 py-1.5 bg-ink hover:bg-electric text-white font-mono text-xs font-bold uppercase transition-colors cursor-pointer">
+                                            Simpan
+                                        </button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
                         @if(!empty($day2Caps[$instance->id]))
                         <tr class="bg-creamDark/30">
                             <td colspan="7" class="px-5 py-3">
-                                <details class="text-[11px]">
+                                <details class="text-[11px]" @toggle="if ($el.open) $dispatch('day2-open-{{ $instance->id }}')">
                                     <summary class="cursor-pointer font-mono font-bold uppercase text-electric hover:text-ink">Kontrol Day-2 (admin) — {{ $instance->hostname ?? $instance->id }}</summary>
                                     <div class="mt-3">
                                         @include('dashboard.partials.day2-panel', ['day2Context' => 'admin', 'vps' => $instance, 'day2' => $day2Caps[$instance->id]])
@@ -294,6 +359,54 @@
                 {{ $instances->links() }}
             </div>
         @endif
+    </div>
+
+    <!-- Modal Konfirmasi Terminate Permanen (Ketik Hostname - PRD 7.3.3) -->
+    <div x-show="terminateModal" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60"
+         style="display: none;"
+         @click.self="terminateModal = false"
+         @keydown.escape.window="terminateModal = false">
+        <div class="bg-white border-2 border-ink p-6 max-w-md w-full space-y-4" @click.stop>
+            <div class="flex items-start justify-between gap-3 pb-3 border-b border-hairline">
+                <div>
+                    <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-ink text-cream">Aksi Destruktif</span>
+                    <h3 class="font-display text-base font-bold text-ink mt-1.5">Konfirmasi Terminate Permanen</h3>
+                </div>
+                <button type="button" @click="terminateModal = false" class="font-mono text-lg font-bold text-muted hover:text-ink cursor-pointer">&times;</button>
+            </div>
+            <p class="text-xs text-ink leading-relaxed">
+                Instance <strong class="font-mono bg-creamDark px-1.5 py-0.5" x-text="terminateTarget.hostname"></strong> akan dihapus permanen di upstream cloud (2 tahap) dan slot kuota akan dilepas. Data tidak dapat dipulihkan.
+            </p>
+            <form :action="terminateTarget.action" method="POST" class="space-y-3">
+                @csrf
+                <div>
+                    <label class="block font-mono text-[10px] font-bold uppercase tracking-widest text-muted mb-1">
+                        Ketik ulang hostname (<span class="text-ink" x-text="terminateTarget.hostname"></span>) untuk konfirmasi
+                    </label>
+                    <input type="text" x-model="terminateConfirmText" autocomplete="off" spellcheck="false"
+                           :placeholder="terminateTarget.hostname"
+                           class="w-full px-3 py-2 border border-hairline font-mono text-xs text-ink bg-white focus:outline-none focus:border-ink">
+                </div>
+                <div>
+                    <label class="block font-mono text-[10px] font-bold uppercase tracking-widest text-muted mb-1">Alasan Terminasi (Opsional)</label>
+                    <input type="text" name="reason" x-model="terminateReason" maxlength="255"
+                           placeholder="Contoh: Permintaan pelanggan / pelanggaran AUP"
+                           class="w-full px-3 py-2 border border-hairline text-xs text-ink bg-white focus:outline-none focus:border-ink">
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-hairline">
+                    <button type="button" @click="terminateModal = false"
+                            class="px-4 py-2 border border-hairline bg-white hover:border-ink text-ink font-mono text-xs font-bold uppercase cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="submit"
+                            :disabled="terminateConfirmText.trim() !== terminateTarget.hostname"
+                            class="px-4 py-2 bg-ink hover:bg-electric disabled:opacity-40 disabled:cursor-not-allowed text-cream font-mono text-xs font-bold uppercase cursor-pointer">
+                        Terminate Permanen
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 @endsection

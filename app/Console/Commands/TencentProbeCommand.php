@@ -135,7 +135,7 @@ class TencentProbeCommand extends Command
     {
         try {
             $count = DB::table('vps_specs')->where('is_active', true)->where('category', 'vps')->count();
-            $this->row('db.vps_specs', 'PASS', "{$count} paket VPS aktif (kandidat auto-provision: 8, ai_combo/managed_db HOLD per D3)");
+            $this->row('db.vps_specs', 'PASS', "{$count} paket Cloud VPS aktif (kandidat auto-provision: 8)");
         } catch (\Throwable $e) {
             $this->row('db.vps_specs', 'WARN', 'DB tidak terjangkau dari probe: '.$e->getMessage());
         }

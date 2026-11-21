@@ -50,27 +50,20 @@ class CustomerDashboardMatrixTest extends TestCase
     private function packages(): array
     {
         return [
-            'vps' => [
-                'spec' => VpsSpec::where('category', 'vps')->firstOrFail(),
+            'starter_coolify' => [
+                'spec' => VpsSpec::where('category', 'vps')->where('name', 'Starter XS')->firstOrFail(),
                 'control_panel' => 'coolify',
                 'extra' => [],
             ],
-            'ai' => [
-                'spec' => VpsSpec::where('category', 'ai_combo')->firstOrFail(),
-                'control_panel' => 'vscode_server',
-                'extra' => ['app_name' => 'Cloud AI Workstation'],
+            'starter_plain' => [
+                'spec' => VpsSpec::where('category', 'vps')->where('name', 'Starter S')->firstOrFail(),
+                'control_panel' => 'none',
+                'extra' => [],
             ],
-            'database' => [
-                'spec' => VpsSpec::where('category', 'managed_db')->firstOrFail(),
-                'control_panel' => 'managed_database',
-                'extra' => [
-                    'db_engine' => 'postgres',
-                    'db_manager' => 'cloudbeaver',
-                    'db_name' => 'cravadb_production',
-                    'db_user' => 'admin_crava',
-                    'db_password' => 'RahasiaDb#123',
-                    'db_port' => 5432,
-                ],
+            'enterprise_ai_stack' => [
+                'spec' => VpsSpec::where('category', 'vps')->where('name', 'Enterprise Pro')->firstOrFail(),
+                'control_panel' => 'vscode_server',
+                'extra' => [],
             ],
         ];
     }

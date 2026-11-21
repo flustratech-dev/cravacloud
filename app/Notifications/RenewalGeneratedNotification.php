@@ -5,10 +5,11 @@ namespace App\Notifications;
 use App\Models\Invoice;
 use App\Models\Subscription;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class RenewalGeneratedNotification extends Notification
+class RenewalGeneratedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     use \App\Notifications\Concerns\UsesMailIdentity;
@@ -16,7 +17,9 @@ class RenewalGeneratedNotification extends Notification
     public function __construct(
         public Subscription $subscription,
         public Invoice $invoice
-    ) {}
+    ) {
+        $this->onQueue('notifications');
+    }
 
     public function via(object $notifiable): array
     {

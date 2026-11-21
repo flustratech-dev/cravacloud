@@ -72,8 +72,7 @@ class VpsSpec extends Model
 
     /**
      * True when this spec is mapped to a verified upstream bundle and is
-     * therefore eligible for auto-provisioning (D3: only the 8 VPS packages;
-     * ai_combo & managed_db stay unmapped/manual until repriced).
+     * therefore eligible for auto-provisioning.
      */
     public function hasUpstreamMapping(): bool
     {
@@ -82,13 +81,7 @@ class VpsSpec extends Model
 
     public function isAiPackage(): bool
     {
-        return ($this->category === 'ai_combo')
-            || in_array((int)$this->id, [7, 8, 9, 10], true)
-            || str_contains(strtolower($this->name), 'combo')
-            || str_contains(strtolower($this->name), 'terminal coding agent')
-            || str_contains(strtolower($this->name), 'cloud ai workstation')
-            || str_contains(strtolower($this->name), 'hermes')
-            || str_contains(strtolower($this->name), 'rag');
+        return $this->category === 'ai_combo';
     }
 
     public function getIsAiPackageAttribute(): bool
@@ -98,10 +91,7 @@ class VpsSpec extends Model
 
     public function isDatabasePackage(): bool
     {
-        return ($this->category === 'managed_db')
-            || in_array((int)$this->id, [11, 12, 13], true)
-            || str_starts_with(strtolower($this->name), 'db ')
-            || str_contains(strtolower($this->name), 'db enterprise');
+        return $this->category === 'managed_db';
     }
 
     public function getIsDatabasePackageAttribute(): bool
@@ -111,7 +101,7 @@ class VpsSpec extends Model
 
     public function isDirectCheckout(): bool
     {
-        return $this->isAiPackage() || $this->isDatabasePackage();
+        return false;
     }
 
     public function getIsDirectCheckoutAttribute(): bool

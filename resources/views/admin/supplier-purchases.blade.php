@@ -11,6 +11,8 @@
         $fmt = fn ($d) => $d?->timezone('Asia/Jakarta')->format('d M Y') ?? '—';
     @endphp
 
+    @include('admin.partials.billing-tabs')
+
     @if($errors->any())
         <div class="bg-white p-5 border-2 border-ink">
             <span class="font-mono text-[10px] font-bold text-ink uppercase tracking-widest block mb-2">Periksa Kembali Isian Anda</span>

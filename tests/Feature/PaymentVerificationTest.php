@@ -7,7 +7,6 @@ use App\Models\Order;
 use App\Models\User;
 use App\Models\VpsSpec;
 use App\Notifications\PaymentReceivedNotification;
-use App\Notifications\PaymentRejectedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -16,54 +15,44 @@ class PaymentVerificationTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected User $admin;
-    protected User $customer;
-    protected VpsSpec $spec;
+    private User $admin;
+    private User $customer;
+    private VpsSpec $spec;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(\Database\Seeders\DatabaseSeeder::class);
 
-        $this->admin = User::where('is_admin', true)->first();
+        $this->admin = User::factory()->create([
+            'is_admin' => true,
+        ]);
 
-        $this->customer = User::create([
-            'full_name' => 'Budi Santoso',
-            'username' => 'budisantoso',
-            'email' => 'budi@example.com',
-            'password' => bcrypt('password123'),
+        $this->customer = User::factory()->create([
             'is_admin' => false,
         ]);
+        $org = $this->customer->createPersonalOrganization();
+        $this->customer->switchToOrganization($org);
 
-        $this->spec = VpsSpec::where('is_active', true)->first();
-    }
-
-    public function test_admin_can_view_payments_page(): void
-    {
-        $order = Order::create([
-            'customer_id' => $this->customer->id,
-            'vps_spec_id' => $this->spec->id,
-            'provider' => 'cravacloud',
-            'datacenter_location' => 'singapore',
-            'os' => 'ubuntu2404',
-            'control_panel' => 'none',
-            'hostname' => 'vps-test',
-            'amount' => 80000,
-            'status' => 'pending',
-            'channel' => 'website',
-            'payment_method' => 'qris',
-            'billing_cycle' => 'monthly',
+        $this->spec = VpsSpec::create([
+            'name' => 'Starter Test',
+            'category' => 'vps',
+            'cpu' => 1,
+            'ram' => 1,
+            'disk' => 20,
+            'bandwidth' => 1000,
+            'cost_price' => 50000,
+            'sell_price' => 80000,
+            'is_active' => true,
         ]);
-
-        $response = $this->actingAs($this->admin)->get(route('admin.payments'));
-
-        $response->assertStatus(200);
-        $response->assertSee('Verifikasi Pembayaran');
-        $response->assertSee('MIDTRANS');
-        $response->assertSee('Rp 80.000');
     }
 
-    public function test_admin_can_approve_payment_and_notification_is_sent(): void
+    public function test_admin_payments_route_is_decommissioned(): void
+    {
+        $this->actingAs($this->admin)->get('/admin/payments')->assertNotFound();
+    }
+
+    public function test_admin_can_mark_order_paid_and_notification_is_sent(): void
     {
         Notification::fake();
 
@@ -91,7 +80,7 @@ class PaymentVerificationTest extends TestCase
             'due_at' => now()->addDay(),
         ]);
 
-        $response = $this->actingAs($this->admin)->post(route('admin.payments.approve', $order->id), [
+        $response = $this->actingAs($this->admin)->post(route('admin.orders.mark-paid', $order->id), [
             'reference' => 'DANA-REF-12345',
             'note' => 'Mutasi cocok',
         ]);
@@ -115,43 +104,8 @@ class PaymentVerificationTest extends TestCase
         );
     }
 
-    public function test_admin_can_hold_payment(): void
+    public function test_admin_can_cancel_pending_order(): void
     {
-        $order = Order::create([
-            'customer_id' => $this->customer->id,
-            'vps_spec_id' => $this->spec->id,
-            'provider' => 'cravacloud',
-            'datacenter_location' => 'singapore',
-            'os' => 'ubuntu2404',
-            'control_panel' => 'none',
-            'hostname' => 'vps-hold',
-            'amount' => 80000,
-            'status' => 'pending',
-            'channel' => 'website',
-            'payment_method' => 'qris',
-            'billing_cycle' => 'monthly',
-        ]);
-
-        $response = $this->actingAs($this->admin)->post(route('admin.payments.hold', $order->id), [
-            'note' => 'Mutasi belum tampak di aplikasi',
-        ]);
-
-        $response->assertRedirect();
-        $response->assertSessionHas('info');
-
-        $order->refresh();
-        $this->assertEquals('pending', $order->status);
-
-        $this->assertDatabaseHas('order_status_history', [
-            'order_id' => $order->id,
-            'reason' => 'Verifikasi ditunda: Mutasi belum tampak di aplikasi',
-        ]);
-    }
-
-    public function test_admin_can_reject_payment_and_notification_is_sent(): void
-    {
-        Notification::fake();
-
         $order = Order::create([
             'customer_id' => $this->customer->id,
             'vps_spec_id' => $this->spec->id,
@@ -176,7 +130,7 @@ class PaymentVerificationTest extends TestCase
             'due_at' => now()->addDay(),
         ]);
 
-        $response = $this->actingAs($this->admin)->post(route('admin.payments.reject', $order->id), [
+        $response = $this->actingAs($this->admin)->post(route('admin.orders.cancel', $order->id), [
             'reason' => 'Mutasi tidak ditemukan di akun DANA Bisnis',
         ]);
 
@@ -188,14 +142,5 @@ class PaymentVerificationTest extends TestCase
 
         $this->assertEquals('cancelled', $order->status);
         $this->assertEquals('cancelled', $invoice->status);
-
-        Notification::assertSentTo(
-            $this->customer,
-            PaymentRejectedNotification::class,
-            function ($notification) use ($order) {
-                return $notification->order->id === $order->id &&
-                       $notification->reason === 'Mutasi tidak ditemukan di akun DANA Bisnis';
-            }
-        );
     }
 }

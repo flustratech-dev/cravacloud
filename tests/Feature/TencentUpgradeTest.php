@@ -373,6 +373,7 @@ class TencentUpgradeTest extends TestCase
         $task = ProvisioningTask::where('order_id', $upgradeOrder->id)->where('kind', 'upgrade')->firstOrFail();
 
         $this->fakeTencent([
+            'DescribeAccountBalance' => ['Balance' => 100000],
             'ModifyInstancesBundle' => [],
             'DescribeInstances' => ['TotalCount' => 1, 'InstanceSet' => [$this->remote([
                 'BundleId' => 'bundle_starter_nmc_lin_med4_01',

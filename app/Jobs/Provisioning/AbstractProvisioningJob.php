@@ -9,6 +9,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
@@ -33,6 +34,16 @@ abstract class AbstractProvisioningJob implements ShouldQueue
 
     public function __construct(public int $taskId)
     {
+    }
+
+    /** Cegah task yang sama dijalankan oleh 2 worker paralel akibat retry/stall. */
+    public function middleware(): array
+    {
+        return [
+            (new WithoutOverlapping('prov-task-' . $this->taskId))
+                ->expireAfter(660)
+                ->releaseAfter(30),
+        ];
     }
 
     /** @return int[] Backoff detik per attempt. */

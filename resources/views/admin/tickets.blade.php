@@ -2,6 +2,8 @@
 
 @section('content')
 <div class="space-y-6">
+    @include('admin.partials.helpdesk-tabs')
+
     @if($openServiceRequestCount > 0)
         <div class="p-4 bg-white border-2 border-electric text-ink flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div>

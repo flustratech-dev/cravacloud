@@ -39,8 +39,13 @@ class BalanceGuard
             : Cache::remember(self::CACHE_KEY, $ttl, fn () => $this->fetchRawBalance());
 
         $divisor = max(1, (int) config('services.tencent.balance_divisor', 100));
+        $balance = round($raw / $divisor, 2);
 
-        return round($raw / $divisor, 2);
+        Cache::put(self::CACHE_KEY, $raw, $ttl);
+        Cache::put('tencent:balance:last', $balance, now()->addDays(7));
+        Cache::put('tencent:balance:checked_at', now()->toIso8601String(), now()->addDays(7));
+
+        return $balance;
     }
 
     /**

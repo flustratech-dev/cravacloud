@@ -82,13 +82,36 @@ class ReinstallVpsJob extends AbstractProvisioningJob
 
     protected function onFailure(ProvisioningTask $task, string $error): void
     {
-        if (!$task->vpsInstance) return;
+        $instance = $task->vpsInstance;
+        if ($instance) {
+            try {
+                app(VpsStateMachine::class)->transition($instance, 'error', [
+                    'reason' => 'Reinstall gagal: ' . $error,
+                    'actor_type' => 'system',
+                ]);
+            } catch (\Throwable $e) {
+                // ignore
+            }
+        }
+
         try {
-            app(VpsStateMachine::class)->transition($task->vpsInstance, 'error', [
-                'reason' => 'Reinstall gagal: ' . $error,
-                'actor_type' => 'system',
-            ]);
-        } catch (\Throwable $e) {
+            app(\App\Services\AdminAlertService::class)->alert(
+                'provisioning.failed',
+                [
+                    'title' => 'Reinstall OS upstream gagal',
+                    'order_id' => $task->order_id,
+                    'details' => [
+                        'Task' => "#{$task->id} (reinstall)",
+                        'Instance' => '#' . ($instance?->id ?? '?') . ' (' . ($instance?->hostname ?? '-') . ')',
+                        'Error' => \Illuminate\Support\Str::limit($error, 160),
+                    ],
+                    'body' => $error,
+                    'action_url' => url('/admin/monitoring?tab=tasks&status=failed'),
+                ],
+                dedupeKey: 'task-' . $task->id,
+                cooldownSeconds: 3600
+            );
+        } catch (\Throwable) {
             // ignore
         }
     }

@@ -19,6 +19,8 @@
         $labelClass = 'block font-mono text-[10px] font-bold text-muted uppercase tracking-widest mb-1.5';
     @endphp
 
+    @include('admin.partials.helpdesk-tabs')
+
     @if($errors->any())
         <div class="bg-white p-5 border-2 border-ink">
             <span class="font-mono text-[10px] font-bold text-ink uppercase tracking-widest block mb-2">Periksa Kembali Isian Anda</span>

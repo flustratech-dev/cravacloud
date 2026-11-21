@@ -54,7 +54,13 @@
 
 <div style="background-color: #f4f4f5; border-left: 3px solid #000000; padding: 12px 16px; border-radius: 4px; margin-bottom: 24px;">
     <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #3f3f46;">
-        <strong>Status Layanan:</strong> Sistem sedang mempersiapkan server VPS Anda. Kredensial server (IP, Port SSH, dan Password) akan otomatis dikirimkan ke email Anda begitu server siap.
+        @if(($order->order_type ?? 'new') === 'renewal')
+            <strong>Status Layanan:</strong> Masa aktif server VPS Anda telah diperpanjang secara otomatis. Detail masa berlaku dan invoice tersedia di Dashboard CravaCloud.
+        @elseif(($order->order_type ?? 'new') === 'upgrade')
+            <strong>Status Layanan:</strong> Paket server VPS Anda sedang ditingkatkan. Perubahan resource akan otomatis aktif setelah proses selesai.
+        @else
+            <strong>Status Layanan:</strong> Sistem sedang mempersiapkan server VPS Anda. Informasi akses (IP, Port SSH, dan panduan dashboard) akan otomatis dikirimkan ke email Anda begitu server siap.
+        @endif
     </p>
 </div>
 

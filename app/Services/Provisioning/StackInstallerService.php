@@ -88,7 +88,7 @@ class StackInstallerService
         if (! empty($info['TaskResult'])) {
             $decoded = base64_decode((string) $info['TaskResult'], true);
             if ($decoded !== false) {
-                $output = mb_substr($decoded, 0, 2000);
+                $output = mb_substr($decoded, -4000);
             }
         }
 

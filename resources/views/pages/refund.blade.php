@@ -162,7 +162,7 @@
                     </div>
                     <div class="space-y-4 text-sm text-muted leading-relaxed">
                         <p>
-                            CravaCloud Indonesia berkomitmen menghadirkan solusi Cloud VPS, Dedicated Database, dan runtime AI Agent dengan performa komputasi terbaik dan ketersediaan tinggi.
+                            CravaCloud Indonesia berkomitmen menghadirkan solusi infrastruktur Cloud VPS KVM NVMe dan ekosistem 1-Click Application Stacks dengan performa komputasi terbaik dan ketersediaan tinggi.
                         </p>
                         <p>
                             Kami memahami bahwa dalam penerapan infrastruktur teknis, potensi kendala hardware host atau inkompatibilitas arsitektur dapat terjadi. Dokumen ini menjelaskan hak serta mekanisme pengembalian dana (refund) secara berkeadilan, transparan, dan terukur.

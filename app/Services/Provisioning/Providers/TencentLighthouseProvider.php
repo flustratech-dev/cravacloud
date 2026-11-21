@@ -448,6 +448,14 @@ class TencentLighthouseProvider implements VpsProviderContract, SupportsStackIns
         }
 
         $bundleId = (string) $targetSpec->upstream_bundle_id;
+        $currentBundleId = (string) ($instance->order?->vpsSpec?->upstream_bundle_id ?? ($instance->provider_meta['bundle_id'] ?? ''));
+        $currentUsd = $currentBundleId !== '' ? (float) config('services.tencent.bundle_prices_usd.'.$currentBundleId, 0) : 0.0;
+        $targetUsd = (float) config('services.tencent.bundle_prices_usd.'.$bundleId, 0);
+        $diffUsd = max(0.0, round($targetUsd - $currentUsd, 2));
+        if ($diffUsd > 0) {
+            $this->balanceGuard->assertSufficient($diffUsd, fresh: true);
+        }
+
         $task->markStarted('Meningkatkan spesifikasi server');
 
         $this->lighthouse->modifyInstancesBundle([$instanceId], $bundleId, $region);

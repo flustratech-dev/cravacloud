@@ -4,10 +4,11 @@ namespace App\Notifications;
 
 use App\Models\ProvisioningTask;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class AdminProvisioningFailedNotification extends Notification
+class AdminProvisioningFailedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     use \App\Notifications\Concerns\UsesMailIdentity;
@@ -15,7 +16,9 @@ class AdminProvisioningFailedNotification extends Notification
     public function __construct(
         public ProvisioningTask $task,
         public string $errorMessage
-    ) {}
+    ) {
+        $this->onQueue('notifications');
+    }
 
     public function via(object $notifiable): array
     {

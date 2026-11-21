@@ -217,7 +217,9 @@ class SupplierPurchaseTest extends TestCase
         $this->purchase($instance, now()->addDay());
 
         $this->assertSame(1, app(SupplierCoverageService::class)->urgentCount());
-        $this->actingAs($this->admin())->get('/admin')->assertSee('Pembelian Supplier');
+        $response = $this->actingAs($this->admin())->get('/admin');
+        $this->assertStringContainsString('Billing & Margin', $response->getContent());
+        $response->assertSee('1');
     }
 
     // ======================= Kerahasiaan supplier =======================

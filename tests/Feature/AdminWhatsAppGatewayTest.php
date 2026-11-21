@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Channels\WhatsAppChannel;
+use App\Models\AdminAuditLog;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\Setting;
@@ -13,7 +13,6 @@ use App\Notifications\InvoiceCreatedNotification;
 use App\Notifications\PaymentReceivedNotification;
 use App\Notifications\VpsProvisionedNotification;
 use App\Services\WhatsAppGateway;
-use App\Services\WhatsAppMessage;
 use App\Services\WhatsAppSettings;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -224,16 +223,22 @@ class AdminWhatsAppGatewayTest extends TestCase
         $this->assertNull(WhatsAppGateway::normalize('12345'));
     }
 
-    public function test_invoice_created_notification_menghasilkan_lampiran_pdf_untuk_whatsapp(): void
+    public function test_notifikasi_pelanggan_hanya_email_dan_database_tanpa_whatsapp(): void
     {
+        config([
+            'whatsapp.enabled' => true,
+            'whatsapp.url'     => 'https://wa.cravacloud.id',
+            'whatsapp.key'     => 'key-no-cust-wa',
+        ]);
+        Http::fake();
+
         $user = $this->customer('081299998888');
         $spec = VpsSpec::first();
-
         $order = $this->createOrder($user, $spec, 'pending');
 
         $invoice = Invoice::create([
             'order_id'       => $order->id,
-            'invoice_number' => 'INV-TEST-2026',
+            'invoice_number' => 'INV-EMAILONLY-2026',
             'amount'         => 150000,
             'subtotal'       => 150000,
             'status'         => 'unpaid',
@@ -241,109 +246,85 @@ class AdminWhatsAppGatewayTest extends TestCase
             'due_at'         => now()->addDays(3),
         ]);
 
-        $notification = new InvoiceCreatedNotification($invoice);
+        $invNotif = new InvoiceCreatedNotification($invoice);
+        $payNotif = new PaymentReceivedNotification($order, $invoice);
 
-        // Uji method toWhatsApp
-        $msg = $notification->toWhatsApp($user);
+        $this->assertSame(['mail', 'database'], $invNotif->via($user));
+        $this->assertSame(['mail', 'database'], $payNotif->via($user));
 
-        $this->assertInstanceOf(WhatsAppMessage::class, $msg);
-        $this->assertTrue($msg->hasMedia());
-        $this->assertStringContainsString('TAGIHAN BARU DITERBITKAN', $msg->getContent());
-        $this->assertStringContainsString('INV-TEST-2026', $msg->getContent());
+        $user->notify($invNotif);
+        $user->notify($payNotif);
+
+        // Pelanggan tidak pernah memicu HTTP ke WA Gateway.
+        Http::assertNothingSent();
     }
 
-    public function test_payment_received_notification_menghasilkan_lampiran_pdf_untuk_whatsapp(): void
+    public function test_email_vps_provisioned_tidak_mengirim_password_plaintext(): void
     {
         $user = $this->customer('081299998888');
         $spec = VpsSpec::first();
-
-        $order = $this->createOrder($user, $spec, 'paid');
-
-        $invoice = Invoice::create([
-            'order_id'       => $order->id,
-            'invoice_number' => 'INV-LUNAS-2026',
-            'amount'         => 200000,
-            'subtotal'       => 200000,
-            'status'         => 'paid',
-            'issued_at'      => now(),
-            'paid_at'        => now(),
-        ]);
-
-        $notification = new PaymentReceivedNotification($order, $invoice);
-        $msg = $notification->toWhatsApp($user);
-
-        $this->assertInstanceOf(WhatsAppMessage::class, $msg);
-        $this->assertTrue($msg->hasMedia());
-        $this->assertStringContainsString('PEMBAYARAN DITERIMA & LUNAS', $msg->getContent());
-        $this->assertStringContainsString('INV-LUNAS-2026', $msg->getContent());
-    }
-
-    public function test_vps_provisioned_notification_menghasilkan_pesan_kredensial_whatsapp(): void
-    {
-        $user = $this->customer('081299998888');
-        $spec = VpsSpec::first();
-
-        $order = $this->createOrder($user, $spec, 'paid');
+        $order = $this->createOrder($user, $spec, 'active');
 
         $instance = VpsInstance::create([
             'customer_id'           => $user->id,
             'order_id'              => $order->id,
-            'hostname'              => 'vps-test.cravacloud.id',
+            'hostname'              => 'vps-sec.cravacloud.id',
             'public_ip'             => '103.150.190.10',
             'ssh_port'              => 22,
-            'initial_root_password' => 'CravaSecret2026!',
-            'os'                    => 'ubuntu-22-04',
+            'ssh_username'          => 'ubuntu',
+            'initial_root_password' => 'SuperSecretPwd#2026',
+            'os'                    => 'ubuntu2404',
+            'control_panel'         => 'coolify',
+            'app_url'               => 'http://103.150.190.10:8000',
             'status'                => 'running',
             'starts_at'             => now(),
             'expires_at'            => now()->addDays(30),
         ]);
 
         $notification = new VpsProvisionedNotification($instance);
-        $msg = $notification->toWhatsApp($user);
+        $this->assertSame(['mail', 'database'], $notification->via($user));
 
-        $this->assertInstanceOf(WhatsAppMessage::class, $msg);
-        $this->assertFalse($msg->hasMedia());
-        $this->assertStringContainsString('SERVER VPS ANDA TELAH AKTIF', $msg->getContent());
-        $this->assertStringContainsString('103.150.190.10', $msg->getContent());
-        $this->assertStringContainsString('CravaSecret2026!', $msg->getContent());
-        $this->assertStringContainsString('ssh root@103.150.190.10 -p 22', $msg->getContent());
+        $html = (string) $notification->toMail($user)->render();
+        $this->assertStringNotContainsString('SuperSecretPwd#2026', $html);
+        $this->assertStringContainsString('ssh ubuntu@103.150.190.10 -p 22', $html);
+        $this->assertStringContainsString('tab Akses', $html);
+        $this->assertStringContainsString('http://103.150.190.10:8000', $html);
     }
 
-    public function test_whatsapp_channel_mengirim_dokumen_media_saat_user_notify(): void
+    public function test_whatsapp_controller_mencatat_audit_log(): void
     {
-        config([
-            'whatsapp.enabled' => true,
-            'whatsapp.url'     => 'https://wa.cravacloud.id',
-            'whatsapp.key'     => 'key-channel-test',
-        ]);
+        $admin = $this->admin();
 
         Http::fake([
-            'https://wa.cravacloud.id/api/v1/messages/media' => Http::response([
+            'https://wa.cravacloud.id/api/v1/messages/text' => Http::response([
                 'success' => true,
-                'data'    => ['id' => 'msg_media_123', 'status' => 'queued'],
+                'data'    => ['id' => 'msg_audit_1'],
             ], 200),
         ]);
 
-        $user = $this->customer('081299998888');
-        $spec = VpsSpec::first();
-        $order = $this->createOrder($user, $spec, 'pending');
+        $this->actingAs($admin)->post(route('admin.whatsapp.settings'), [
+            'wa_enabled' => '1',
+            'wa_url'     => 'https://wa.cravacloud.id',
+            'wa_key'     => 'audit-secret-key',
+            'wa_session' => 'crava-ops',
+            'wa_timeout' => 15,
+        ])->assertRedirect(route('admin.whatsapp.index'));
 
-        $invoice = Invoice::create([
-            'order_id'       => $order->id,
-            'invoice_number' => 'INV-CHAN-2026',
-            'amount'         => 150000,
-            'subtotal'       => 150000,
-            'status'         => 'unpaid',
-            'issued_at'      => now(),
-            'due_at'         => now()->addDays(3),
+        $this->assertDatabaseHas('admin_audit_logs', [
+            'admin_user_id' => $admin->id,
+            'action'        => 'whatsapp.settings_updated',
         ]);
 
-        $user->notify(new InvoiceCreatedNotification($invoice));
+        WhatsAppSettings::apply();
 
-        Http::assertSent(function ($request) {
-            return $request->url() === 'https://wa.cravacloud.id/api/v1/messages/media'
-                && $request->isMultipart()
-                && $request->header('X-Api-Key')[0] === 'key-channel-test';
-        });
+        $this->actingAs($admin)->postJson(route('admin.whatsapp.test'), [
+            'phone'   => '081234567890',
+            'message' => 'Tes audit',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('admin_audit_logs', [
+            'admin_user_id' => $admin->id,
+            'action'        => 'whatsapp.test_sent',
+        ]);
     }
 }

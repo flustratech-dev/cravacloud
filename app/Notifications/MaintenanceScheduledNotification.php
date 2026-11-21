@@ -2,17 +2,16 @@
 
 namespace App\Notifications;
 
-use App\Channels\WhatsAppChannel;
 use App\Models\MaintenanceWindow;
-use App\Services\WhatsAppMessage;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
  * Pemberitahuan maintenance terjadwal ke pelanggan.
  */
-class MaintenanceScheduledNotification extends Notification
+class MaintenanceScheduledNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     use \App\Notifications\Concerns\UsesMailIdentity;
@@ -20,17 +19,12 @@ class MaintenanceScheduledNotification extends Notification
     public function __construct(
         public MaintenanceWindow $window
     ) {
+        $this->onQueue('notifications');
     }
 
     public function via(object $notifiable): array
     {
-        $channels = ['mail', 'database'];
-
-        if (config('whatsapp.enabled') && ! empty($notifiable->phone)) {
-            $channels[] = WhatsAppChannel::class;
-        }
-
-        return $channels;
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -74,29 +68,5 @@ class MaintenanceScheduledNotification extends Notification
         $rest = $minutes % 60;
 
         return $rest === 0 ? $hours . ' jam' : $hours . ' jam ' . $rest . ' menit';
-    }
-
-    public function toWhatsApp(object $notifiable): ?WhatsAppMessage
-    {
-        $namaPelanggan = $notifiable->full_name ?? 'Pelanggan CravaCloud';
-        $start = $this->window->starts_at->timezone('Asia/Jakarta')->translatedFormat('d F Y, H:i') . ' WIB';
-        $end = $this->window->ends_at->timezone('Asia/Jakarta')->translatedFormat('d F Y, H:i') . ' WIB';
-
-        $message = implode("\n", [
-            "Halo *{$namaPelanggan}*,",
-            '',
-            '🔧 *PEMBERITAHUAN PEMELIHARAAN SISTEM*',
-            "*{$this->window->title}*",
-            '',
-            "• *Waktu Mulai:* {$start}",
-            "• *Perkiraan Selesai:* {$end} ({$this->durationText()})",
-            '',
-            $this->window->description ?: 'Pemeliharaan rutin infrastruktur server cloud CravaCloud.',
-            '',
-            '_Kami mengupayakan pemeliharaan selesai tepat waktu untuk meminimalkan dampak pada server Anda._',
-            '_CravaCloud Operations Team_',
-        ]);
-
-        return WhatsAppMessage::create($message);
     }
 }

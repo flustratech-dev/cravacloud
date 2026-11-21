@@ -72,6 +72,26 @@ class AbuseController extends Controller
             'handled_by' => Auth::id(),
         ]);
 
+        if (in_array($case->severity, ['high', 'critical'], true)) {
+            try {
+                $case->loadMissing(['user', 'vpsInstance']);
+                app(\App\Services\AdminAlertService::class)->alert('billing.refund_or_abuse', [
+                    'title' => 'Kasus Pelanggaran ' . strtoupper((string) $case->severity),
+                    'severity' => $case->severity === 'critical' ? 'CRITICAL' : 'ACTION',
+                    'details' => [
+                        'Kasus' => "#{$case->id} ({$case->type_label})",
+                        'Pelanggan' => $case->user?->full_name ?: ($case->user?->username ?: '-'),
+                        'Server' => $case->vpsInstance?->hostname ?? '-',
+                        'Bukti' => \Illuminate\Support\Str::limit((string) ($case->evidence ?? '-'), 180),
+                    ],
+                    'action_url' => url('/admin/abuse'),
+                    'action_label' => 'Tinjau Kasus Pelanggaran',
+                ], dedupeKey: "abuse:{$case->id}", cooldownSeconds: 3600);
+            } catch (\Throwable) {
+                // ignore
+            }
+        }
+
         $this->audit(
             'abuse.case_created',
             "Mencatat kasus pelanggaran {$case->type_label} untuk pengguna #{$case->user_id}.",
@@ -90,6 +110,7 @@ class AbuseController extends Controller
 
         $request->validate([
             'deadline_days' => ['required', 'integer', 'min:1', 'max:30'],
+            'suspend_upstream' => ['nullable', 'boolean'],
         ]);
 
         $template = NotificationTemplate::active()
@@ -103,7 +124,7 @@ class AbuseController extends Controller
         $deadline = now()->addDays((int) $request->input('deadline_days'));
 
         $data = [
-            'nama' => $case->user->name ?? 'Pelanggan',
+            'nama' => $case->user->full_name ?: ($case->user->username ?: 'Pelanggan'),
             'layanan' => $case->vpsInstance?->hostname ?? 'Layanan Anda',
             'jenis_pelanggaran' => $case->type_label,
             'waktu' => $case->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i') . ' WIB',
@@ -127,6 +148,20 @@ class AbuseController extends Controller
             return back()->with('error', 'Pemberitahuan gagal dikirim: ' . $e->getMessage());
         }
 
+        $upstreamWarn = null;
+        $suspendedUpstream = false;
+        if ($request->boolean('suspend_upstream') && $case->vpsInstance) {
+            try {
+                $dispatcher = app(\App\Services\Provisioning\VpsLifecycleDispatcher::class);
+                if ($dispatcher->supports($case->vpsInstance)) {
+                    $dispatcher->suspend($case->vpsInstance, "Suspensi kasus abuse #{$case->id}");
+                    $suspendedUpstream = true;
+                }
+            } catch (\Throwable $e) {
+                $upstreamWarn = 'Notifikasi terkirim, namun suspend upstream gagal: ' . $e->getMessage();
+            }
+        }
+
         $case->update([
             'status' => 'notified',
             'notified_at' => now(),
@@ -135,20 +170,38 @@ class AbuseController extends Controller
         $this->audit(
             'abuse.customer_notified',
             "Mengirim pemberitahuan pelanggaran kasus #{$case->id} ke {$case->user->email}.",
-            $case
+            $case,
+            ['suspend_upstream' => $suspendedUpstream]
         );
 
-        return back()->with('success', 'Pemberitahuan pelanggaran terkirim ke pelanggan.');
+        return $upstreamWarn
+            ? back()->with('warning', $upstreamWarn)
+            : back()->with('success', 'Pemberitahuan pelanggaran terkirim ke pelanggan.' . ($suspendedUpstream ? ' Suspend upstream sedang diproses.' : ''));
     }
 
     public function resolve(Request $request, int $id)
     {
-        $case = AbuseCase::findOrFail($id);
+        $case = AbuseCase::with('vpsInstance')->findOrFail($id);
 
         $validated = $request->validate([
             'status' => ['required', 'in:resolved,terminated'],
             'resolution' => ['required', 'string', 'max:1000'],
+            'terminate_upstream' => ['nullable', 'boolean'],
         ]);
+
+        $terminatedUpstream = false;
+        $upstreamWarn = null;
+        if ($validated['status'] === 'terminated' && $request->boolean('terminate_upstream') && $case->vpsInstance) {
+            try {
+                $dispatcher = app(\App\Services\Provisioning\VpsLifecycleDispatcher::class);
+                if ($dispatcher->supports($case->vpsInstance)) {
+                    $dispatcher->destroy($case->vpsInstance, "Terminasi kasus abuse #{$case->id}: {$validated['resolution']}");
+                    $terminatedUpstream = true;
+                }
+            } catch (\Throwable $e) {
+                $upstreamWarn = 'Kasus ditutup, namun terminate upstream gagal: ' . $e->getMessage();
+            }
+        }
 
         $case->update([
             'status' => $validated['status'],
@@ -160,9 +213,12 @@ class AbuseController extends Controller
         $this->audit(
             'abuse.case_resolved',
             "Menutup kasus pelanggaran #{$case->id} dengan status {$case->status_label}.",
-            $case
+            $case,
+            ['status' => $validated['status'], 'terminate_upstream' => $terminatedUpstream]
         );
 
-        return back()->with('success', 'Kasus pelanggaran berhasil ditutup.');
+        return $upstreamWarn
+            ? back()->with('warning', $upstreamWarn)
+            : back()->with('success', 'Kasus pelanggaran berhasil ditutup.' . ($terminatedUpstream ? ' Terminasi upstream sedang diproses.' : ''));
     }
 }

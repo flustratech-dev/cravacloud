@@ -327,7 +327,7 @@ class StackRegistry
                 warningMessage: 'OmniRoute dijalankan terisolasi pada loopback internal (127.0.0.1:20128) tanpa membuka port publik tambahan demi keamanan API key.',
                 warningBullets: [
                     'Hanya port SSH (22) yang dibuka di firewall publik',
-                    'Akses dashboard melalui SSH tunnel: ssh -L 20128:127.0.0.1:20128 root@<IP>',
+                    'Akses dashboard melalui SSH tunnel: ssh -L 20128:127.0.0.1:20128 ubuntu@<IP> (gunakan root@<IP> untuk Debian/Rocky/CentOS)',
                     'Kredensial provider LLM dikonfigurasi mandiri setelah VPS aktif',
                 ],
             ),
@@ -345,7 +345,7 @@ class StackRegistry
                 warningMessage: '9router berjalan pada loopback internal (127.0.0.1:20128) tanpa membuka port publik tambahan.',
                 warningBullets: [
                     'Hanya port SSH (22) yang dibuka di firewall publik',
-                    'Akses dashboard melalui SSH tunnel: ssh -L 20128:127.0.0.1:20128 root@<IP>',
+                    'Akses dashboard melalui SSH tunnel: ssh -L 20128:127.0.0.1:20128 ubuntu@<IP> (gunakan root@<IP> untuk Debian/Rocky/CentOS)',
                     'Konfigurasi routing model dilakukan mandiri setelah VPS aktif',
                 ],
             ),
@@ -2147,10 +2147,37 @@ class StackRegistry
         return array_keys($this->definitions);
     }
 
+    /**
+     * Stack keys disabled dynamically via admin Settings (`disabled_stacks`).
+     * Wrapped in try/catch so DB-less Unit tests never fail.
+     *
+     * @return array<int, string>
+     */
+    public function disabledKeys(): array
+    {
+        try {
+            $raw = app(\App\Services\SettingsService::class)->get('disabled_stacks', []);
+            if (! is_array($raw)) {
+                return [];
+            }
+
+            return array_values(array_filter(
+                array_map('strval', $raw),
+                fn (string $key) => $key !== '' && $key !== 'none'
+            ));
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     /** @return array<int, string> */
     public function checkoutKeys(bool $includeManagedDb = false): array
     {
-        $keys = $this->keys();
+        $disabled = $this->disabledKeys();
+        $keys = array_values(array_filter(
+            $this->keys(),
+            fn (string $key) => ! in_array($key, $disabled, true)
+        ));
         if ($includeManagedDb) {
             $keys[] = 'managed_database';
         }
@@ -2166,8 +2193,12 @@ class StackRegistry
      */
     public function uiCatalog(?array $allowedKeys = null, bool $checkoutOnly = true): array
     {
+        $disabled = $this->disabledKeys();
         $out = [];
         foreach ($this->definitions as $key => $definition) {
+            if (in_array($key, $disabled, true)) {
+                continue;
+            }
             if ($allowedKeys !== null && ! in_array($key, $allowedKeys, true)) {
                 continue;
             }

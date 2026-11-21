@@ -24,57 +24,26 @@
 
             {{-- Stepper Bar --}}
             <div class="hidden sm:block">
-                <template x-if="isDirectCheckout">
-                    <div class="grid grid-cols-2 gap-px bg-hairline border border-hairline">
+                <div class="grid grid-cols-3 gap-px bg-hairline border border-hairline">
+                    @foreach(['Konfigurasi VPS', 'Informasi Akun', 'Metode Pembayaran'] as $index => $title)
                         <div class="p-4 flex items-center gap-3 transition-colors"
-                             :class="currentSlide === 1 ? 'bg-white border-b-2 border-b-electric' : (currentSlide > 1 ? 'bg-creamDark/60' : 'bg-white')">
+                             :class="currentSlide === {{ $index }} ? 'bg-white border-b-2 border-b-electric' : (currentSlide > {{ $index }} ? 'bg-creamDark/60' : 'bg-white')">
                             <span class="w-7 h-7 font-mono text-xs font-bold flex items-center justify-center shrink-0"
-                                  :class="currentSlide === 1 ? 'bg-electric text-white' : (currentSlide > 1 ? 'bg-ink text-cream' : 'bg-creamDark text-muted border border-hairline')">
-                                <template x-if="currentSlide > 1">
+                                  :class="currentSlide === {{ $index }} ? 'bg-electric text-white' : (currentSlide > {{ $index }} ? 'bg-ink text-cream' : 'bg-creamDark text-muted border border-hairline')">
+                                <template x-if="currentSlide > {{ $index }}">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
                                 </template>
-                                <template x-if="currentSlide <= 1"><span>01</span></template>
+                                <template x-if="currentSlide <= {{ $index }}">
+                                    <span>0{{ $index + 1 }}</span>
+                                </template>
                             </span>
                             <div>
-                                <span class="font-mono text-[10px] uppercase tracking-wider text-muted block">Step 01</span>
-                                <span class="font-display text-sm font-bold" :class="currentSlide >= 1 ? 'text-ink' : 'text-muted'">Informasi Akun</span>
+                                <span class="font-mono text-[10px] uppercase tracking-wider text-muted block">Step 0{{ $index + 1 }}</span>
+                                <span class="font-display text-sm font-bold" :class="currentSlide >= {{ $index }} ? 'text-ink' : 'text-muted'">{{ $title }}</span>
                             </div>
                         </div>
-
-                        <div class="p-4 flex items-center gap-3 transition-colors"
-                             :class="currentSlide === 2 ? 'bg-white border-b-2 border-b-electric' : 'bg-white'">
-                            <span class="w-7 h-7 font-mono text-xs font-bold flex items-center justify-center shrink-0"
-                                  :class="currentSlide === 2 ? 'bg-electric text-white' : 'bg-creamDark text-muted border border-hairline'">02</span>
-                            <div>
-                                <span class="font-mono text-[10px] uppercase tracking-wider text-muted block">Step 02</span>
-                                <span class="font-display text-sm font-bold" :class="currentSlide === 2 ? 'text-ink' : 'text-muted'">Konfirmasi Pembayaran</span>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-
-                <template x-if="!isDirectCheckout">
-                    <div class="grid grid-cols-3 gap-px bg-hairline border border-hairline">
-                        @foreach(['Konfigurasi VPS', 'Informasi Akun', 'Metode Pembayaran'] as $index => $title)
-                            <div class="p-4 flex items-center gap-3 transition-colors"
-                                 :class="currentSlide === {{ $index }} ? 'bg-white border-b-2 border-b-electric' : (currentSlide > {{ $index }} ? 'bg-creamDark/60' : 'bg-white')">
-                                <span class="w-7 h-7 font-mono text-xs font-bold flex items-center justify-center shrink-0"
-                                      :class="currentSlide === {{ $index }} ? 'bg-electric text-white' : (currentSlide > {{ $index }} ? 'bg-ink text-cream' : 'bg-creamDark text-muted border border-hairline')">
-                                    <template x-if="currentSlide > {{ $index }}">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-                                    </template>
-                                    <template x-if="currentSlide <= {{ $index }}">
-                                        <span>0{{ $index + 1 }}</span>
-                                    </template>
-                                </span>
-                                <div>
-                                    <span class="font-mono text-[10px] uppercase tracking-wider text-muted block">Step 0{{ $index + 1 }}</span>
-                                    <span class="font-display text-sm font-bold" :class="currentSlide >= {{ $index }} ? 'text-ink' : 'text-muted'">{{ $title }}</span>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </template>
+                    @endforeach
+                </div>
             </div>
 
             {{-- Mobile Compact Progress Bar --}}
@@ -113,102 +82,20 @@
                     </div>
                 </div>
 
-                {{-- SLIDE 0: Configuration (Standard Cloud VPS) --}}
-                <div x-show="!isDirectCheckout && currentSlide === 0"
+                {{-- SLIDE 0: Configuration (Cloud VPS) --}}
+                <div x-show="currentSlide === 0"
                      x-transition:enter="transition ease-out duration-200"
                      x-transition:enter-start="opacity-0 translate-y-1"
                      x-transition:enter-end="opacity-100 translate-y-0">
                     @include('order.partials.slide-configuration')
                 </div>
 
-                {{-- SLIDE 1: Direct Checkout Service Banner + Account Information --}}
+                {{-- SLIDE 1: Account Information --}}
                 <div x-show="currentSlide === 1"
                      x-transition:enter="transition ease-out duration-200"
                      x-transition:enter-start="opacity-0 translate-y-1"
                      x-transition:enter-end="opacity-100 translate-y-0"
                      class="space-y-6">
-
-                    {{-- AI Combo Pre-configured Info Banner --}}
-                    <template x-if="isAiPackage && currentSpec">
-                        <div class="border border-ink bg-white p-5 sm:p-6">
-                            <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-4 border-b border-hairline">
-                                <div>
-                                    <span class="font-mono text-[10px] uppercase tracking-widest text-electric font-bold block mb-1">PAKET INSTAN AI INFRASTRUCTURE</span>
-                                    <h3 class="font-display font-bold text-ink text-lg" x-text="currentSpec.name"></h3>
-                                </div>
-                                <span class="font-mono text-[10px] font-bold uppercase px-2.5 py-1 bg-electric text-white">Pre-Configured Bundle</span>
-                            </div>
-
-                            <p class="text-xs text-muted leading-relaxed mb-4" x-text="currentSpec.tagline || 'Dedicated AI Agent & Inference Runtime'"></p>
-
-                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-px bg-hairline border border-hairline font-mono text-xs">
-                                <div class="bg-creamDark/40 p-3">
-                                    <span class="text-[10px] text-muted uppercase block">Spec Compute</span>
-                                    <span class="font-bold text-ink mt-0.5 block" x-text="currentSpec.cpu + ' Core / ' + currentSpec.ram + ' GB RAM'"></span>
-                                </div>
-                                <div class="bg-creamDark/40 p-3">
-                                    <span class="text-[10px] text-muted uppercase block">Storage</span>
-                                    <span class="font-bold text-ink mt-0.5 block" x-text="currentSpec.disk + ' GB NVMe'"></span>
-                                </div>
-                                <div class="bg-creamDark/40 p-3 col-span-2 sm:col-span-1">
-                                    <span class="text-[10px] text-muted uppercase block">Stack Otomatis</span>
-                                    <span class="font-bold text-electric mt-0.5 block" x-text="controlPanelLabel"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-
-                    {{-- Managed Database Selector Box --}}
-                    <template x-if="isDatabasePackage && currentSpec">
-                        <div class="border border-ink bg-white p-5 sm:p-6 space-y-5">
-                            <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-hairline">
-                                <div>
-                                    <span class="font-mono text-[10px] uppercase tracking-widest text-emerald-700 font-bold block mb-1">MANAGED DATABASE ENGINE</span>
-                                    <h3 class="font-display font-bold text-ink text-lg" x-text="currentSpec.name"></h3>
-                                </div>
-                                <span class="font-mono text-[10px] font-bold uppercase px-2.5 py-1 bg-emerald-700 text-white">Dedicated Cluster</span>
-                            </div>
-
-                            <div>
-                                <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block mb-2">Pilih Database Engine Utama</label>
-                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                    @foreach([
-                                        ['postgres', 'PostgreSQL 16', 'Relational & JSONB'],
-                                        ['mysql', 'MySQL 8 / MariaDB', 'OLTP Standar Web'],
-                                        ['redis', 'Redis 7 Cache', 'In-Memory Key-Value'],
-                                        ['mongodb', 'MongoDB 7', 'NoSQL Document Store'],
-                                        ['vector', 'Qdrant / pgvector', 'AI Embeddings & RAG'],
-                                    ] as [$val, $label, $sub])
-                                        <button type="button" @click="dbEngine = '{{ $val }}'"
-                                                :class="dbEngine === '{{ $val }}' ? 'border-2 border-electric bg-cream text-ink' : 'border border-hairline bg-white hover:bg-creamDark/40 text-ink'"
-                                                class="p-3 text-left transition-colors cursor-pointer">
-                                            <div class="font-display font-bold text-xs">{{ $label }}</div>
-                                            <div class="font-mono text-[10px] text-muted mt-0.5">{{ $sub }}</div>
-                                        </button>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="font-mono text-[11px] font-bold uppercase tracking-wider text-ink block mb-2">Panel Pengelola Web Database</label>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-px bg-hairline border border-hairline">
-                                    <button type="button" @click="dbManager = 'cloudbeaver'"
-                                            :class="dbManager === 'cloudbeaver' ? 'bg-cream border-2 border-electric -m-px z-10' : 'bg-white hover:bg-creamDark/40'"
-                                            class="p-3.5 text-left transition-colors cursor-pointer">
-                                        <div class="font-display font-bold text-xs text-ink">CloudBeaver Web GUI (Disarankan)</div>
-                                        <div class="text-[11px] text-muted mt-0.5">Kelola query, tabel, dan SQL langsung via browser HTTPS.</div>
-                                    </button>
-                                    <button type="button" @click="dbManager = 'cli_only'"
-                                            :class="dbManager === 'cli_only' ? 'bg-cream border-2 border-electric -m-px z-10' : 'bg-white hover:bg-creamDark/40'"
-                                            class="p-3.5 text-left transition-colors cursor-pointer">
-                                        <div class="font-display font-bold text-xs text-ink">CLI &amp; Direct Endpoint Only</div>
-                                        <div class="text-[11px] text-muted mt-0.5">Hemat memori penuh untuk koneksi aplikasi via TCP/TLS.</div>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-
                     @include('order.partials.slide-account')
                 </div>
 
@@ -224,28 +111,14 @@
                 <div class="mt-6 pt-6 border-t border-hairline flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3">
                     {{-- Back Buttons --}}
                     <div>
-                        <template x-if="isDirectCheckout">
-                            <div>
-                                <button type="button" @click="previousSlide()" x-show="currentSlide > 1"
-                                        class="w-full sm:w-auto rounded-none px-5 py-3 bg-white border border-ink hover:bg-creamDark text-ink font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
-                                    ← Kembali ke Informasi Akun
-                                </button>
-                                <button type="button" @click="previousSlide()" x-show="currentSlide === 1"
-                                        class="w-full sm:w-auto rounded-none px-5 py-3 bg-white border border-ink hover:bg-creamDark text-ink font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
-                                    ← Kembali ke Katalog Paket
-                                </button>
-                            </div>
-                        </template>
-                        <template x-if="!isDirectCheckout">
-                            <button type="button" @click="previousSlide()" x-show="currentSlide > 0"
-                                    class="w-full sm:w-auto rounded-none px-5 py-3 bg-white border border-ink hover:bg-creamDark text-ink font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
-                                ← <span x-text="currentSlide === 2 ? 'Kembali ke Informasi Akun' : 'Kembali ke Konfigurasi VPS'"></span>
-                            </button>
-                        </template>
+                        <button type="button" @click="previousSlide()" x-show="currentSlide > 0"
+                                class="w-full sm:w-auto rounded-none px-5 py-3 bg-white border border-ink hover:bg-creamDark text-ink font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                            ← <span x-text="currentSlide === 2 ? 'Kembali ke Informasi Akun' : 'Kembali ke Konfigurasi VPS'"></span>
+                        </button>
                     </div>
 
                     {{-- Forward / Submit Controls --}}
-                    <div x-show="!isDirectCheckout && currentSlide === 0" class="w-full sm:w-auto sm:ml-auto">
+                    <div x-show="currentSlide === 0" class="w-full sm:w-auto sm:ml-auto">
                         <button type="button"
                                 @click="nextSlide()"
                                 :disabled="isPackageInactive"
@@ -305,70 +178,13 @@
                             <span class="font-mono text-[10px] uppercase tracking-widest text-muted block">ORDER SPEC</span>
                             <h3 class="font-display font-bold text-ink text-lg">Ringkasan Pesanan</h3>
                         </div>
-                        <span class="px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider"
-                              :class="isDatabasePackage ? 'bg-emerald-700 text-white' : (isAiPackage ? 'bg-electric text-white' : 'bg-ink text-cream')">
-                            <span x-text="isDatabasePackage ? 'Managed DB' : (isAiPackage ? 'AI Combo' : 'Cloud VPS')"></span>
+                        <span class="px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider bg-ink text-cream">
+                            Cloud VPS
                         </span>
                     </div>
 
-                    {{-- Direct Checkout Spec Summary --}}
-                    <template x-if="isDirectCheckout && currentSpec">
-                        <div class="space-y-4 text-xs text-ink">
-                            <div>
-                                <span class="font-mono text-[10px] uppercase text-muted block mb-0.5">Paket Layanan</span>
-                                <span class="font-display font-bold text-ink text-base block" x-text="currentSpec.name"></span>
-                                <span class="text-muted text-[11px]" x-text="currentSpec.tagline"></span>
-                            </div>
-
-                            <div class="bg-creamDark/40 p-3.5 border border-hairline space-y-2 font-mono text-[11px]">
-                                <div class="flex justify-between gap-2">
-                                    <span class="text-muted">Compute</span>
-                                    <span class="font-bold text-ink text-right" x-text="currentSpec.cpu + ' vCPU · ' + currentSpec.ram + ' GB RAM'"></span>
-                                </div>
-                                <div class="flex justify-between gap-2">
-                                    <span class="text-muted">Storage</span>
-                                    <span class="font-bold text-ink text-right" x-text="currentSpec.disk + ' GB NVMe SSD'"></span>
-                                </div>
-                                <div class="flex justify-between gap-2">
-                                    <span class="text-muted">Bandwidth</span>
-                                    <span class="font-bold text-ink text-right" x-text="currentSpec.bandwidth + ' Mbps'"></span>
-                                </div>
-                                <div class="flex justify-between gap-2">
-                                    <span class="text-muted">Setup</span>
-                                    <span class="font-bold text-ink text-right">Pre-configured</span>
-                                </div>
-                                <template x-if="isDatabasePackage">
-                                    <div class="border-t border-hairline pt-2 mt-2 space-y-2">
-                                        <div class="flex justify-between gap-2">
-                                            <span class="text-muted">DB Engine</span>
-                                            <span class="font-bold text-electric text-right" x-text="dbEngineLabel"></span>
-                                        </div>
-                                        <div class="flex justify-between gap-2">
-                                            <span class="text-muted">Web GUI</span>
-                                            <span class="font-bold text-ink text-right" x-text="dbManager === 'cloudbeaver' ? 'CloudBeaver GUI' : 'CLI Only'"></span>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-
-                            <div x-show="parsedFeatures.length > 0">
-                                <span class="font-mono text-[10px] uppercase text-muted block mb-2 font-bold"
-                                      x-text="isDatabasePackage ? 'Fitur Server Database:' : 'Bundling Pre-configured:'"></span>
-                                <ul class="space-y-1.5">
-                                    <template x-for="(feat, idx) in parsedFeatures" :key="idx">
-                                        <li class="flex items-start gap-2 text-[11px] text-ink/90">
-                                            <svg class="w-3.5 h-3.5 text-electric shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-                                            <span class="leading-tight" x-text="feat"></span>
-                                        </li>
-                                    </template>
-                                </ul>
-                            </div>
-                        </div>
-                    </template>
-
                     {{-- Standard Cloud VPS Spec Summary --}}
-                    <template x-if="!isDirectCheckout">
-                        <div class="space-y-2.5 text-xs">
+                    <div class="space-y-2.5 text-xs">
                             <div class="flex justify-between items-start gap-2">
                                 <span class="text-muted font-mono uppercase text-[11px]">Hostname</span>
                                 <span class="font-mono font-bold text-ink text-right break-all" x-text="vpsName || '-'"></span>
@@ -395,15 +211,52 @@
                                 <span class="font-semibold text-ink text-right" x-text="controlPanelLabel"></span>
                             </div>
                         </div>
-                    </template>
 
-                    {{-- Price Breakdown --}}
-                    <div class="border-t border-ink pt-4">
+                    {{-- Promo & Price Breakdown --}}
+                    <div class="border-t border-ink pt-4 space-y-3">
+                        <div>
+                            <label class="font-mono text-[10px] uppercase text-muted block mb-1">Kode Promo / Kupon</label>
+                            <div class="flex gap-1.5">
+                                <input type="text" x-model="couponCode" placeholder="KODEPROMO"
+                                       class="flex-1 px-2.5 py-1.5 border border-hairline bg-white font-mono text-xs uppercase focus:outline-none focus:border-electric">
+                                <button type="button" @click="refreshPromoPreview()" :disabled="applyingPromo"
+                                        class="px-3 py-1.5 bg-ink hover:bg-electric text-white font-mono text-[10px] font-bold uppercase cursor-pointer">
+                                    Pakai
+                                </button>
+                            </div>
+                            <p x-show="couponError" x-text="couponError" class="font-mono text-[10px] text-red-700 mt-1"></p>
+                            <p x-show="appliedCoupon && !couponError" class="font-mono text-[10px] text-emerald-700 mt-1">
+                                Kupon <strong x-text="appliedCoupon"></strong> aktif.
+                            </p>
+                        </div>
+
+                        @if(auth()->check())
+                            @php $userCredit = \App\Models\CreditTransaction::balanceFor(auth()->id()); @endphp
+                            @if($userCredit > 0)
+                                <label class="flex items-center justify-between gap-2 p-2.5 border border-hairline bg-creamDark/30 text-xs cursor-pointer">
+                                    <span class="flex items-center gap-2">
+                                        <input type="checkbox" x-model="applyCredit" @change="refreshPromoPreview()" class="w-4 h-4 border-ink accent-electric">
+                                        <span class="font-medium text-ink">Gunakan Saldo Kredit</span>
+                                    </span>
+                                    <span class="font-mono text-[11px] font-bold text-electric">Rp {{ number_format($userCredit, 0, ',', '.') }}</span>
+                                </label>
+                            @endif
+                        @endif
+
+                        <template x-if="priceBreakdown && (priceBreakdown.coupon_discount > 0 || priceBreakdown.tax_amount > 0 || priceBreakdown.credit_applied > 0)">
+                            <div class="space-y-1 text-[11px] font-mono border-t border-hairline pt-2 text-muted">
+                                <div class="flex justify-between"><span>Subtotal</span><span x-text="formatRupiah(priceBreakdown.gross)"></span></div>
+                                <div class="flex justify-between text-emerald-700" x-show="priceBreakdown.coupon_discount > 0"><span>Diskon Kupon</span><span x-text="'-' + formatRupiah(priceBreakdown.coupon_discount)"></span></div>
+                                <div class="flex justify-between" x-show="priceBreakdown.tax_amount > 0"><span>Pajak</span><span x-text="formatRupiah(priceBreakdown.tax_amount)"></span></div>
+                                <div class="flex justify-between text-electric" x-show="priceBreakdown.credit_applied > 0"><span>Kredit Akun</span><span x-text="'-' + formatRupiah(priceBreakdown.credit_applied)"></span></div>
+                            </div>
+                        </template>
+
                         <div class="flex justify-between items-baseline">
                             <span class="font-mono text-xs uppercase font-bold text-ink">Total Tagihan</span>
                             <span class="font-mono text-2xl font-bold text-electric" x-text="formatRupiah(totalPrice)"></span>
                         </div>
-                        <p class="font-mono text-[10px] text-muted mt-1">Siklus penagihan bulanan • Tanpa biaya setup tersembunyi</p>
+                        <p class="font-mono text-[10px] text-muted">Siklus penagihan bulanan • Tanpa biaya setup tersembunyi</p>
                     </div>
 
                     {{-- Available Payment Logos --}}
@@ -460,8 +313,7 @@
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 bg-electric"></span>
                         <h3 class="font-mono text-xs font-bold text-ink uppercase tracking-wider">Ringkasan Pesanan</h3>
-                        <span class="px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-ink text-cream"
-                              x-text="isDatabasePackage ? 'Managed DB' : (isAiPackage ? 'AI Combo' : 'Cloud VPS')"></span>
+                        <span class="px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-ink text-cream">Cloud VPS</span>
                     </div>
                     <button type="button" @click="mobileSummaryOpen = false"
                             class="w-7 h-7 border border-hairline bg-white text-ink flex items-center justify-center cursor-pointer"
@@ -491,22 +343,20 @@
                         </div>
                     </div>
 
-                    <template x-if="!isDirectCheckout">
-                        <div class="bg-creamDark/40 p-3 border border-hairline space-y-1.5 font-mono text-[11px]">
-                            <div class="flex justify-between gap-2">
-                                <span class="text-muted">Hostname:</span>
-                                <span class="text-ink font-bold" x-text="vpsName || '-'"></span>
-                            </div>
-                            <div class="flex justify-between gap-2">
-                                <span class="text-muted">Datacenter:</span>
-                                <span class="uppercase text-ink font-semibold" x-text="datacenter"></span>
-                            </div>
-                            <div class="flex justify-between gap-2">
-                                <span class="text-muted">Stack:</span>
-                                <span class="text-ink font-semibold" x-text="controlPanelLabel"></span>
-                            </div>
+                    <div class="bg-creamDark/40 p-3 border border-hairline space-y-1.5 font-mono text-[11px]">
+                        <div class="flex justify-between gap-2">
+                            <span class="text-muted">Hostname:</span>
+                            <span class="text-ink font-bold" x-text="vpsName || '-'"></span>
                         </div>
-                    </template>
+                        <div class="flex justify-between gap-2">
+                            <span class="text-muted">Datacenter:</span>
+                            <span class="uppercase text-ink font-semibold" x-text="datacenter"></span>
+                        </div>
+                        <div class="flex justify-between gap-2">
+                            <span class="text-muted">Stack:</span>
+                            <span class="text-ink font-semibold" x-text="controlPanelLabel"></span>
+                        </div>
+                    </div>
 
                     <div class="border-t border-hairline pt-3 flex justify-between items-center font-mono">
                         <span class="text-xs uppercase font-bold text-ink">Total Tagihan</span>
@@ -532,8 +382,7 @@
                     <div class="min-w-0">
                         <div class="flex items-center gap-1.5">
                             <span class="font-mono text-[10px] font-bold uppercase text-ink">Ringkasan</span>
-                            <span class="font-mono text-[9px] font-bold px-1.5 py-0.5 bg-creamDark border border-hairline text-ink shrink-0"
-                                  x-text="isDatabasePackage ? 'DB' : (isAiPackage ? 'AI' : 'VPS')"></span>
+                            <span class="font-mono text-[9px] font-bold px-1.5 py-0.5 bg-creamDark border border-hairline text-ink shrink-0">VPS</span>
                         </div>
                         <span class="text-[11px] text-muted block truncate" x-text="currentSpec ? currentSpec.name : 'Pilih Paket'"></span>
                     </div>
@@ -583,8 +432,6 @@ function checkoutState() {
         warningModalMode: 'license',
         datacenter: 'indonesia',
         os: 'ubuntu2404',
-        dbEngine: 'postgres',
-        dbManager: 'cloudbeaver',
         operatingSystems: {{ Js::from(\App\Models\Order::checkoutOperatingSystems()) }},
         stackSupportedOs: {{ Js::from($stackSupportedOs ?? app(\App\Services\Provisioning\Stacks\StackRegistry::class)->supportedOsMap()) }},
         stackCatalog: {{ Js::from($stackCatalog ?? app(\App\Services\Provisioning\Stacks\StackRegistry::class)->uiCatalog(checkoutOnly: true)) }},
@@ -628,6 +475,12 @@ function checkoutState() {
         registerPhone: '',
         registerPassword: '',
         registerPasswordConfirmation: '',
+        couponCode: '',
+        appliedCoupon: '',
+        couponError: '',
+        applyCredit: false,
+        priceBreakdown: null,
+        applyingPromo: false,
         showRegisterPassword: false,
         showRegisterConfirmPassword: false,
         loginIdentifier: '',
@@ -647,44 +500,15 @@ function checkoutState() {
         get isPackageInactive() {
             return Boolean(this.currentSpec && !this.currentSpec.is_active);
         },
-        get isAiPackage() {
-            const s = this.currentSpec;
-            if (!s) return false;
-            return s.category === 'ai_combo' || Boolean(s.is_ai_package);
-        },
-        get isDatabasePackage() {
-            const s = this.currentSpec;
-            if (!s) return false;
-            return s.category === 'managed_db' || Boolean(s.is_database_package);
-        },
-        get isDirectCheckout() {
-            return this.isAiPackage || this.isDatabasePackage;
-        },
         get totalStepCount() {
-            return this.isDirectCheckout ? 2 : 3;
+            return 3;
         },
         get currentStepNumber() {
-            if (this.isDirectCheckout) {
-                return this.currentSlide === 1 ? 1 : 2;
-            }
             return this.currentSlide + 1;
         },
         get currentStepTitle() {
-            if (this.isDirectCheckout) {
-                return this.currentSlide === 1 ? 'Informasi Akun' : 'Konfirmasi Pembayaran';
-            }
             const titles = ['Konfigurasi VPS', 'Informasi Akun', 'Metode Pembayaran'];
             return titles[this.currentSlide] || 'Konfigurasi VPS';
-        },
-        get dbEngineLabel() {
-            const labels = {
-                postgres: 'PostgreSQL 16',
-                mysql: 'MySQL 8.0 / MariaDB 11',
-                redis: 'Redis 7 In-Memory Cache',
-                mongodb: 'MongoDB 7 Community',
-                vector: 'Qdrant / pgvector (AI & RAG)'
-            };
-            return labels[this.dbEngine] || 'PostgreSQL 16';
         },
         get parsedFeatures() {
             const s = this.currentSpec;
@@ -700,7 +524,43 @@ function checkoutState() {
             return this.currentSpec ? parseFloat(this.currentSpec.sell_price) : 115000;
         },
         get totalPrice() {
+            if (this.priceBreakdown && typeof this.priceBreakdown.total === 'number') {
+                return this.priceBreakdown.total;
+            }
             return this.currentBaseMonthlyPrice;
+        },
+        async refreshPromoPreview() {
+            this.applyingPromo = true;
+            this.couponError = '';
+            try {
+                const res = await fetch('/checkout/apply-coupon', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': this.csrfToken,
+                    },
+                    body: JSON.stringify({
+                        spec_id: this.selectedSpec,
+                        coupon_code: (this.couponCode || '').trim() || null,
+                        apply_credit: this.applyCredit ? 1 : 0,
+                    }),
+                });
+                const d = await res.json().catch(() => null);
+                if (d && d.breakdown) {
+                    this.priceBreakdown = d.breakdown;
+                }
+                if (!res.ok || (d && d.ok === false)) {
+                    this.couponError = (d && d.error) || 'Kode promo tidak valid.';
+                    this.appliedCoupon = '';
+                } else {
+                    this.appliedCoupon = (this.couponCode || '').trim();
+                }
+            } catch (e) {
+                this.couponError = 'Gagal mengecek promo.';
+            } finally {
+                this.applyingPromo = false;
+            }
         },
         get planRamGb() {
             return this.currentSpec ? parseInt(this.currentSpec.ram || 0, 10) : 0;
@@ -762,7 +622,6 @@ function checkoutState() {
         },
         get compatibleOperatingSystems() {
             const all = this.operatingSystems || {};
-            if (this.isDirectCheckout) return all;
             const allowed = this.stackSupportedOs[this.controlPanel];
             if (!Array.isArray(allowed) || allowed.length === 0) return all;
             const filtered = {};
@@ -778,36 +637,6 @@ function checkoutState() {
             }
         },
 
-        applyAiPackageDefaults() {
-            const spec = this.currentSpec;
-            if (!spec) return;
-            const clean = (spec.name || 'ai-agent').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-            const rnd = Math.random().toString(36).substring(2, 6);
-            if (!this.vpsName || this.vpsName.startsWith('cv-ai-') || this.vpsName.startsWith('cv-db-') || this.vpsName === '') {
-                this.vpsName = 'cv-ai-' + clean.substring(0, 14) + '-' + rnd;
-            }
-            this.controlPanel = spec.default_stack || 'vscode_server';
-            this.datacenter = 'indonesia';
-            this.os = 'ubuntu2404';
-            this.provider = 'cravacloud';
-        },
-
-        applyDatabaseDefaults() {
-            const spec = this.currentSpec;
-            if (!spec) return;
-            const clean = (spec.name || 'db').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-            const rnd = Math.random().toString(36).substring(2, 6);
-            if (!this.vpsName || this.vpsName.startsWith('cv-db-') || this.vpsName.startsWith('cv-ai-') || this.vpsName === '') {
-                this.vpsName = 'cv-db-' + clean.substring(0, 14) + '-' + rnd;
-            }
-            this.controlPanel = spec.default_stack || 'managed_database';
-            this.datacenter = 'indonesia';
-            this.os = 'ubuntu2404';
-            if (!this.dbEngine) this.dbEngine = 'postgres';
-            if (!this.dbManager) this.dbManager = 'cloudbeaver';
-            this.provider = 'cravacloud';
-        },
-
         applyQueryPrefills() {
             try {
                 const params = new URLSearchParams(window.location.search);
@@ -816,7 +645,7 @@ function checkoutState() {
                     this.vpsName = host;
                 }
                 const stack = params.get('stack');
-                if (stack && !this.isDirectCheckout) {
+                if (stack) {
                     const found = this.stackCatalog.find((s) => s.key === stack);
                     if (found) {
                         this.stackType = found.uiGroup === 'panel' ? 'control_panel' : (found.uiGroup === 'app' ? 'app' : 'none');
@@ -852,38 +681,11 @@ function checkoutState() {
             if (!this.selectedSpec && Object.keys(this.specs).length > 0) {
                 this.selectedSpec = parseInt(Object.keys(this.specs)[0]);
             }
-            if (this.isDirectCheckout) {
-                if (this.currentSlide === 0) this.currentSlide = 1;
-                if (this.isDatabasePackage) {
-                    this.applyDatabaseDefaults();
-                } else {
-                    this.applyAiPackageDefaults();
-                }
-            } else {
-                if (this.controlPanel === 'managed_database') {
-                    this.controlPanel = 'none';
-                    this.stackType = 'none';
-                }
-                this.ensureCompatibleOs();
-            }
-
+            this.ensureCompatibleOs();
             this.saveDraft();
 
             this.$watch('selectedSpec', () => {
-                if (this.isDirectCheckout) {
-                    if (this.currentSlide === 0) this.currentSlide = 1;
-                    if (this.isDatabasePackage) {
-                        this.applyDatabaseDefaults();
-                    } else {
-                        this.applyAiPackageDefaults();
-                    }
-                } else {
-                    if (this.controlPanel === 'managed_database') {
-                        this.controlPanel = 'none';
-                        this.stackType = 'none';
-                    }
-                    this.ensureCompatibleOs();
-                }
+                this.ensureCompatibleOs();
                 this.saveDraft();
             });
 
@@ -892,8 +694,6 @@ function checkoutState() {
             this.$watch('datacenter', () => this.saveDraft());
             this.$watch('os', () => this.saveDraft());
             this.$watch('controlPanel', () => { this.ensureCompatibleOs(); this.saveDraft(); });
-            this.$watch('dbEngine', () => this.saveDraft());
-            this.$watch('dbManager', () => this.saveDraft());
             this.$watch('billingCycle', () => this.saveDraft());
             this.$watch('paymentMethod', () => this.saveDraft());
             this.$watch('registerFullName', () => this.saveDraft());
@@ -913,8 +713,6 @@ function checkoutState() {
                     acknowledgedWarnings: this.acknowledgedWarnings,
                     datacenter: this.datacenter,
                     os: this.os,
-                    dbEngine: this.dbEngine,
-                    dbManager: this.dbManager,
                     paymentMethod: this.paymentMethod,
                     registerFullName: this.registerFullName,
                     registerUsername: this.registerUsername,
@@ -939,43 +737,26 @@ function checkoutState() {
                 this.provider = 'cravacloud';
 
                 if (draft.vpsName) {
-                    const isDraftDb = draft.vpsName.startsWith('cv-db-');
-                    const isDraftAi = draft.vpsName.startsWith('cv-ai-');
-                    if (this.isDatabasePackage && !isDraftDb) {
-                        // Biarkan generate default nama database
-                    } else if (this.isAiPackage && !isDraftAi) {
-                        // Biarkan generate default nama AI
-                    } else if (!this.isDatabasePackage && !this.isAiPackage && (isDraftDb || isDraftAi)) {
-                        this.vpsName = '';
-                    } else {
-                        this.vpsName = draft.vpsName;
-                    }
+                    this.vpsName = draft.vpsName;
                 }
                 if (draft.acknowledgedWarnings && typeof draft.acknowledgedWarnings === 'object') {
                     this.acknowledgedWarnings = draft.acknowledgedWarnings;
                 }
-                if (draft.controlPanel && !this.isDirectCheckout) {
-                    if (draft.controlPanel === 'managed_database') {
+                if (draft.controlPanel) {
+                    const found = this.stackCatalog.find((s) => s.key === draft.controlPanel);
+                    if (!found || found.uiGroup === 'none') {
+                        this.controlPanel = 'none';
+                        this.stackType = 'none';
+                    } else if (found.hardBlockOnRam && this.planRamGb > 0 && this.planRamGb < (found.minRamGb || 2)) {
                         this.controlPanel = 'none';
                         this.stackType = 'none';
                     } else {
-                        const found = this.stackCatalog.find((s) => s.key === draft.controlPanel);
-                        if (!found || found.uiGroup === 'none') {
-                            this.controlPanel = 'none';
-                            this.stackType = 'none';
-                        } else if (found.hardBlockOnRam && this.planRamGb > 0 && this.planRamGb < (found.minRamGb || 2)) {
-                            this.controlPanel = 'none';
-                            this.stackType = 'none';
-                        } else {
-                            this.controlPanel = found.key;
-                            this.stackType = found.uiGroup === 'panel' ? 'control_panel' : 'app';
-                        }
+                        this.controlPanel = found.key;
+                        this.stackType = found.uiGroup === 'panel' ? 'control_panel' : 'app';
                     }
                 }
                 if (draft.datacenter) this.datacenter = draft.datacenter;
-                if (draft.os && !this.isDirectCheckout) this.os = draft.os;
-                if (draft.dbEngine && this.isDatabasePackage) this.dbEngine = draft.dbEngine;
-                if (draft.dbManager && this.isDatabasePackage) this.dbManager = draft.dbManager;
+                if (draft.os) this.os = draft.os;
                 if (draft.paymentMethod && this.paymentMethods[draft.paymentMethod]) {
                     this.paymentMethod = draft.paymentMethod;
                 } else {
@@ -1137,15 +918,6 @@ function checkoutState() {
 
         previousSlide() {
             this.mobileSummaryOpen = false;
-            if (this.isDirectCheckout) {
-                if (this.currentSlide === 2) {
-                    this.currentSlide = 1;
-                    this.scrollToWizardTop();
-                } else if (this.currentSlide === 1) {
-                    window.location.href = "{{ route('packages.vps') }}";
-                }
-                return;
-            }
             if (this.currentSlide > 0) {
                 this.currentSlide--;
                 this.scrollToWizardTop();
@@ -1159,21 +931,6 @@ function checkoutState() {
                     icon: 'warning',
                     title: 'Pemesanan Ditangguhkan'
                 });
-                return;
-            }
-
-            if (this.isDirectCheckout) {
-                if (this.currentSlide === 1) {
-                    if (!this.vpsName || !/^[A-Za-z0-9][A-Za-z0-9-]*$/.test(this.vpsName)) {
-                        showAlert('Hostname / Nama Server wajib diisi (gunakan huruf, angka, dan tanda hubung).');
-                        return;
-                    }
-                    if (!await this.validateAccount()) {
-                        return;
-                    }
-                    this.currentSlide = 2;
-                    this.scrollToWizardTop();
-                }
                 return;
             }
 
@@ -1283,12 +1040,6 @@ function checkoutState() {
                 return;
             }
 
-            if (this.isDatabasePackage) {
-                this.applyDatabaseDefaults();
-            } else if (this.isAiPackage) {
-                this.applyAiPackageDefaults();
-            }
-
             this.isSubmitting = true;
 
             try {
@@ -1303,9 +1054,9 @@ function checkoutState() {
                     warning_acknowledged: this.isWarningAcknowledged ? 1 : 0,
                     license_acknowledged: this.isLicenseAcknowledged ? 1 : 0,
                     payment_method: this.paymentMethod,
-                    db_engine: this.isDatabasePackage ? this.dbEngine : null,
-                    db_manager: this.isDatabasePackage ? this.dbManager : null,
                     hostname: this.vpsName,
+                    coupon_code: this.appliedCoupon || ((this.couponCode || '').trim() || null),
+                    apply_credit: this.applyCredit ? 1 : 0,
                     terms_accepted: this.termsAccepted ? 1 : 0,
                     phone: this.isLoggedIn
                         ? (this.currentUser?.phone || '')

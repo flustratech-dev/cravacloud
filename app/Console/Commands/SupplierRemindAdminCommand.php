@@ -74,7 +74,7 @@ class SupplierRemindAdminCommand extends Command
 
         $subject = '[Supplier] ' . ($urgent->count() ? "{$urgent->count()} VPS harus diperpanjang segera" : 'Ringkasan tugas perpanjangan');
 
-        if (!$alerts->digest($subject, $text)) {
+        if (!$alerts->digest($subject, $text, 'payment.paid_manual')) {
             $this->error('Tugas Supplier gagal dikirim lewat WA maupun email.');
 
             return self::FAILURE;

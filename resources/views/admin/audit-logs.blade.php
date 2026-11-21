@@ -8,6 +8,8 @@
         $tabs = ['admin' => 'Aksi Admin', 'login' => 'Riwayat Login', 'impersonation' => 'Sesi Masuk sebagai Pelanggan'];
     @endphp
 
+    @include('admin.partials.system-tabs')
+
     <div class="bg-white p-1.5 border border-hairline flex flex-wrap items-center gap-1">
         @foreach($tabs as $key => $label)
             <a href="{{ route('admin.audit.index', ['tab' => $key]) }}"

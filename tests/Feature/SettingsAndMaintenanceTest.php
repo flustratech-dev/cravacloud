@@ -91,7 +91,7 @@ class SettingsAndMaintenanceTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Identitas Merek');
         $response->assertSee('Profil Perusahaan');
-        $response->assertSee('Masa Tenggang per Jenis Produk');
+        $response->assertSee('Masa Tenggang Perpanjangan Cloud VPS');
     }
 
     public function test_guest_cannot_view_settings_page(): void

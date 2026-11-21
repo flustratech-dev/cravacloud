@@ -230,7 +230,7 @@ class MailIdentity
                 $cleanAdmins = $configAdmins;
                 $sources['admin'] = 'config';
             } else {
-                $cleanAdmins = ['support@cravacloud.id', 'admin@gmail.com'];
+                $cleanAdmins = [$resolvedSupportAddress ?: 'support@cravacloud.id'];
                 $sources['admin'] = 'hardcode';
             }
         }

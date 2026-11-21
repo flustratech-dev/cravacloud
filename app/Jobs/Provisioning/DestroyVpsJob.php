@@ -123,10 +123,22 @@ class DestroyVpsJob extends AbstractProvisioningJob
         // is still occupied and reconcile keeps tracking it. Alert admin.
         $instance = $task->vpsInstance;
 
-        app(AdminAlertService::class)->digest(
-            'Destroy upstream gagal',
-            'Instance #'.($instance?->id ?? '?').' ('.($instance?->hostname ?? '-').") gagal dihapus di upstream (task #{$task->id}). "
-            ."Slot kuota BELUM dilepas; periksa manual sebelum mencoba ulang.\n\nError: {$error}"
+        app(AdminAlertService::class)->alert(
+            'provisioning.failed',
+            [
+                'title' => 'Destroy upstream gagal',
+                'order_id' => $task->order_id,
+                'details' => [
+                    'Task' => "#{$task->id} (destroy)",
+                    'Instance' => '#' . ($instance?->id ?? '?') . ' (' . ($instance?->hostname ?? '-') . ')',
+                    'Error' => \Illuminate\Support\Str::limit($error, 160),
+                ],
+                'body' => 'Instance #' . ($instance?->id ?? '?') . ' (' . ($instance?->hostname ?? '-') . ") gagal dihapus di upstream (task #{$task->id}). "
+                    . "Slot kuota BELUM dilepas; periksa manual sebelum mencoba ulang.\n\nError: {$error}",
+                'action_url' => url('/admin/monitoring?tab=tasks&status=failed'),
+            ],
+            dedupeKey: 'task-' . $task->id,
+            cooldownSeconds: 3600
         );
     }
 

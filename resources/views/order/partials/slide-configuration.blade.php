@@ -55,7 +55,7 @@
                     <option :value="key" x-text="label"></option>
                 </template>
             </select>
-            <p x-show="!isDirectCheckout && Object.keys(compatibleOperatingSystems || {}).length < Object.keys(operatingSystems || {}).length"
+            <p x-show="Object.keys(compatibleOperatingSystems || {}).length < Object.keys(operatingSystems || {}).length"
                class="font-mono text-[11px] text-muted mt-1.5">
                 Menampilkan OS kompatibel dengan stack <span class="text-ink font-semibold" x-text="controlPanelLabel"></span>.
             </p>

@@ -63,7 +63,7 @@
                     Ketentuan Layanan (Terms of Service)
                 </h1>
                 <p class="mt-3 text-sm text-muted leading-relaxed">
-                    Perjanjian hukum mengikat antara pengguna dan CravaCloud Indonesia terkait penyediaan, pemanfaatan, serta batas tanggung jawab layanan infrastruktur Cloud VPS, Dedicated Database, dan runtime AI Agent.
+                    Perjanjian hukum mengikat antara pengguna dan CravaCloud Indonesia terkait penyediaan, pemanfaatan, serta batas tanggung jawab layanan infrastruktur Cloud VPS KVM NVMe dan ekosistem 1-Click Application Stacks.
                 </p>
 
                 <!-- Metadata Grid -->
@@ -354,16 +354,14 @@
                             5.1. <strong>Sistem Pembayaran Prabayar (Prepaid):</strong> Seluruh paket sewa server ditagihkan di awal periode pemakaian berdasarkan siklus langganan yang dipilih (bulanan).
                         </p>
                         @php($graceVps = app(\App\Services\SettingsService::class)->int('renewal_grace_days_vps', 5))
-                        @php($graceDb = app(\App\Services\SettingsService::class)->int('renewal_grace_days_database', 25))
-                        @php($graceApp = app(\App\Services\SettingsService::class)->int('renewal_grace_days_app', 25))
                         <p>
-                            5.2. <strong>Pengingat Perpanjangan:</strong> Pengingat perpanjangan dikirim otomatis melalui email dan WhatsApp pada 7 (tujuh), 3 (tiga), dan 1 (satu) hari sebelum tanggal jatuh tempo, serta pada hari jatuh tempo. Perpanjangan dapat dilakukan kapan saja dari menu Tagihan di dashboard; sisa masa aktif tidak hangus.
+                            5.2. <strong>Pengingat Perpanjangan:</strong> Pengingat perpanjangan dikirim otomatis melalui email pada 7 (tujuh), 3 (tiga), dan 1 (satu) hari sebelum tanggal jatuh tempo, serta pada hari jatuh tempo. Perpanjangan dapat dilakukan kapan saja dari menu Tagihan di dashboard; sisa masa aktif tidak hangus.
                         </p>
                         <p>
                             5.3. <strong>Suspensi Layanan:</strong> Apabila perpanjangan belum dibayar hingga tanggal jatuh tempo, layanan berstatus suspend dan dapat dinonaktifkan sewaktu-waktu sejak tanggal tersebut. Layanan dipulihkan setelah pembayaran perpanjangan dikonfirmasi selama masa tenggang masih berlaku.
                         </p>
                         <p>
-                            5.4. <strong>Masa Tenggang &amp; Terminasi Permanen:</strong> CravaCloud memberikan masa tenggang (grace period) selama {{ $graceVps }} hari kalender setelah tanggal jatuh tempo untuk layanan Cloud VPS Starter &amp; Enterprise Series, serta {{ $graceDb }} hari untuk instance database khusus dan {{ $graceApp }} hari untuk stack aplikasi terkait. Jika dalam jangka waktu tersebut tidak ada pembayaran yang dikonfirmasi, layanan diterminasi dan disk virtual server dihapus secara permanen tanpa kemungkinan pemulihan data (irreversible deletion).
+                            5.4. <strong>Masa Tenggang &amp; Terminasi Permanen:</strong> CravaCloud memberikan masa tenggang (grace period) selama {{ $graceVps }} hari kalender setelah tanggal jatuh tempo untuk seluruh layanan Cloud VPS Starter &amp; Enterprise Series. Jika dalam jangka waktu tersebut tidak ada pembayaran yang dikonfirmasi, layanan diterminasi dan disk virtual server dihapus secara permanen tanpa kemungkinan pemulihan data (irreversible deletion).
                         </p>
                         <p>
                             5.5. <strong>Waktu Penyerahan Layanan:</strong> Akses server diserahkan paling lambat 1&times;24 jam sejak pembayaran terkonfirmasi (umumnya lebih cepat). Masa aktif dihitung sejak pembayaran terkonfirmasi. Apabila penyerahan melewati 1&times;24 jam, masa aktif dihitung sejak server diserahkan sebagai kompensasi, tanpa perlu diajukan.

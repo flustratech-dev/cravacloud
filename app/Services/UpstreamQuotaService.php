@@ -224,6 +224,34 @@ class UpstreamQuotaService
             ]);
     }
 
+    /** Upgrade lintas bundle_type (Starter → General): pindahkan 1 slot used secara atomik. */
+    public function migrateUsedSlot(string $regionCode, string $fromBundleType, string $toBundleType): void
+    {
+        if ($fromBundleType === $toBundleType) {
+            return;
+        }
+
+        DB::transaction(function () use ($regionCode, $fromBundleType, $toBundleType) {
+            DB::table('upstream_quota_pools')
+                ->where('region_code', $regionCode)
+                ->where('bundle_type', $fromBundleType)
+                ->update([
+                    'used' => DB::raw('CASE WHEN used > 0 THEN used - 1 ELSE 0 END'),
+                    'updated_at' => now(),
+                ]);
+
+            DB::table('upstream_quota_pools')
+                ->where('region_code', $regionCode)
+                ->where('bundle_type', $toBundleType)
+                ->update([
+                    'used' => DB::raw('used + 1'),
+                    'updated_at' => now(),
+                ]);
+        });
+
+        $this->warnIfHighUsage($regionCode, $toBundleType);
+    }
+
     /**
      * Correct `used` from real upstream instance counts (read-only API).
      * Returns per-pool summary; alerts admin on drift.
@@ -367,7 +395,12 @@ class UpstreamQuotaService
         }
 
         try {
-            $this->alerts->digest($subject, $text);
+            $this->alerts->alert('upstream.quota_hold', [
+                'title' => $subject,
+                'body' => $text,
+                'whatsapp_text' => $text,
+                'action_url' => url('/admin/monitoring?tab=upstream'),
+            ]);
         } catch (\Throwable $e) {
             Log::warning('quota.alert_failed', ['key' => $cacheKey, 'error' => $e->getMessage()]);
         }

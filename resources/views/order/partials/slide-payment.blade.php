@@ -4,8 +4,7 @@
             <h2 class="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">Metode Pembayaran</h2>
             <p class="text-xs text-muted mt-1">Satu gerbang pembayaran instan dan aman untuk seluruh saluran pembayaran resmi.</p>
         </div>
-        <span class="w-8 h-8 bg-electric text-white font-mono text-xs font-bold flex items-center justify-center shrink-0"
-              x-text="isDirectCheckout ? '02' : '03'"></span>
+        <span class="w-8 h-8 bg-electric text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">03</span>
     </div>
 
     {{-- Unified Payment Gateway Card --}}

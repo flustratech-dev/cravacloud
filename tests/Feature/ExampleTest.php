@@ -434,16 +434,16 @@ class ExampleTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'api.customer@shopee.co.id', 'channel' => 'shopee']);
     }
 
-    public function test_api_contracts_shopee_process_order_ai_production_pro(): void
+    public function test_api_contracts_shopee_process_order_enterprise_pro(): void
     {
         $adminKey = config('cravacloud.admin_api_key', 'cv_sec_k9f83n2x9v1b7a6d8e4f5c2b0e9a1d3f');
 
         $response = $this->withHeader('X-Admin-Key', $adminKey)
             ->postJson('/api/admin/shopee/process-order', [
                 'shopee_order_id' => 'SHOPEE-BIZ-2026',
-                'customer_name' => 'Business Customer Test',
+                'customer_name' => 'Enterprise Customer Test',
                 'customer_email' => 'business.customer@shopee.co.id',
-                'package' => 'business',
+                'package' => 'enterprise-pro',
                 'control_panel' => 'ollama',
                 'datacenter_location' => 'singapore',
                 'os' => 'ubuntu2404',
@@ -463,7 +463,7 @@ class ExampleTest extends TestCase
         $this->assertEquals(975000, (int) $order->vpsSpec->sell_price);
     }
 
-    public function test_api_contracts_shopee_process_order_mahasiswa_basic(): void
+    public function test_api_contracts_shopee_process_order_starter_xs(): void
     {
         $adminKey = config('cravacloud.admin_api_key', 'cv_sec_k9f83n2x9v1b7a6d8e4f5c2b0e9a1d3f');
 
@@ -472,7 +472,7 @@ class ExampleTest extends TestCase
                 'shopee_order_id' => 'SHOPEE-MHS-2026',
                 'customer_name' => 'Starter Test Shopee',
                 'customer_email' => 'mhs.shopee@test.id',
-                'package' => 'mahasiswa basic',
+                'package' => 'starter-xs',
                 'control_panel' => 'docker',
                 'datacenter_location' => 'singapore',
                 'os' => 'ubuntu2404',

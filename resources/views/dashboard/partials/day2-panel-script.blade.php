@@ -9,6 +9,7 @@
         return {
             id: cfg.id, status: cfg.status, caps: cfg.caps, routes: cfg.routes, csrf: cfg.csrf,
             redirect: cfg.redirect, upgradeSpecs: cfg.upgradeSpecs || [],
+            lazy: Boolean(cfg.lazy), activated: false,
             busy: false, globalError: '', fwError: '',
             task: null, pollTimer: null,
             traffic: null, rules: [],
@@ -16,6 +17,13 @@
             upgradeTarget: '', preview: null,
 
             init() {
+                if (!this.lazy) {
+                    this.activate();
+                }
+            },
+            activate() {
+                if (this.activated) return;
+                this.activated = true;
                 if (this.caps.traffic) this.loadTraffic();
                 if (this.caps.firewall) this.loadFirewall();
                 this.poll();
@@ -45,17 +53,24 @@
             fmtIdr(n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); },
             headers() { return { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json' }; },
 
-            async call(url, method, body) {
-                this.globalError = '';
-                const res = await fetch(url, { method, headers: this.headers(), body: body ? JSON.stringify(body) : undefined });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok || data.ok === false) {
-                    const msg = data.error || data.message || 'Permintaan gagal diproses.';
+            async call(url, method, body, opts = {}) {
+                if (!opts.silent) this.globalError = '';
+                try {
+                    const res = await fetch(url, { method, headers: this.headers(), body: body ? JSON.stringify(body) : undefined });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || data.ok === false) {
+                        const msg = data.error || data.message || 'Permintaan gagal diproses.';
+                        this.globalError = msg;
+                        if (!opts.silent && typeof showAlert === 'function') showAlert(msg, { icon: 'error', title: 'Gagal' });
+                        return null;
+                    }
+                    return data;
+                } catch (e) {
+                    const msg = 'Gagal terhubung ke server.';
                     this.globalError = msg;
-                    if (typeof showAlert === 'function') showAlert(msg, { icon: 'error', title: 'Gagal' });
+                    if (!opts.silent && typeof showAlert === 'function') showAlert(msg, { icon: 'error', title: 'Gagal' });
                     return null;
                 }
-                return data;
             },
 
             async power(action) {
@@ -81,8 +96,8 @@
                 if (data && data.url) window.open(data.url, '_blank', 'noopener');
             },
 
-            async loadTraffic() { const d = await this.call(this.routes.traffic, 'GET'); if (d) this.traffic = d; },
-            async loadFirewall() { const d = await this.call(this.routes.firewall, 'GET'); if (d) this.rules = d.rules || []; },
+            async loadTraffic() { const d = await this.call(this.routes.traffic, 'GET', undefined, { silent: true }); if (d) this.traffic = d; },
+            async loadFirewall() { const d = await this.call(this.routes.firewall, 'GET', undefined, { silent: true }); if (d) this.rules = d.rules || []; },
             async addRule() {
                 this.fwError = '';
                 if (!this.fw.port) { this.fwError = 'Port wajib diisi.'; return; }

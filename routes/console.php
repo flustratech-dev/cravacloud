@@ -65,16 +65,10 @@ Schedule::command('billing:terminate-expired')
 //     ->description('Mulai/akhiri jendela maintenance terjadwal dan kirim pemberitahuannya.');
 
 // ============================================================
-// PHASE 3 - Pengingat perpanjangan instance
+// PHASE 3 - Pengingat perpanjangan instance (DIGANTIKAN billing:check-due + billing:*)
 // ============================================================
-// Dijalankan sekali sehari. Idempotensi dijamin indeks unik di
-// tabel renewal_reminders, sehingga aman bila terjadi pengulangan.
-Schedule::command('renewal:remind')
-    ->dailyAt('09:00')
-    ->timezone('Asia/Jakarta')
-    ->withoutOverlapping()
-    ->onOneServer()
-    ->description('Kirim pengingat H-3/H-1/H-0 instance dan pindahkan status yang jatuh tempo.');
+// Command legacy renewal:remind dimatikan dari jadwal agar tidak terjadi bypass
+// lifecycle Tencent maupun pengingat ganda. Gunakan billing:check-due (08:00 WIB).
 
 // ============================================================
 // PHASE 5 - Peringatan waktu tanggap fulfillment
@@ -99,12 +93,12 @@ Schedule::command('supplier:remind-admin')
     ->onOneServer()
     ->description('Pengingat VPS yang harus segera diperpanjang di Supplier.');
 
-Schedule::command('fulfillment:remind-admin')
-    ->everyFiveMinutes()
+Schedule::command('provisioning:alert-stuck')
+    ->everyFifteenMinutes()
     ->timezone('Asia/Jakarta')
     ->withoutOverlapping()
     ->onOneServer()
-    ->description('Ingatkan admin (WA + email) order lunas yang belum disetup, bertahap sampai diserahkan.');
+    ->description('Alert admin (WA + email) bila ada task provisioning macet >20m atau order otomatis tertahan >15m.');
 
 // ============================================================
 // Provisioning reconciliation (Phase 4D — aktif)
@@ -159,3 +153,13 @@ Schedule::command('tencent:check-balance')
     ->withoutOverlapping()
     ->onOneServer()
     ->description('Cek saldo upstream dan alert bila di bawah threshold (read-only).');
+
+// ============================================================
+// Ticket SLA Watchdog (v2.1 — tiap 15 menit)
+// ============================================================
+Schedule::command('tickets:check-sla')
+    ->everyFifteenMinutes()
+    ->timezone('Asia/Jakarta')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->description('Cek tiket support yang melewati SLA respons admin & kirim alert WA+email.');

@@ -37,14 +37,11 @@ class OrderController extends Controller
         // Harga modal disembunyikan: halaman ini mengirim data paket ke browser
         // lewat Js::from(), sehingga seluruh atribut dapat dibaca dari view-source.
         // Tidak disembunyikan di level model karena form edit paket admin membutuhkannya.
-        $specs = VpsSpec::orderBy('sell_price', 'asc')->get()
+        $specs = VpsSpec::where('category', 'vps')
+            ->orderBy('sell_price', 'asc')
+            ->get()
             ->each->makeHidden(['cost_price']);
-        $retiredLegacyNames = ['Student Basic', 'Standard', 'Premium', 'Startup', 'Business', 'Mahasiswa Basic'];
-        $defaultSpec = $specs->first(fn ($s) => $s->is_active
-            && !in_array($s->category, ['ai_combo', 'managed_db'], true)
-            && !in_array($s->name, $retiredLegacyNames, true))
-            ?? $specs->firstWhere('is_active', true)
-            ?? $specs->first();
+        $defaultSpec = $specs->firstWhere('is_active', true) ?? $specs->first();
         $hasExplicitSpec = !empty($spec_id) || $request->has('spec_id');
         $selectedSpecId = $spec_id ?? $request->query('spec_id', $defaultSpec->id ?? 1);
         $selectedSpec = $specs->firstWhere('id', $selectedSpecId) ?? $defaultSpec;
@@ -61,6 +58,41 @@ class OrderController extends Controller
             'stackCatalog',
             'stackLabels'
         ));
+    }
+
+    public function applyCoupon(Request $request)
+    {
+        $validated = $request->validate([
+            'spec_id' => 'required|exists:vps_specs,id',
+            'coupon_code' => 'nullable|string|max:50',
+            'apply_credit' => 'nullable|boolean',
+        ]);
+
+        $spec = VpsSpec::findOrFail($validated['spec_id']);
+        $user = Auth::user();
+        $couponCode = trim((string) ($validated['coupon_code'] ?? '')) ?: null;
+        $applyCredit = $user !== null && $request->boolean('apply_credit');
+        $taxRate = \App\Models\TaxRate::defaultForCountry($user?->country ?? 'ID');
+
+        $breakdown = app(\App\Services\BillingService::class)->calculatePrice(
+            $spec,
+            'monthly',
+            $couponCode,
+            $applyCredit,
+            $user,
+            $taxRate
+        );
+
+        // Normalize legacy discount keys for checkout preview compatibility
+        $breakdown['discount'] = $breakdown['coupon_discount'] ?? 0.0;
+
+        $couponError = $breakdown['coupon']['error'] ?? null;
+
+        return response()->json([
+            'ok' => $couponError === null,
+            'error' => $couponError,
+            'breakdown' => $breakdown,
+        ], $couponError && $couponCode !== null ? 422 : 200);
     }
 
     public function quickLogin(Request $request)
@@ -113,51 +145,22 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-        $specId = $request->input('vps_spec_id');
-        $spec = VpsSpec::find($specId);
-        $isAiPackage = $spec && $spec->isAiPackage();
-        $isDbPackage = $spec && $spec->isDatabasePackage();
-
-        if ($isAiPackage) {
-            $cleanName = Str::slug($spec->name);
-            $randomSuffix = Str::lower(Str::random(4));
-            $request->merge([
-                'hostname' => $request->input('hostname') ?: ('cv-ai-' . substr($cleanName, 0, 16) . '-' . $randomSuffix),
-                'control_panel' => $request->input('control_panel') ?: ($spec->default_stack ?: 'vscode_server'),
-                'provider' => $request->input('provider') ?: $spec->defaultProvider(),
-                'datacenter_location' => $request->input('datacenter_location') ?: 'indonesia',
-                'os' => $request->input('os') ?: 'ubuntu2404',
-                'billing_cycle' => $request->input('billing_cycle') ?: 'monthly',
-            ]);
-        } elseif ($isDbPackage) {
-            $cleanName = Str::slug($spec->name);
-            $randomSuffix = Str::lower(Str::random(4));
-            $request->merge([
-                'hostname' => $request->input('hostname') ?: ('cv-db-' . substr($cleanName, 0, 16) . '-' . $randomSuffix),
-                'control_panel' => $request->input('control_panel') ?: ($spec->default_stack ?: 'managed_database'),
-                'provider' => $request->input('provider') ?: $spec->defaultProvider(),
-                'datacenter_location' => $request->input('datacenter_location') ?: 'indonesia',
-                'os' => $request->input('os') ?: 'ubuntu2404',
-                'billing_cycle' => $request->input('billing_cycle') ?: 'monthly',
-                'db_engine' => $request->input('db_engine') ?: 'postgres',
-                'db_manager' => $request->input('db_manager') ?: 'cloudbeaver',
-            ]);
-        }
-
         $stackRegistry = app(StackRegistry::class);
+
+        $wasAuthenticated = Auth::check();
 
         $validated = $request->validate([
             'vps_spec_id' => 'required|exists:vps_specs,id',
-            'control_panel' => ['required', 'string', Rule::in($stackRegistry->checkoutKeys(includeManagedDb: true))],
+            'control_panel' => ['required', 'string', Rule::in($stackRegistry->checkoutKeys(includeManagedDb: false))],
             'provider' => 'nullable|string|max:50',
             'datacenter_location' => 'required|in:singapore,indonesia',
             'os' => 'required|string',
-            'billing_cycle' => 'nullable|string|in:monthly',
+            'billing_cycle' => ['nullable', 'string', Rule::in(['monthly'])],
+            'coupon_code' => 'nullable|string|max:50',
+            'apply_credit' => 'nullable|boolean',
             'hostname' => ['required', 'string', 'max:63', 'regex:/^[A-Za-z0-9][A-Za-z0-9-]*$/'],
             'root_password' => 'nullable|string|max:255',
             'payment_method' => 'required|string|in:online_payment,midtrans_snap,qris,bca_va,mandiri_va,bni_va,bri_va,cimb_va,permata_va,other_va,bsi_va,danamon_va,seabank_va,credit_card,gopay,shopeepay,ovo,dana,indomaret,akulaku',
-            'db_engine' => 'nullable|string|in:postgres,mysql,redis,mongodb,vector',
-            'db_manager' => 'nullable|string|in:cloudbeaver,cli_only',
             'warning_acknowledged' => 'nullable|boolean',
             'license_acknowledged' => 'nullable|boolean',
             // Guest fields if not logged in
@@ -188,6 +191,17 @@ class OrderController extends Controller
         }
 
         $spec = VpsSpec::findOrFail($validated['vps_spec_id']);
+        if ($spec->category !== 'vps') {
+            $retiredMessage = 'Paket layanan ini sudah tidak tersedia. Silakan pilih paket Cloud VPS yang aktif.';
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $retiredMessage,
+                    'errors' => ['vps_spec_id' => [$retiredMessage]],
+                ], 422);
+            }
+            return back()->withInput()->withErrors(['vps_spec_id' => $retiredMessage]);
+        }
+
         if (!$spec->is_active) {
             $inactiveMessage = 'Paket layanan ini sedang dinonaktifkan sementara oleh tim CravaCloud untuk pemeliharaan sistem.';
             if ($request->expectsJson()) {
@@ -205,8 +219,7 @@ class OrderController extends Controller
             'os' => [Rule::in(array_keys(Order::checkoutOperatingSystems()))],
         ])->validate();
 
-        if (! $isAiPackage && ! $isDbPackage
-            && ! $stackRegistry->supportsOs($validated['os'], $validated['control_panel'])) {
+        if (! $stackRegistry->supportsOs($validated['os'], $validated['control_panel'])) {
             $compatMessage = 'Kombinasi sistem operasi dan stack tersebut belum didukung. Silakan pilih OS yang kompatibel atau Tanpa Control Panel.';
             if ($request->expectsJson()) {
                 return response()->json([
@@ -218,7 +231,7 @@ class OrderController extends Controller
         }
 
         $stackDef = $stackRegistry->get($validated['control_panel']);
-        if (! $isAiPackage && ! $isDbPackage && $stackDef !== null) {
+        if ($stackDef !== null) {
             if ($stackDef->hardBlockOnRam && (int) $spec->ram < $stackDef->minRamGb) {
                 throw ValidationException::withMessages([
                     'control_panel' => "Stack {$stackDef->label} membutuhkan minimal {$stackDef->minRamGb} GB RAM. Paket {$spec->name} hanya memiliki {$spec->ram} GB RAM.",
@@ -268,6 +281,25 @@ class OrderController extends Controller
                         'email' => 'Email ini sudah terdaftar. Silakan login terlebih dahulu atau gunakan password yang benar.',
                     ]);
                 }
+
+                // Wajib hormati 2FA bila akun eksisting mengaktifkannya (tutup celah 2FA bypass via guest checkout).
+                if ($existingUser->hasTwoFactorEnabled()) {
+                    $request->session()->put('2fa.pending_user_id', $existingUser->id);
+                    $request->session()->put('2fa.remember', true);
+
+                    if ($request->expectsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'requires_2fa' => true,
+                            'redirect' => route('two-factor.challenge'),
+                            'message' => 'Akun ini mengaktifkan autentikasi dua faktor (2FA). Silakan selesaikan verifikasi 2FA terlebih dahulu.',
+                        ], 422);
+                    }
+
+                    return redirect()->route('two-factor.challenge')
+                        ->with('info', 'Akun ini mengaktifkan autentikasi dua faktor (2FA). Silakan masukkan kode verifikasi terlebih dahulu.');
+                }
+
                 $user = $existingUser;
             } else {
                 $requestedUsername = $request->input('username');
@@ -336,7 +368,25 @@ class OrderController extends Controller
         }
 
         $cycle = 'monthly';
-        $netAmount = (float) $spec->sell_price;
+        $billing = app(\App\Services\BillingService::class);
+        $couponCode = trim((string) ($validated['coupon_code'] ?? '')) ?: null;
+        $useCredit = $wasAuthenticated && $request->boolean('apply_credit');
+        $taxRate = \App\Models\TaxRate::defaultForCountry($user->country ?? 'ID');
+        $breakdown = $billing->calculatePrice($spec, $cycle, $couponCode, $useCredit, $user, $taxRate);
+
+        if ($couponCode !== null && ! empty($breakdown['coupon']['error'])) {
+            $couponMsg = (string) $breakdown['coupon']['error'];
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $couponMsg,
+                    'errors' => ['coupon_code' => [$couponMsg]],
+                ], 422);
+            }
+
+            return back()->withInput()->withErrors(['coupon_code' => $couponMsg]);
+        }
+
+        $netAmount = (float) $breakdown['total'];
         $setupFee = 0;
 
         // Region upstream untuk order ini (nullable bila lokasi belum dipetakan).
@@ -361,25 +411,14 @@ class OrderController extends Controller
         // Bungkus dalam transaction agar order + invoice + status history atomic.
         $order = DB::transaction(function () use (
             $user, $organization, $spec, $validated, $cycle, $netAmount, $setupFee,
-            $termsVersion, $termsIp, $termsAgent, $datacenterRegion, $orderMetadata
+            $termsVersion, $termsIp, $termsAgent, $datacenterRegion, $orderMetadata,
+            $billing, $breakdown
         ) {
             $order = Order::create([
                 'customer_id' => $user->id,
                 'organization_id' => $organization->id,
                 'vps_spec_id' => $spec->id,
                 'control_panel' => $validated['control_panel'],
-                'db_engine' => $spec->isDatabasePackage() ? ($validated['db_engine'] ?? 'postgres') : null,
-                'db_manager' => $spec->isDatabasePackage() ? ($validated['db_manager'] ?? 'cloudbeaver') : null,
-                'db_name' => $spec->isDatabasePackage() ? 'cravadb_production' : null,
-                'db_user' => $spec->isDatabasePackage() ? 'admin_crava' : null,
-                'db_password' => $spec->isDatabasePackage() ? ($validated['root_password'] ?? null) : null,
-                'db_port' => $spec->isDatabasePackage() ? match($validated['db_engine'] ?? 'postgres') {
-                    'mysql' => 3306,
-                    'redis' => 6379,
-                    'mongodb' => 27017,
-                    'vector' => 6333,
-                    default => 5432,
-                } : null,
                 'provider' => $validated['provider'],
                 'hostname' => strtolower($validated['hostname']),
                 'root_password' => $validated['root_password'] ?? null,
@@ -389,7 +428,9 @@ class OrderController extends Controller
                 'billing_cycle' => $cycle,
                 'status' => 'pending',
                 'channel' => 'website',
-                'payment_method' => $validated['payment_method'],
+                'payment_method' => $netAmount <= 0
+                    ? (($breakdown['credit_applied'] ?? 0) > 0 ? 'credit_balance' : 'coupon')
+                    : $validated['payment_method'],
                 'amount' => $netAmount,
                 'setup_fee' => $setupFee,
                 'paid_at' => null,
@@ -411,17 +452,7 @@ class OrderController extends Controller
                 'user_agent' => $termsAgent,
             ]);
 
-            $invoiceNumber = 'INV-' . date('Ym') . '-' . str_pad($order->id, 4, '0', STR_PAD_LEFT);
-            Invoice::create([
-                'order_id' => $order->id,
-                'organization_id' => $organization->id,
-                'invoice_number' => $invoiceNumber,
-                'amount' => $netAmount,
-                'status' => 'sent',
-                'issued_at' => now(),
-                'due_at' => now()->addDays(1),
-                'paid_at' => null,
-            ]);
+            $invoice = $billing->generateInvoice($order, $breakdown);
 
             // Catat entry awal di history (from_status = null berarti "created").
             OrderStatusHistory::create([
@@ -434,17 +465,66 @@ class OrderController extends Controller
                 'ip_address' => request()->ip(),
                 'metadata' => [
                     'amount' => $netAmount,
-                    'payment_method' => $validated['payment_method'],
+                    'payment_method' => $order->payment_method,
                     'billing_cycle' => $cycle,
+                    'coupon_discount' => $breakdown['coupon_discount'] ?? 0,
+                    'credit_applied' => $breakdown['credit_applied'] ?? 0,
                 ],
                 'created_at' => now(),
             ]);
+
+            // Jika total menjadi Rp0 (tertutup kupon 100% / saldo credit), langsung lunasi via StateMachine.
+            if ($netAmount <= 0.009) {
+                $tx = PaymentTransaction::create([
+                    'order_id' => $order->id,
+                    'invoice_id' => $invoice->id,
+                    'provider' => 'internal',
+                    'provider_transaction_id' => 'INT-' . strtoupper(Str::random(12)),
+                    'provider_order_ref' => 'CRV-' . $order->id,
+                    'payment_method' => $order->payment_method,
+                    'amount' => 0,
+                    'currency' => 'IDR',
+                    'status' => 'settled',
+                    'settled_at' => now(),
+                ]);
+
+                $this->orderStateMachine->transition($order, 'paid', [
+                    'reason' => 'Order lunas via kupon/saldo kredit tanpa gateway.',
+                    'actor_user_id' => $user->id,
+                    'actor_type' => 'customer',
+                    'metadata' => ['transaction_id' => $tx->id],
+                    'onLocked' => function (Order $locked) use ($invoice, $tx) {
+                        $locked->paid_at = now();
+                        $locked->save();
+                        $invoice->update([
+                            'status' => 'paid',
+                            'paid_at' => now(),
+                            'paid_via_transaction_id' => $tx->id,
+                        ]);
+                    },
+                ]);
+
+                return $order->fresh();
+            }
 
             return $order;
         });
 
         // Simpan ID order aktif di session browser agar bisa dipulihkan saat kembali dari Midtrans
         session(['last_order_id' => $order->id]);
+
+        if ($order->paid_at) {
+            $successUrl = route('order.success', $order->id);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'order_id' => $order->id,
+                    'redirect_url' => $successUrl,
+                ]);
+            }
+
+            return redirect($successUrl)->with('success', 'Pesanan berhasil dilunasi menggunakan saldo kredit / kupon promo.');
+        }
 
         // VPS Instance TIDAK dibuat di sini.
         // Instance hanya dibuat oleh Admin/Orchestrator setelah payment terkonfirmasi via webhook.

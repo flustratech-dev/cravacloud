@@ -49,6 +49,10 @@ class ProvisioningOrchestrator
             return; // renewals are handled by RenewalService (Phase 4).
         }
 
+        if (! empty($order->metadata['manual_fulfillment'])) {
+            return; // explicitly pinned to manual fulfillment
+        }
+
         $spec = $order->vpsSpec;
         if (! $spec || ! $this->gate->allows($spec)) {
             return; // gate OFF / unmapped (D3) / not whitelisted → manual flow.
@@ -95,12 +99,19 @@ class ProvisioningOrchestrator
                 'region' => $region,
                 'bundle_type' => $spec->upstream_bundle_type,
             ]);
-            $this->alerts->digest(
-                'Auto-provisioning ditahan: pool penuh',
-                "Order #{$order->id} ({$spec->name}) sudah LUNAS tetapi pool {$region}/{$spec->upstream_bundle_type} penuh. "
-                .'Order ditahan di status paid — tidak ada fallback otomatis (D4). '
-                .'Mohon koordinasi dengan pelanggan: tambah kapasitas, pindah region (persetujuan pelanggan), atau refund.',
-            );
+            $this->alerts->alert('upstream.quota_hold', [
+                'title' => 'Auto-provisioning ditahan: pool penuh',
+                'order_id' => $order->id,
+                'details' => [
+                    'Order' => "#{$order->id} ({$spec->name})",
+                    'Pool' => "{$region} / {$spec->upstream_bundle_type}",
+                    'Status' => 'Ditahan di paid (tidak ada fallback region)',
+                ],
+                'body' => "Order #{$order->id} ({$spec->name}) sudah LUNAS tetapi pool {$region}/{$spec->upstream_bundle_type} penuh. "
+                    .'Order ditahan di status paid — tidak ada fallback otomatis (D4). '
+                    .'Mohon koordinasi dengan pelanggan: tambah kapasitas, pindah region (persetujuan pelanggan), atau refund.',
+                'action_url' => url('/admin/monitoring?tab=upstream'),
+            ], dedupeKey: 'quota-hold-' . $order->id, cooldownSeconds: 86400);
 
             return;
         }
@@ -151,10 +162,16 @@ class ProvisioningOrchestrator
                 'order_id' => $order->id,
                 'error' => $e->getMessage(),
             ]);
-            $this->alerts->digest(
-                'Auto-provisioning gagal dimulai',
-                "Order #{$order->id}: reservasi kuota sudah dilepas, order kembali ke alur manual. Error: {$e->getMessage()}",
-            );
+            $this->alerts->alert('provisioning.failed', [
+                'title' => 'Auto-provisioning gagal dimulai',
+                'order_id' => $order->id,
+                'details' => [
+                    'Order' => "#{$order->id}",
+                    'Error' => \Illuminate\Support\Str::limit($e->getMessage(), 160),
+                ],
+                'body' => "Order #{$order->id}: reservasi kuota sudah dilepas, order kembali ke alur manual. Error: {$e->getMessage()}",
+                'action_url' => url('/admin/monitoring?tab=tasks&status=failed'),
+            ], dedupeKey: 'auto-dispatch-fail-' . $order->id, cooldownSeconds: 3600);
 
             return;
         }
@@ -166,6 +183,123 @@ class ProvisioningOrchestrator
             'task_id' => $task->id,
             'region' => $region,
         ]);
+    }
+
+    public function retryFailedOrder(Order $order): ProvisioningTask
+    {
+        $spec = $order->vpsSpec;
+        if (! $spec || ! $this->gate->allows($spec)) {
+            throw new \RuntimeException('Order ini tidak memenuhi syarat auto-provisioning (gate OFF / spec tidak terpetakan).');
+        }
+
+        $region = $order->datacenterRegion?->code
+            ?: $this->quota->regionForLocation((string) $order->datacenter_location);
+
+        if (! $region) {
+            throw new \RuntimeException('Region upstream pesanan tidak dikenali.');
+        }
+
+        $existingInstance = $order->vpsInstance;
+
+        // If VM already exists upstream (e.g. failed at stack installation stage), retry InstallStackJob only.
+        if ($existingInstance && $existingInstance->provider_resource_id) {
+            $task = DB::transaction(function () use ($order, $existingInstance) {
+                $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+                if ($locked->status === 'failed') {
+                    app(OrderStateMachine::class)->transition($locked, 'provisioning', [
+                        'reason' => 'Retry instalasi stack oleh Admin.',
+                        'actor_user_id' => auth()->id(),
+                        'actor_type' => 'admin',
+                        'onLocked' => function (Order $o) {
+                            $o->provisioning_attempts = ($o->provisioning_attempts ?? 0) + 1;
+                            $o->failure_reason = null;
+                            $o->save();
+                        },
+                    ]);
+                }
+
+                app(VpsStateMachine::class)->transition($existingInstance, 'provisioning', [
+                    'reason' => 'Retry instalasi stack ulang.',
+                    'actor_type' => 'admin',
+                    'allowSame' => true,
+                ]);
+
+                return ProvisioningTask::create([
+                    'order_id' => $locked->id,
+                    'vps_instance_id' => $existingInstance->id,
+                    'kind' => 'install_stack',
+                    'status' => 'pending',
+                    'provider' => 'tencent',
+                    'progress' => 65,
+                    'current_step' => 'Menjalankan ulang instalasi stack',
+                    'actor_user_id' => auth()->id(),
+                    'input' => [
+                        'stack' => (string) ($locked->control_panel ?: 'none'),
+                    ],
+                ]);
+            });
+
+            \App\Jobs\Provisioning\InstallStackJob::dispatch($task->id);
+
+            return $task;
+        }
+
+        // VM not yet created upstream → reserve pool slot and dispatch ProvisionVpsJob.
+        if (! $this->quota->reserveHard($region, (string) $spec->upstream_bundle_type)) {
+            throw new \RuntimeException("Pool kuota region {$region} ({$spec->upstream_bundle_type}) sedang penuh.");
+        }
+
+        try {
+            $task = DB::transaction(function () use ($order, $existingInstance, $region) {
+                $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+                if ($locked->status === 'failed') {
+                    app(OrderStateMachine::class)->transition($locked, 'provisioning', [
+                        'reason' => 'Retry auto-provisioning oleh Admin.',
+                        'actor_user_id' => auth()->id(),
+                        'actor_type' => 'admin',
+                        'onLocked' => function (Order $o) {
+                            $o->provisioning_attempts = ($o->provisioning_attempts ?? 0) + 1;
+                            $o->failure_reason = null;
+                            $o->save();
+                        },
+                    ]);
+                }
+
+                $instance = $existingInstance ?: $this->createInstance($locked, $region);
+                if ($existingInstance && $existingInstance->status !== 'provisioning') {
+                    app(VpsStateMachine::class)->transition($existingInstance, 'provisioning', [
+                        'reason' => 'Retry auto-provisioning ulang.',
+                        'actor_type' => 'admin',
+                        'allowSame' => true,
+                    ]);
+                }
+
+                return ProvisioningTask::create([
+                    'order_id' => $locked->id,
+                    'vps_instance_id' => $instance->id,
+                    'kind' => 'provision',
+                    'status' => 'pending',
+                    'provider' => 'tencent',
+                    'progress' => 0,
+                    'current_step' => 'Menunggu retry provisioning',
+                    'actor_user_id' => auth()->id(),
+                    'input' => [
+                        'stack' => (string) ($locked->control_panel ?: 'none'),
+                        'os' => (string) ($locked->os ?: 'ubuntu2404'),
+                        'region' => $region,
+                        'quota_reserved' => true,
+                    ],
+                ]);
+            });
+        } catch (\Throwable $e) {
+            $this->quota->releaseReserved($region, (string) $spec->upstream_bundle_type);
+            throw $e;
+        }
+
+        ProvisionVpsJob::dispatch($task->id);
+
+        return $task;
     }
 
     private function createInstance(Order $order, string $region): VpsInstance
@@ -225,9 +359,15 @@ class ProvisioningOrchestrator
     private function hold(Order $order, string $reason): void
     {
         Log::warning('provisioning.auto_hold', ['order_id' => $order->id, 'reason' => $reason]);
-        $this->alerts->digest(
-            'Auto-provisioning ditahan',
-            "Order #{$order->id} sudah lunas tetapi tidak bisa diproses otomatis: {$reason} Order tetap di alur manual.",
-        );
+        $this->alerts->alert('provisioning.failed', [
+            'title' => 'Auto-provisioning ditahan',
+            'order_id' => $order->id,
+            'details' => [
+                'Order' => "#{$order->id}",
+                'Alasan' => $reason,
+            ],
+            'body' => "Order #{$order->id} sudah lunas tetapi tidak bisa diproses otomatis: {$reason} Order tetap di alur manual.",
+            'action_url' => url('/admin/orders?status=needs_provision'),
+        ], dedupeKey: 'hold-' . $order->id, cooldownSeconds: 3600);
     }
 }

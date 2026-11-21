@@ -49,6 +49,12 @@ class WhatsAppController extends Controller
 
         WhatsAppSettings::save($data);
 
+        $this->audit('whatsapp.settings_updated', 'Memperbarui konfigurasi WhatsApp Gateway Admin.', null, [
+            'wa_enabled' => $data['wa_enabled'],
+            'wa_url' => $data['wa_url'] ?? null,
+            'wa_session' => $data['wa_session'] ?? null,
+        ]);
+
         Log::info('Pengaturan WhatsApp Gateway diperbarui', [
             'oleh' => $request->user()?->id,
         ]);
@@ -68,6 +74,8 @@ class WhatsAppController extends Controller
         ]);
 
         WhatsAppSettings::forget($validated['field']);
+
+        $this->audit('whatsapp.setting_reset', "Mengembalikan pengaturan {$validated['field']} WA Gateway ke default.");
 
         Log::info('Pengaturan WhatsApp Gateway dikembalikan ke default', [
             'oleh'  => $request->user()?->id,
@@ -154,6 +162,10 @@ class WhatsAppController extends Controller
         }
 
         $messageId = $response->json('data.id') ?? $response->json('data.message_id') ?? 'OK';
+
+        $this->audit('whatsapp.test_sent', 'Mengirim pesan uji WhatsApp Admin ke ' . WhatsAppGateway::mask($phone) . '.', null, [
+            'message_id' => $messageId,
+        ]);
 
         Log::info('Uji kirim WhatsApp berhasil', [
             'oleh'       => $request->user()?->id,

@@ -53,7 +53,7 @@
             <table border="0" cellpadding="0" cellspacing="0" role="presentation">
                 <tr>
                     <td align="center" bgcolor="#000000" style="border-radius: 6px; background-color: #000000;">
-                        <a href="{{ rtrim(config('app.url', 'https://cravacloud.id'), '/') }}/admin/orders" 
+                        <a href="{{ rtrim(config('app.url', 'https://cravacloud.id'), '/') }}/admin/monitoring?tab=tasks&status=failed" 
                            target="_blank" 
                            rel="noopener noreferrer" 
                            style="display: inline-block; padding: 12px 28px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 6px; background-color: #000000; border: 1px solid #000000; text-align: center;">

@@ -247,6 +247,27 @@ class PaymentWebhookController extends Controller
                 $existingEvent
             );
 
+            try {
+                app(\App\Services\AdminAlertService::class)->alert(
+                    'payment.failed',
+                    [
+                        'title' => "Amount Mismatch Webhook Order #{$order->id}",
+                        'order_id' => $order->id,
+                        'details' => [
+                            'Order' => "#{$order->id}",
+                            'Nominal Webhook' => 'Rp ' . number_format($webhookAmount, 0, ',', '.'),
+                            'Nominal Order' => 'Rp ' . number_format($orderAmount, 0, ',', '.'),
+                            'IP Sumber' => $ipAddress,
+                        ],
+                        'action_url' => url('/admin/webhooks?status=failed'),
+                    ],
+                    dedupeKey: 'wh-amt-' . $order->id,
+                    cooldownSeconds: 3600
+                );
+            } catch (\Throwable) {
+                // ignore
+            }
+
             return [
                 'http' => 422,
                 'body' => ['success' => false, 'message' => 'Amount mismatch.'],
@@ -346,6 +367,27 @@ class PaymentWebhookController extends Controller
                         'payment_transaction_id' => $tx->id,
                     ]);
 
+                    try {
+                        app(\App\Services\AdminAlertService::class)->alert(
+                            'payment.failed',
+                            [
+                                'title' => "Fraud Challenge Midtrans Order #{$order->id}",
+                                'order_id' => $order->id,
+                                'details' => [
+                                    'Order' => "#{$order->id}",
+                                    'Pelanggan' => $order->customer?->full_name ?? '-',
+                                    'Nominal' => 'Rp ' . number_format((float) $order->amount, 0, ',', '.'),
+                                    'Status' => 'challenge (perlu tinjauan manual)',
+                                ],
+                                'action_url' => url('/admin/webhooks?status=failed'),
+                            ],
+                            dedupeKey: 'wh-challenge-' . $order->id,
+                            cooldownSeconds: 3600
+                        );
+                    } catch (\Throwable) {
+                        // ignore
+                    }
+
                     return [
                         'status' => 'challenge',
                         'message' => 'Payment on fraud challenge, awaiting manual review.',
@@ -366,6 +408,28 @@ class PaymentWebhookController extends Controller
 
                 if (in_array($paymentStatus, ['cancel', 'deny', 'expire', 'failure'], true)) {
                     $this->handleFailure($order, $tx, $event, $paymentStatus);
+
+                    if (in_array($paymentStatus, ['deny', 'failure'], true)) {
+                        try {
+                            app(\App\Services\AdminAlertService::class)->alert(
+                                'payment.failed',
+                                [
+                                    'title' => "Pembayaran Gagal/Ditolak Order #{$order->id}",
+                                    'order_id' => $order->id,
+                                    'details' => [
+                                        'Order' => "#{$order->id}",
+                                        'Status Gateway' => strtoupper($paymentStatus),
+                                        'Nominal' => 'Rp ' . number_format((float) $order->amount, 0, ',', '.'),
+                                    ],
+                                    'action_url' => url('/admin/webhooks?status=failed'),
+                                ],
+                                dedupeKey: 'wh-deny-' . $order->id,
+                                cooldownSeconds: 3600
+                            );
+                        } catch (\Throwable) {
+                            // ignore
+                        }
+                    }
 
                     return [
                         'status' => 'cancelled',
@@ -396,8 +460,62 @@ class PaymentWebhookController extends Controller
         } catch (InvalidStateTransitionException $e) {
             Log::warning('Payment webhook state transition rejected', [
                 'order_id' => $order->id,
+                'status' => $order->status,
+                'payment_status' => $paymentStatus,
                 'error' => $e->getMessage(),
             ]);
+
+            $recordedTx = null;
+            if (in_array($paymentStatus, ['settlement', 'capture', 'paid'], true)) {
+                $recordedTx = PaymentTransaction::updateOrCreate(
+                    [
+                        'provider' => $provider,
+                        'provider_transaction_id' => $providerTxId,
+                    ],
+                    [
+                        'order_id' => $order->id,
+                        'invoice_id' => $order->invoice?->id,
+                        'provider_order_ref' => $validated['order_id'] ?? $order->id,
+                        'payment_method' => $validated['payment_type'] ?? $order->payment_method,
+                        'amount' => $grossAmount,
+                        'currency' => 'IDR',
+                        'status' => 'settled',
+                        'settled_at' => now(),
+                        'fraud_status' => $validated['fraud_status'] ?? 'accept',
+                        'signature_key' => $incomingSignature,
+                        'raw_payload' => $rawPayload,
+                    ]
+                );
+
+                Log::critical('webhook.late_settled_on_closed_order', [
+                    'order_id' => $order->id,
+                    'order_status' => $order->status,
+                    'tx_id' => $recordedTx->id,
+                ]);
+
+                try {
+                    app(\App\Services\AdminAlertService::class)->alert(
+                        'payment.late_settled',
+                        [
+                            'title' => 'Dana Masuk pada Order Kedaluwarsa / Dibatalkan',
+                            'order_id' => $order->id,
+                            'details' => [
+                                'Order' => "#{$order->id} (status: {$order->status})",
+                                'Nominal' => 'Rp ' . number_format((float) $grossAmount, 0, ',', '.'),
+                                'Payment Tx' => "#{$recordedTx->id}",
+                            ],
+                            'body' => "Order #{$order->id} (status DB: {$order->status}) menerima webhook settlement Midtrans "
+                                . "(Rp " . number_format((float) $grossAmount, 0, ',', '.') . "). Dana tercatat pada PaymentTransaction #{$recordedTx->id}.",
+                            'action_url' => url('/admin/orders'),
+                        ],
+                        dedupeKey: 'late-wh-' . $order->id,
+                        cooldownSeconds: 86400
+                    );
+                } catch (\Throwable) {
+                    // ignore
+                }
+            }
+
             $this->recordWebhook(
                 $provider,
                 $providerTxId,
@@ -406,7 +524,7 @@ class PaymentWebhookController extends Controller
                 $rawPayload,
                 $ipAddress,
                 $order->id,
-                null,
+                $recordedTx?->id,
                 'ignored',
                 $e->getMessage(),
                 200,
@@ -442,6 +560,26 @@ class PaymentWebhookController extends Controller
                 500,
                 $existingEvent
             );
+
+            try {
+                app(\App\Services\AdminAlertService::class)->alert(
+                    'payment.failed',
+                    [
+                        'title' => 'Webhook Processing Error (HTTP 500)',
+                        'order_id' => $order->id ?? null,
+                        'details' => [
+                            'Order' => '#' . ($order->id ?? $rawOrderId),
+                            'Event' => $providerTxId,
+                            'Error' => \Illuminate\Support\Str::limit($e->getMessage(), 150),
+                        ],
+                        'action_url' => url('/admin/webhooks?status=failed'),
+                    ],
+                    dedupeKey: 'wh-500-' . $providerTxId,
+                    cooldownSeconds: 1800
+                );
+            } catch (\Throwable) {
+                // ignore
+            }
 
             return [
                 'http' => 500,
@@ -484,12 +622,6 @@ class PaymentWebhookController extends Controller
             $tx = PaymentTransaction::where('provider_order_ref', $rawOrderId)->with('order.invoice')->first();
             if ($tx && $tx->order) {
                 $order = $tx->order;
-            }
-        }
-        if (!$order) {
-            $cleanId = preg_replace('/[^0-9]/', '', $rawOrderId);
-            if (!empty($cleanId)) {
-                $order = Order::with('invoice')->find((int) $cleanId);
             }
         }
 

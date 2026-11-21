@@ -4,13 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Concerns\LogsAdminAudit;
 use App\Http\Controllers\Controller;
+use App\Jobs\SendBroadcastChunkJob;
 use App\Models\BroadcastLog;
 use App\Models\NotificationTemplate;
 use App\Models\User;
-use App\Notifications\TemplatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -59,56 +58,37 @@ class BroadcastController extends Controller
             'confirm.accepted' => 'Centang konfirmasi terlebih dahulu sebelum mengirim broadcast.',
         ]);
 
-        $recipients = $this->recipientQuery($validated['audience'])->get();
+        $userIds = $this->recipientQuery($validated['audience'])->pluck('id');
 
         $log = BroadcastLog::create([
             'template_code' => $validated['template_code'] ?? null,
             'subject' => $validated['subject'],
             'body' => $validated['body'],
             'audience' => $validated['audience'],
-            'recipient_count' => $recipients->count(),
+            'recipient_count' => $userIds->count(),
+            'sent_count' => 0,
+            'failed_count' => 0,
             'sent_by' => Auth::id(),
             'sent_at' => now(),
         ]);
 
-        $sent = 0;
-        $failed = 0;
-
-        foreach ($recipients as $user) {
-            // Placeholder {{nama}} diisi per penerima agar surel tetap personal.
-            $body = str_replace('{{nama}}', $user->name ?? 'Pelanggan', $validated['body']);
-
-            try {
-                $user->notify(new TemplatedNotification(
-                    $validated['subject'],
-                    $body,
-                    'PEMBERITAHUAN LAYANAN'
-                ));
-                $sent++;
-            } catch (\Throwable $e) {
-                $failed++;
-                Log::error('broadcast.send_failed', [
-                    'broadcast_log_id' => $log->id,
-                    'user_id' => $user->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
+        foreach ($userIds->chunk(50) as $chunk) {
+            SendBroadcastChunkJob::dispatch(
+                $log->id,
+                $chunk->values()->all(),
+                $validated['subject'],
+                $validated['body'],
+                'PEMBERITAHUAN LAYANAN'
+            );
         }
-
-        $log->update(['sent_count' => $sent, 'failed_count' => $failed]);
 
         $this->audit(
             'broadcast.sent',
-            "Mengirim broadcast \"{$log->subject}\" ke {$sent} penerima ({$failed} gagal).",
+            "Menjadwalkan broadcast \"{$log->subject}\" ke {$userIds->count()} penerima (batch 50/job).",
             $log
         );
 
-        $message = "Broadcast terkirim ke {$sent} pelanggan.";
-        if ($failed > 0) {
-            $message .= " {$failed} pengiriman gagal, periksa log untuk rinciannya.";
-        }
-
-        return back()->with('success', $message);
+        return back()->with('success', "Broadcast dijadwalkan untuk {$userIds->count()} pelanggan dan sedang diproses antrean.");
     }
 
     /**
@@ -133,7 +113,7 @@ class BroadcastController extends Controller
                 ->chunkById(500, function ($users) use ($handle) {
                     foreach ($users as $user) {
                         fputcsv($handle, [
-                            $user->name,
+                            $user->full_name ?: ($user->username ?: ''),
                             $user->email,
                             $user->phone ?? '',
                             $user->vps_instances_count,

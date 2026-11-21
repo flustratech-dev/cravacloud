@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\VpsInstance;
 use App\Models\VpsSpec;
 use App\Services\Provisioning\Exceptions\Day2Exception;
+use App\Services\Provisioning\Exceptions\ProviderException;
 use App\Services\Provisioning\VpsDay2Service;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 /**
@@ -118,7 +120,7 @@ class VpsActionController extends Controller
         ]);
     }
 
-    /** Run a Day-2 operation, translating Day2Exception into a 422 JSON body. */
+    /** Run a Day-2 operation, translating Day2Exception/ProviderException cleanly without leaking vendor errors. */
     private function guard(callable $fn): JsonResponse
     {
         try {
@@ -130,6 +132,17 @@ class VpsActionController extends Controller
             }
 
             return response()->json($body, 422);
+        } catch (ProviderException $e) {
+            Log::warning('dashboard.day2.provider_error', [
+                'code' => $e->providerCode,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'ok' => false,
+                'code' => 'upstream_unavailable',
+                'error' => 'Layanan kontrol server sementara tidak dapat memuat data. Silakan coba beberapa saat lagi.',
+            ], 502);
         }
     }
 }

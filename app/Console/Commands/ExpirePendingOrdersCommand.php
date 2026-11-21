@@ -52,8 +52,8 @@ class ExpirePendingOrdersCommand extends Command
                     'actor_type' => 'system',
                 ]);
 
-                // Update status invoice jika ada
-                if ($order->invoice && in_array($order->invoice->status, ['draft', 'unpaid', 'pending'], true)) {
+                // Update status invoice jika ada (order checkout menerbitkan status 'sent')
+                if ($order->invoice && in_array($order->invoice->status, ['draft', 'sent', 'unpaid', 'pending'], true)) {
                     $order->invoice->update([
                         'status' => 'cancelled',
                     ]);

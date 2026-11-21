@@ -116,7 +116,16 @@ class SendRenewalRemindersCommand extends Command
             $this->renewal->applyGracePeriod($instance);
 
             if ($this->handleStage($instance, RenewalReminder::STAGE_H0, 0, false, $digest)) {
-                $instance->update(['status' => 'suspended']);
+                $lifecycle = app(\App\Services\Provisioning\VpsLifecycleDispatcher::class);
+                if ($lifecycle->supports($instance)) {
+                    $lifecycle->suspend($instance, 'Masa aktif habis pada pengingat jatuh tempo.');
+                } else {
+                    app(\App\Services\VpsStateMachine::class)->transition($instance, 'suspended', [
+                        'reason' => 'Masa aktif habis pada pengingat jatuh tempo.',
+                        'actor_type' => 'system',
+                        'allowSame' => true,
+                    ]);
+                }
                 $this->line("  ✓ Suspend instance #{$instance->id} ({$instance->hostname})");
             }
         }
@@ -143,7 +152,16 @@ class SendRenewalRemindersCommand extends Command
             }
 
             if ($this->handleStage($instance, RenewalReminder::STAGE_GRACE_ENDED, -1, false, $digest)) {
-                $instance->update(['status' => 'terminated']);
+                $lifecycle = app(\App\Services\Provisioning\VpsLifecycleDispatcher::class);
+                if ($lifecycle->supports($instance)) {
+                    $lifecycle->destroy($instance, 'Tenggang berakhir pada pengingat perpanjangan.');
+                } else {
+                    app(\App\Services\VpsStateMachine::class)->transition($instance, 'terminated', [
+                        'reason' => 'Tenggang berakhir pada pengingat perpanjangan.',
+                        'actor_type' => 'system',
+                        'allowSame' => true,
+                    ]);
+                }
                 $this->line("  ✓ Terminate instance #{$instance->id} ({$instance->hostname})");
             }
         }

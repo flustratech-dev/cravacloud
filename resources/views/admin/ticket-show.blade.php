@@ -106,77 +106,122 @@
 
             @if($ticket->isOpen() && $requestVps)
                 @if($ticket->type === 'reinstall')
-                    <ol class="list-decimal pl-5 space-y-1 text-ink">
-                        <li>Buka dashboard supplier, cari VPS dengan IP <strong class="font-mono">{{ $requestIp }}</strong>.</li>
-                        <li>Jalankan reinstall/rebuild dengan OS yang diminta. Catat password root baru.</li>
-                        <li>Jika stack bukan "Tanpa Control Panel", pasang stack yang diminta.</li>
-                        <li>Isi form di bawah. Pelanggan otomatis menerima email. Password hanya tampil di dashboard pelanggan, tidak ikut email.</li>
-                    </ol>
-
-                    @php
-                        $adminOsOptions = $requestVps->reinstallOsOptions();
-                        $adminStackOptions = $requestVps->reinstallStackOptions();
-                        $defaultOs = old('os', $requestData['os'] ?? $requestVps->os);
-                        $defaultStack = old('control_panel', $requestData['control_panel'] ?? $requestVps->control_panel);
-                    @endphp
-                    <form action="{{ route('admin.tickets.complete-reinstall', $ticket->id) }}" method="POST" class="space-y-3 pt-3 border-t border-hairline"
-                          data-confirm="Tandai reinstall selesai? Password root baru akan tersimpan dan pelanggan menerima email.">
-                        @csrf
-                        <div class="grid sm:grid-cols-2 gap-3">
-                            <div>
-                                <label class="block font-mono text-[11px] font-bold uppercase text-ink mb-1">OS terpasang</label>
-                                <select name="os" required class="w-full px-3 py-2 border border-hairline bg-white text-ink focus:outline-none focus:border-electric">
-                                    @foreach($adminOsOptions as $osKey => $osName)
-                                        <option value="{{ $osKey }}" @selected((string) $defaultOs === (string) $osKey)>{{ $osName }}</option>
-                                    @endforeach
-                                </select>
-                                @error('os') <p class="mt-1 font-mono text-[11px] text-ink font-bold">{{ $message }}</p> @enderror
+                    @if(($requestVps->provider ?? 'manual') === 'tencent')
+                        @php
+                            $reinstallTask = \App\Models\ProvisioningTask::where('vps_instance_id', $requestVps->id)
+                                ->where('kind', 'reinstall')
+                                ->latest('id')
+                                ->first();
+                        @endphp
+                        <div class="p-4 border border-ink bg-creamDark/40 space-y-2">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <span class="font-mono text-[10px] font-bold uppercase tracking-widest bg-ink text-cream px-2 py-0.5">Auto-Reinstall Tencent</span>
+                                    <p class="font-semibold text-ink text-xs mt-1">
+                                        Server ini menggunakan provisioning otomatis. Reinstall diproses langsung via upstream task tanpa input dashboard supplier manual.
+                                    </p>
+                                </div>
+                                <a href="{{ route('admin.instances', ['search' => $requestVps->hostname]) }}"
+                                   class="px-3 py-1.5 border border-ink bg-white hover:bg-creamDark text-ink font-mono text-[11px] font-bold uppercase">
+                                    Kelola di Instances
+                                </a>
                             </div>
-                            <div>
-                                <label class="block font-mono text-[11px] font-bold uppercase text-ink mb-1">Stack terpasang</label>
-                                @if($requestVps->hasFixedStack())
-                                    <p class="px-3 py-2 border border-hairline bg-creamDark/40 text-ink">{{ $requestVps->control_panel_label }} (bawaan paket)</p>
-                                @else
-                                    <select name="control_panel" required class="w-full px-3 py-2 border border-hairline bg-white text-ink focus:outline-none focus:border-electric">
-                                        @foreach($adminStackOptions as $stackKey => $stackName)
-                                            <option value="{{ $stackKey }}" @selected((string) $defaultStack === (string) $stackKey)>{{ $stackName }}</option>
+                            @if($reinstallTask)
+                                <div class="pt-2 border-t border-hairline font-mono text-[11px] flex flex-wrap items-center justify-between gap-2">
+                                    <div>
+                                        Task #{{ $reinstallTask->id }} &middot; Status: <strong class="uppercase">{{ $reinstallTask->status }}</strong> ({{ (int) $reinstallTask->progress }}%)
+                                        @if($reinstallTask->current_step)
+                                            &middot; Step: {{ $reinstallTask->current_step }}
+                                        @endif
+                                        @if($reinstallTask->error)
+                                            <span class="block text-ink font-bold mt-1">Error: {{ $reinstallTask->error }}</span>
+                                        @endif
+                                    </div>
+                                    @if($reinstallTask->status === 'failed')
+                                        <form action="{{ route('admin.tasks.retry', $reinstallTask->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="px-3 py-1.5 bg-electric hover:bg-electricHover text-white font-mono text-[11px] font-bold uppercase cursor-pointer">
+                                                Retry Reinstall Task
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    @else
+                        <ol class="list-decimal pl-5 space-y-1 text-ink">
+                            <li>Buka dashboard supplier, cari VPS dengan IP <strong class="font-mono">{{ $requestIp }}</strong>.</li>
+                            <li>Jalankan reinstall/rebuild dengan OS yang diminta. Catat password SSH baru.</li>
+                            <li>Jika stack bukan "Tanpa Control Panel", pasang stack yang diminta.</li>
+                            <li>Isi form di bawah. Pelanggan otomatis menerima email. Password hanya tampil di dashboard pelanggan, tidak ikut email.</li>
+                        </ol>
+
+                        @php
+                            $adminOsOptions = $requestVps->reinstallOsOptions();
+                            $adminStackOptions = $requestVps->reinstallStackOptions();
+                            $defaultOs = old('os', $requestData['os'] ?? $requestVps->os);
+                            $defaultStack = old('control_panel', $requestData['control_panel'] ?? $requestVps->control_panel);
+                            $defaultSshUser = old('ssh_username', $ticket->vpsInstance?->ssh_user ?? \App\Models\VpsInstance::defaultSshUsernameForOs((string) $defaultOs));
+                        @endphp
+                        <form action="{{ route('admin.tickets.complete-reinstall', $ticket->id) }}" method="POST" class="space-y-3 pt-3 border-t border-hairline"
+                              data-confirm="Tandai reinstall selesai? Password root baru akan tersimpan dan pelanggan menerima email.">
+                            @csrf
+                            <div class="grid sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block font-mono text-[11px] font-bold uppercase text-ink mb-1">OS terpasang</label>
+                                    <select name="os" required class="w-full px-3 py-2 border border-hairline bg-white text-ink focus:outline-none focus:border-electric">
+                                        @foreach($adminOsOptions as $osKey => $osName)
+                                            <option value="{{ $osKey }}" @selected((string) $defaultOs === (string) $osKey)>{{ $osName }}</option>
                                         @endforeach
                                     </select>
-                                    @error('control_panel') <p class="mt-1 font-mono text-[11px] text-ink font-bold">{{ $message }}</p> @enderror
-                                @endif
+                                    @error('os') <p class="mt-1 font-mono text-[11px] text-ink font-bold">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label class="block font-mono text-[11px] font-bold uppercase text-ink mb-1">Stack terpasang</label>
+                                    @if($requestVps->hasFixedStack())
+                                        <p class="px-3 py-2 border border-hairline bg-creamDark/40 text-ink">{{ $requestVps->control_panel_label }} (bawaan paket)</p>
+                                    @else
+                                        <select name="control_panel" required class="w-full px-3 py-2 border border-hairline bg-white text-ink focus:outline-none focus:border-electric">
+                                            @foreach($adminStackOptions as $stackKey => $stackName)
+                                                <option value="{{ $stackKey }}" @selected((string) $defaultStack === (string) $stackKey)>{{ $stackName }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('control_panel') <p class="mt-1 font-mono text-[11px] text-ink font-bold">{{ $message }}</p> @enderror
+                                    @endif
+                                </div>
                             </div>
-                        </div>
 
-                        <div>
-                            <label class="block font-mono text-[11px] font-bold uppercase text-ink mb-1">Username SSH</label>
-                            <input type="text" name="ssh_username" value="{{ old('ssh_username', $ticket->vpsInstance?->ssh_user ?? 'root') }}" maxlength="32" pattern="[A-Za-z_][A-Za-z0-9._\-]{0,31}" autocomplete="off" spellcheck="false"
-                                   class="w-full px-3 py-2 border border-hairline bg-white font-mono text-ink focus:outline-none focus:border-electric">
-                            <p class="mt-1 text-muted">Biarkan bila username tidak berubah setelah reinstall.</p>
-                            @error('ssh_username') <p class="mt-1 font-mono text-[11px] text-ink font-bold">{{ $message }}</p> @enderror
-                        </div>
+                            <div>
+                                <label class="block font-mono text-[11px] font-bold uppercase text-ink mb-1">Username SSH</label>
+                                <input type="text" name="ssh_username" value="{{ $defaultSshUser }}" maxlength="32" pattern="[A-Za-z_][A-Za-z0-9._\-]{0,31}" autocomplete="off" spellcheck="false"
+                                       class="w-full px-3 py-2 border border-hairline bg-white font-mono text-ink focus:outline-none focus:border-electric">
+                                <p class="mt-1 text-muted">Biarkan bila username tidak berubah setelah reinstall.</p>
+                                @error('ssh_username') <p class="mt-1 font-mono text-[11px] text-ink font-bold">{{ $message }}</p> @enderror
+                            </div>
 
-                        <div>
-                            <label class="block font-mono text-[11px] font-bold uppercase text-ink mb-1">Password SSH baru</label>
-                            <input type="text" name="root_password" required minlength="8" maxlength="128" autocomplete="off" spellcheck="false"
-                                   class="w-full px-3 py-2 border border-hairline bg-white font-mono text-ink focus:outline-none focus:border-electric"
-                                   placeholder="Password root dari dashboard supplier">
-                            <p class="mt-1 text-muted">Disimpan terenkripsi. Pelanggan membukanya lewat tombol salin di tab Akses.</p>
-                            @error('root_password') <p class="mt-1 font-mono text-[11px] text-ink font-bold">{{ $message }}</p> @enderror
-                        </div>
+                            <div>
+                                <label class="block font-mono text-[11px] font-bold uppercase text-ink mb-1">Password SSH baru</label>
+                                <input type="text" name="root_password" required minlength="8" maxlength="128" autocomplete="off" spellcheck="false"
+                                       class="w-full px-3 py-2 border border-hairline bg-white font-mono text-ink focus:outline-none focus:border-electric"
+                                       placeholder="Password root dari dashboard supplier">
+                                <p class="mt-1 text-muted">Disimpan terenkripsi. Pelanggan membukanya lewat tombol salin di tab Akses.</p>
+                                @error('root_password') <p class="mt-1 font-mono text-[11px] text-ink font-bold">{{ $message }}</p> @enderror
+                            </div>
 
-                        <div>
-                            <label class="block font-mono text-[11px] font-bold uppercase text-ink mb-1">Pesan ke pelanggan (opsional)</label>
-                            <textarea name="message" rows="3" maxlength="2000" class="w-full px-3 py-2 border border-hairline bg-white text-ink focus:outline-none focus:border-electric"
-                                      placeholder="Kosongkan untuk memakai pesan standar: reinstall selesai, password baru ada di tab Akses.">{{ old('message') }}</textarea>
-                            @error('message') <p class="mt-1 font-mono text-[11px] text-ink font-bold">{{ $message }}</p> @enderror
-                        </div>
+                            <div>
+                                <label class="block font-mono text-[11px] font-bold uppercase text-ink mb-1">Pesan ke pelanggan (opsional)</label>
+                                <textarea name="message" rows="3" maxlength="2000" class="w-full px-3 py-2 border border-hairline bg-white text-ink focus:outline-none focus:border-electric"
+                                          placeholder="Kosongkan untuk memakai pesan standar: reinstall selesai, password baru ada di tab Akses.">{{ old('message') }}</textarea>
+                                @error('message') <p class="mt-1 font-mono text-[11px] text-ink font-bold">{{ $message }}</p> @enderror
+                            </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit" class="px-5 py-2.5 bg-electric hover:bg-electricHover text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
-                                Tandai Reinstall Selesai
-                            </button>
-                        </div>
-                    </form>
+                            <div class="flex justify-end">
+                                <button type="submit" class="px-5 py-2.5 bg-electric hover:bg-electricHover text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                                    Tandai Reinstall Selesai
+                                </button>
+                            </div>
+                        </form>
+                    @endif
                 @else
                     <ol class="list-decimal pl-5 space-y-1 text-ink">
                         <li>Buka dashboard supplier, cek status VPS dengan IP <strong class="font-mono">{{ $requestIp }}</strong>.</li>

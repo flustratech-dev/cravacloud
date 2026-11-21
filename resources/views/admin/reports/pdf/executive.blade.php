@@ -27,61 +27,71 @@
         </tr>
     </table>
 
-    <!-- 3 Pilar Layanan Komparasi (VPS vs AI vs DB) -->
-    <div class="section-header">KINERJA & KONTRIBUSI 3 PILAR LAYANAN UTAMA</div>
+    <!-- Ringkasan Portofolio Cloud VPS (Starter vs Enterprise Series) -->
+    <div class="section-header">KINERJA PORTOFOLIO CLOUD VPS (STARTER &amp; ENTERPRISE SERIES)</div>
     <table class="data-table">
         <thead>
             <tr>
-                <th style="width: 32%;">PILAR LAYANAN</th>
+                <th style="width: 34%;">LINI PAKET CLOUD VPS</th>
                 <th style="width: 18%;" class="text-center">TOTAL PESANAN</th>
                 <th style="width: 20%;" class="text-center">AKTIF BEROPERASI</th>
-                <th style="width: 30%;" class="text-right">TOTAL OMZET LUNAS</th>
+                <th style="width: 28%;" class="text-right">TOTAL OMZET LUNAS</th>
             </tr>
         </thead>
         <tbody>
+            @php
+                $starterOrders = $vpsOrders->filter(fn ($o) => str_starts_with(strtolower((string) ($o->vpsSpec?->name ?? '')), 'starter'));
+                $enterpriseOrders = $vpsOrders->filter(fn ($o) => str_starts_with(strtolower((string) ($o->vpsSpec?->name ?? '')), 'enterprise'));
+                $otherOrders = $vpsOrders->reject(fn ($o) => $starterOrders->contains('id', $o->id) || $enterpriseOrders->contains('id', $o->id));
+                $starterRevenue = (float) $invoices->where('status', 'paid')->filter(fn ($i) => $i->order && $starterOrders->contains('id', $i->order->id))->sum('amount');
+                $enterpriseRevenue = (float) $invoices->where('status', 'paid')->filter(fn ($i) => $i->order && $enterpriseOrders->contains('id', $i->order->id))->sum('amount');
+                $otherRevenue = max(0, (float) $revenue - $starterRevenue - $enterpriseRevenue);
+            @endphp
             <tr>
                 <td>
-                    <div style="font-weight: 700; color: #0f172a;">1. Cloud VPS (Linux Compute)</div>
-                    <div style="font-size: 7px; color: #64748b;">Standard, Student Basic, High Memory, Business Tier</div>
+                    <div style="font-weight: 700; color: #0f172a;">1. Starter Series (XS / S / M / L)</div>
+                    <div style="font-size: 7px; color: #64748b;">Cloud VPS KVM NVMe 2–4 vCPU, 1–8 GB RAM + 177 1-Click Stack</div>
                 </td>
-                <td class="text-center font-bold">{{ $vpsOrders->count() }} unit</td>
+                <td class="text-center font-bold">{{ $starterOrders->count() }} unit</td>
                 <td class="text-center">
-                    <span class="badge badge-success">{{ $vpsOrders->where('status', 'active')->count() }} running</span>
+                    <span class="badge badge-success">{{ $starterOrders->where('status', 'active')->count() }} running</span>
                 </td>
                 <td class="text-right font-mono" style="font-weight: 700; color: #0f172a;">
-                    Rp {{ number_format($vpsRevenue, 0, ',', '.') }}
+                    Rp {{ number_format($starterRevenue, 0, ',', '.') }}
                 </td>
             </tr>
             <tr>
                 <td>
-                    <div style="font-weight: 700; color: #0f172a;">2. AI Agent & Autonomous Workstation</div>
-                    <div style="font-size: 7px; color: #64748b;">Claude Code, OpenCode CLI, Ollama, Hermes, Dify RAG</div>
+                    <div style="font-weight: 700; color: #0f172a;">2. Enterprise Series (Pro / Max / Ultra / Extreme)</div>
+                    <div style="font-size: 7px; color: #64748b;">High-Performance Compute 4–16 vCPU, 16–64 GB RAM + 1-Click Stack</div>
                 </td>
-                <td class="text-center font-bold">{{ $aiOrders->count() }} unit</td>
+                <td class="text-center font-bold">{{ $enterpriseOrders->count() }} unit</td>
                 <td class="text-center">
-                    <span class="badge badge-info">{{ $aiOrders->where('status', 'active')->count() }} running</span>
+                    <span class="badge badge-info">{{ $enterpriseOrders->where('status', 'active')->count() }} running</span>
                 </td>
                 <td class="text-right font-mono" style="font-weight: 700; color: #0f172a;">
-                    Rp {{ number_format($aiRevenue, 0, ',', '.') }}
+                    Rp {{ number_format($enterpriseRevenue, 0, ',', '.') }}
                 </td>
             </tr>
-            <tr>
-                <td>
-                    <div style="font-weight: 700; color: #0f172a;">3. Managed Database Server</div>
-                    <div style="font-size: 7px; color: #64748b;">PostgreSQL 16, MySQL 8.0, Redis Cache, MongoDB, Qdrant</div>
-                </td>
-                <td class="text-center font-bold">{{ $dbOrders->count() }} unit</td>
-                <td class="text-center">
-                    <span class="badge badge-neutral">{{ $dbOrders->where('status', 'active')->count() }} running</span>
-                </td>
-                <td class="text-right font-mono" style="font-weight: 700; color: #0f172a;">
-                    Rp {{ number_format($dbRevenue, 0, ',', '.') }}
-                </td>
-            </tr>
+            @if($otherOrders->isNotEmpty())
+                <tr>
+                    <td>
+                        <div style="font-weight: 700; color: #0f172a;">3. Paket Khusus / Custom</div>
+                        <div style="font-size: 7px; color: #64748b;">Konfigurasi Cloud VPS kustom</div>
+                    </td>
+                    <td class="text-center font-bold">{{ $otherOrders->count() }} unit</td>
+                    <td class="text-center">
+                        <span class="badge badge-neutral">{{ $otherOrders->where('status', 'active')->count() }} running</span>
+                    </td>
+                    <td class="text-right font-mono" style="font-weight: 700; color: #0f172a;">
+                        Rp {{ number_format($otherRevenue, 0, ',', '.') }}
+                    </td>
+                </tr>
+            @endif
         </tbody>
         <tfoot>
             <tr style="background-color: #f1f5f9; font-weight: 800;">
-                <td style="padding: 6px 7px; text-transform: uppercase;">TOTAL KONSOLIDASI PORTOFOLIO</td>
+                <td style="padding: 6px 7px; text-transform: uppercase;">TOTAL KONSOLIDASI CLOUD VPS</td>
                 <td class="text-center" style="padding: 6px 7px;">{{ $orders->count() }} unit</td>
                 <td class="text-center" style="padding: 6px 7px;">{{ $orders->where('status', 'active')->count() }} aktif</td>
                 <td class="text-right font-mono" style="padding: 6px 7px; color: #0f172a; font-size: 8.5px;">

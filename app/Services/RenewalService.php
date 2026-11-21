@@ -212,6 +212,15 @@ class RenewalService
         $this->applyGracePeriod($instance);
         $instance->save();
 
+        try {
+            app(SubscriptionSyncService::class)->syncFromRenewal($instance, $paidAt, $newExpiresAt);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('renewal.subscription_sync_failed', [
+                'instance_id' => $instance->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         // Tandai order fulfillment delivered
         $order->fulfillment_stage = 'delivered';
         $order->delivered_at = now();
@@ -283,11 +292,18 @@ class RenewalService
             ]);
 
             try {
-                app(AdminAlertService::class)->digest(
-                    'Renewal upstream tidak ter-dispatch',
-                    "Order renewal #{$orderId} untuk instance #{$instanceId} sudah memperpanjang masa aktif pelanggan, "
-                    ."tetapi job renewal upstream gagal dibuat. Proses manual diperlukan.\n\nError: {$e->getMessage()}"
-                );
+                app(AdminAlertService::class)->alert('provisioning.failed', [
+                    'title' => 'Renewal upstream tidak ter-dispatch',
+                    'order_id' => $orderId,
+                    'details' => [
+                        'Order' => "#{$orderId}",
+                        'Instance' => "#{$instanceId}",
+                        'Error' => \Illuminate\Support\Str::limit($e->getMessage(), 160),
+                    ],
+                    'body' => "Order renewal #{$orderId} untuk instance #{$instanceId} sudah memperpanjang masa aktif pelanggan, "
+                        ."tetapi job renewal upstream gagal dibuat. Proses manual diperlukan.\n\nError: {$e->getMessage()}",
+                    'action_url' => url('/admin/monitoring?tab=tasks&status=failed'),
+                ], dedupeKey: 'renew-dispatch-' . $orderId, cooldownSeconds: 3600);
             } catch (\Throwable $alertError) {
                 \Illuminate\Support\Facades\Log::error('renewal.upstream_dispatch_alert_failed', [
                     'order_id' => $orderId,

@@ -329,5 +329,17 @@ class MailIdentityTest extends TestCase
         $response->assertSessionHasNoErrors();
         $response->assertRedirect();
     }
+
+    public function test_hardcoded_fallback_never_leaks_personal_gmail_address(): void
+    {
+        app(SettingsService::class)->set('mail_admin_addresses', '');
+        config(['mail.admin_addresses' => []]);
+        MailIdentity::flushCache();
+
+        $recipients = MailIdentity::adminRecipients();
+
+        $this->assertNotEmpty($recipients);
+        $this->assertNotContains('admin@gmail.com', $recipients);
+    }
 }
 

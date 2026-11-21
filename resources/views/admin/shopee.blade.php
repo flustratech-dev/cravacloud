@@ -13,11 +13,11 @@
     os: '{{ old('os', 'ubuntu2404') }}',
     controlPanel: '{{ old('control_panel', 'none') }}',
     hostname: '{{ old('hostname', '') }}',
-    dbEngine: '{{ old('db_engine', 'postgres') }}',
-    dbManager: '{{ old('db_manager', 'cloudbeaver') }}',
+    shopeeMode: '{{ old('shopee_mode', 'auto') }}',
     autoProvision: false,
     publicIp: '{{ old('public_ip', '') }}',
     sshPort: '{{ old('ssh_port', '22') }}',
+    sshUsername: '{{ old('ssh_username', 'ubuntu') }}',
     rootPassword: '{{ old('root_password', '') }}',
     activeMsgTab: 'ready',
     specs: @js($specs),
@@ -34,11 +34,29 @@
     provHostname: '',
     provOs: 'ubuntu2404',
     provSshPort: 22,
+    provSshUsername: 'ubuntu',
     provRootPassword: '',
     provAppUrl: '',
 
+    defaultSshUserFor(osKey) {
+        return String(osKey || 'ubuntu2404').toLowerCase().startsWith('ubuntu') ? 'ubuntu' : 'root';
+    },
+
     init() {
         this.syncSpecSettings();
+        @if(!old('ssh_username'))
+            this.sshUsername = this.defaultSshUserFor(this.os);
+        @endif
+        this.$watch('os', (val) => {
+            if (!this.sshUsername || this.sshUsername === 'ubuntu' || this.sshUsername === 'root') {
+                this.sshUsername = this.defaultSshUserFor(val);
+            }
+        });
+        this.$watch('provOs', (val) => {
+            if (!this.provSshUsername || this.provSshUsername === 'ubuntu' || this.provSshUsername === 'root') {
+                this.provSshUsername = this.defaultSshUserFor(val);
+            }
+        });
     },
 
     syncSpecSettings() {
@@ -49,21 +67,10 @@
             this.os = Object.keys(this.operatingSystems)[0] || 'ubuntu2404';
         }
 
-        if (spec.is_database_package) {
-            this.controlPanel = 'managed_database';
-        } else if (spec.is_ai_package && spec.default_stack) {
-            this.controlPanel = spec.default_stack;
+        if (spec.upstream_bundle_id) {
+            this.shopeeMode = 'auto';
+            this.autoProvision = false;
         }
-    },
-
-    isDatabasePackage() {
-        const spec = this.specs.find(s => String(s.id) === String(this.vpsSpecId));
-        return (spec && spec.is_database_package) || this.controlPanel === 'managed_database';
-    },
-
-    isAiPackage() {
-        const spec = this.specs.find(s => String(s.id) === String(this.vpsSpecId));
-        return spec && spec.is_ai_package;
     },
 
     parseSmartText() {
@@ -152,7 +159,7 @@
         }
 
         // Control Panel / Stack (dynamic dari StackRegistry / Order::stackLabels())
-        const stackAliases = { wp: 'wordpress', dify: 'dify_ollama', managed_db: 'managed_database' };
+        const stackAliases = { wp: 'wordpress', dify: 'dify_ollama' };
         let matchedStack = null;
         for (const [alias, targetKey] of Object.entries(stackAliases)) {
             if (this.stackLabels && this.stackLabels[targetKey] && new RegExp('\\b' + alias + '\\b', 'i').test(lowerText)) {
@@ -213,11 +220,14 @@
         this.provHostname = data.hostname || ('vps-' + data.username);
         this.provOs = data.os_key || 'ubuntu2404';
         this.provSshPort = 22;
+        this.provSshUsername = this.defaultSshUserFor(this.provOs);
         this.provRootPassword = '';
         this.provAppUrl = '';
         this.provisionModalOpen = true;
     }
 }">
+
+    @include('admin.partials.orders-tabs')
 
     @php
         $inputClass = 'w-full px-3 py-2 border border-hairline text-xs text-ink bg-white focus:outline-none focus:border-electric';
@@ -315,9 +325,6 @@ User SSH      : {{ $c['ssh_username'] ?? 'root' }}
 Password SSH  : {{ $c['root_password'] }}
 @if(!empty($c['app_url']))
 Akses Panel   : {{ $c['app_url'] }}
-@endif
-@if(!empty($c['db_engine']))
-Database      : {{ $c['db_engine'] }} (Port {{ $c['ssh_port'] }})
 @endif
 @endif
 --------------------------------------------------
@@ -469,53 +476,41 @@ Terima kasih telah mempercayakan kebutuhan server Anda di CravaCloud!</div>
                 </div>
 
                 <div class="flex items-end">
-                    <template x-if="isAiPackage()">
-                        <div class="p-2.5 bg-creamDark/40 border border-hairline text-[11px] text-muted w-full">
-                            <span class="font-bold text-ink block">Paket AI Combo</span>
-                            Panduan dan tautan web GUI akan otomatis disertakan pada instance.
-                        </div>
-                    </template>
-                    <template x-if="!isAiPackage() && !isDatabasePackage()">
-                        <div class="p-2 text-muted font-mono text-[11px] w-full">
-                            Paket reguler cloud server.
-                        </div>
-                    </template>
-                </div>
-            </div>
-
-            <!-- Conditional Section for Managed Database -->
-            <div x-show="isDatabasePackage()" x-cloak class="p-4 bg-creamDark/40 border border-hairline space-y-3">
-                <div class="font-display font-bold text-ink text-xs uppercase tracking-wider">Konfigurasi Managed Database</div>
-                <div class="grid sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="{{ $labelClass }}">Database Engine *</label>
-                        <select name="db_engine" x-model="dbEngine" class="{{ $inputClass }}">
-                            <option value="postgres">PostgreSQL (Port 5432)</option>
-                            <option value="mysql">MySQL (Port 3306)</option>
-                            <option value="redis">Redis In-Memory (Port 6379)</option>
-                            <option value="mongodb">MongoDB Document (Port 27017)</option>
-                            <option value="vector">Vector Qdrant (Port 6333)</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="{{ $labelClass }}">Database Manager GUI *</label>
-                        <select name="db_manager" x-model="dbManager" class="{{ $inputClass }}">
-                            <option value="cloudbeaver">CloudBeaver Web GUI (Port 8080)</option>
-                            <option value="cli_only">CLI Only (Tanpa Web GUI)</option>
-                        </select>
+                    <div class="p-2 text-muted font-mono text-[11px] w-full">
+                        Cloud VPS KVM + 1-Click Stack
                     </div>
                 </div>
             </div>
 
-            <!-- Section 3: Auto-provision checkbox & IP -->
+            <!-- Section 3: Mode Eksekusi Provisioning Shopee -->
             <div class="p-4 bg-creamDark/40 border border-hairline space-y-3">
-                <label class="flex items-center gap-2.5 cursor-pointer font-semibold text-ink text-xs">
-                    <input type="checkbox" name="auto_provision" value="1" x-model="autoProvision" class="w-4 h-4 border-ink accent-electric">
-                    <span>Langsung alokasikan IP Publik dan aktifkan status Running sekarang</span>
-                </label>
+                <div class="font-display font-bold text-ink text-xs uppercase tracking-wider">Mode Provisioning Shopee</div>
+                <div class="grid sm:grid-cols-2 gap-3">
+                    <label class="flex items-start gap-2.5 p-3 border border-hairline bg-white cursor-pointer"
+                           :class="shopeeMode === 'auto' ? 'border-electric bg-cream' : ''">
+                        <input type="radio" name="shopee_mode" value="auto" x-model="shopeeMode" @change="autoProvision = false" class="mt-0.5 accent-electric">
+                        <span>
+                            <strong class="block text-ink">Otomatis Tencent Cloud</strong>
+                            <span class="text-[11px] text-muted">Direkomendasikan bila paket terpetakan &amp; auto-provisioning aktif. Tanpa input IP/password manual.</span>
+                        </span>
+                    </label>
+                    <label class="flex items-start gap-2.5 p-3 border border-hairline bg-white cursor-pointer"
+                           :class="shopeeMode === 'manual' ? 'border-electric bg-cream' : ''">
+                        <input type="radio" name="shopee_mode" value="manual" x-model="shopeeMode" class="mt-0.5 accent-electric">
+                        <span>
+                            <strong class="block text-ink">Input Manual (Darurat / Override)</strong>
+                            <span class="text-[11px] text-muted">Alokasi IP manual langsung bila provisioning otomatis tidak digunakan.</span>
+                        </span>
+                    </label>
+                </div>
 
-                <div x-show="autoProvision" x-cloak class="grid sm:grid-cols-3 gap-3 pt-2 border-t border-hairline">
+                <div x-show="shopeeMode === 'manual'" x-cloak class="pt-2 border-t border-hairline space-y-3">
+                    <label class="flex items-center gap-2.5 cursor-pointer font-semibold text-ink text-xs">
+                        <input type="checkbox" name="auto_provision" value="1" x-model="autoProvision" class="w-4 h-4 border-ink accent-electric">
+                        <span>Langsung alokasikan IP Publik dan aktifkan status Running sekarang</span>
+                    </label>
+
+                    <div x-show="autoProvision" x-cloak class="grid sm:grid-cols-3 gap-3 pt-2 border-t border-hairline">
                     <div>
                         <label class="{{ $labelClass }}">Alokasi IP Publik Node *</label>
                         <input type="text" name="public_ip" x-model="publicIp" placeholder="Contoh: 103.150.12.88"
@@ -529,8 +524,8 @@ Terima kasih telah mempercayakan kebutuhan server Anda di CravaCloud!</div>
                     </div>
 
                     <div>
-                        <label class="{{ $labelClass }}">Username SSH (Default root)</label>
-                        <input type="text" name="ssh_username" value="{{ old('ssh_username', 'root') }}" maxlength="32" pattern="[A-Za-z_][A-Za-z0-9._\-]{0,31}" autocomplete="off" spellcheck="false"
+                        <label class="{{ $labelClass }}">Username SSH (Default ubuntu)</label>
+                        <input type="text" name="ssh_username" x-model="sshUsername" maxlength="32" pattern="[A-Za-z_][A-Za-z0-9._\-]{0,31}" autocomplete="off" spellcheck="false"
                                class="{{ $inputClass }} font-mono">
                     </div>
 
@@ -546,6 +541,7 @@ Terima kasih telah mempercayakan kebutuhan server Anda di CravaCloud!</div>
                                class="{{ $inputClass }} font-mono">
                         <p class="mt-1 text-muted">Link yang tampil di dashboard pelanggan. Bisa diisi nanti di Admin &gt; Cloud Instances.</p>
                     </div>
+                </div>
                 </div>
             </div>
 
@@ -617,13 +613,13 @@ Terima kasih telah mempercayakan kebutuhan server Anda di CravaCloud!</div>
                                 'customer_email' => $so->customer->email ?? '',
                                 'customer_phone' => $cleanRowPhone,
                                 'username' => $so->customer->username ?? '',
-                                'package' => $so->vpsSpec->name ?? 'Standard',
+                                'package' => $so->vpsSpec->name ?? 'Cloud VPS',
                                 'provider' => $so->provider_label,
                                 'datacenter' => ucfirst($so->datacenter_location),
                                 'os' => $so->os_label,
                                 'os_key' => $so->os,
                                 'control_panel' => $so->control_panel_label,
-                                'needs_panel_url' => $so->control_panel !== 'none' && !($so->isDatabasePackage() && $so->db_manager === 'cli_only'),
+                                'needs_panel_url' => $so->control_panel !== 'none',
                                 'status' => $so->status,
                                 'has_instance' => (bool)$instance,
                                 'hostname' => $instance?->hostname ?? ($so->hostname ?? ('vps-' . ($so->customer->username ?? 'node'))),
@@ -866,7 +862,7 @@ Terima kasih telah mempercayakan kebutuhan server Anda di CravaCloud!</div>
                     </div>
                     <div>
                         <label class="{{ $labelClass }}">Username SSH</label>
-                        <input type="text" name="ssh_username" value="root" maxlength="32" pattern="[A-Za-z_][A-Za-z0-9._\-]{0,31}" autocomplete="off" spellcheck="false"
+                        <input type="text" name="ssh_username" x-model="provSshUsername" maxlength="32" pattern="[A-Za-z_][A-Za-z0-9._\-]{0,31}" autocomplete="off" spellcheck="false"
                                class="{{ $inputClass }} font-mono">
                     </div>
                 </div>

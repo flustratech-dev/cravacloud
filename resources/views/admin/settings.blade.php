@@ -10,6 +10,8 @@
         $globalOn = $settings->bool('maintenance_global_enabled', false);
     @endphp
 
+    @include('admin.partials.system-tabs')
+
     @if($errors->any())
         <div class="bg-white p-5 border-2 border-ink">
             <span class="font-mono text-[10px] font-bold text-ink uppercase tracking-widest block mb-2">Periksa Kembali Isian Anda</span>
@@ -57,6 +59,9 @@
         <button type="button" @click="tab = 'maintenance'"
                 :class="tab === 'maintenance' ? 'bg-electric text-white' : 'text-ink hover:bg-creamDark/60'"
                 class="{{ $tabBase }}">Maintenance</button>
+        <button type="button" @click="tab = 'provisioning'"
+                :class="tab === 'provisioning' ? 'bg-electric text-white' : 'text-ink hover:bg-creamDark/60'"
+                class="{{ $tabBase }}">Provisioning &amp; Tencent</button>
     </div>
 
     <!-- ============ TAB: IDENTITAS MEREK ============ -->
@@ -196,6 +201,39 @@
                     </div>
                 </div>
 
+                <div class="pt-4 border-t border-hairline space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <span class="font-mono text-[10px] font-bold text-muted uppercase tracking-widest block">Matriks Event Alert WhatsApp Admin (15 Event)</span>
+                            <p class="text-[11px] text-muted mt-0.5">Email HTML tetap terkirim sebagai arsip operasional; centang di bawah mengontrol alert real-time ke nomor WA Admin di atas. Pelanggan 100% Email &amp; Dashboard (tanpa WA).</p>
+                        </div>
+                    </div>
+                    <input type="hidden" name="wa_events_submitted" value="1">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                        @foreach($alertEvents ?? \App\Services\AdminAlertService::EVENTS as $eventKey => $meta)
+                            @php
+                                $checked = ($alertWaSettings[$eventKey] ?? $meta['default_wa'] ?? false);
+                                $sev = $meta['severity'] ?? 'INFO';
+                                $sevBadge = $sev === 'CRITICAL'
+                                    ? 'bg-red-50 text-red-700 border-red-300'
+                                    : ($sev === 'ACTION' ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-blue-50 text-blue-700 border-blue-300');
+                            @endphp
+                            <label class="flex items-start gap-2.5 p-2.5 border border-hairline hover:bg-creamDark/30 cursor-pointer">
+                                <input type="checkbox" name="wa_events[{{ $eventKey }}]" value="1"
+                                       {{ $checked ? 'checked' : '' }}
+                                       class="mt-0.5 w-4 h-4 border-ink accent-electric shrink-0">
+                                <span class="min-w-0 flex-1">
+                                    <span class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="text-xs font-bold text-ink">{{ $meta['label'] }}</span>
+                                        <span class="font-mono text-[9px] font-bold px-1.5 py-0.5 border {{ $sevBadge }}">{{ $sev }}</span>
+                                    </span>
+                                    <span class="block font-mono text-[10px] text-muted mt-0.5">{{ $eventKey }} — {{ $meta['description'] }}</span>
+                                </span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
                 <div class="pt-4 border-t border-hairline">
                     <span class="font-mono text-[10px] font-bold text-muted uppercase tracking-widest block mb-3">Penanda Tangan Faktur</span>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -322,15 +360,14 @@
                 </div>
 
                 <div>
-                    <label class="{{ $labelClass }}">Nomor WhatsApp Admin (Order Lunas &amp; Pengingat Setup)</label>
+                    <label class="{{ $labelClass }}">Nomor WhatsApp Tujuan Admin (Ops Alert Pager)</label>
                     <input type="text" name="admin_notification_whatsapp" maxlength="200" placeholder="6281234567890, 6289876543210"
                            value="{{ old('admin_notification_whatsapp', $settings->get('admin_notification_whatsapp', '')) }}"
                            class="{{ $inputClass }} font-mono">
                     @error('admin_notification_whatsapp') <p class="font-mono text-[11px] font-bold text-ink mt-1">{{ $message }}</p> @enderror
                     <p class="text-[11px] text-muted mt-1">
-                        Boleh lebih dari satu, pisahkan dengan koma. Setiap order lunas langsung dikabarkan ke WA &amp; surel di atas,
-                        lalu diingatkan 30 menit, 1 jam, dan tiap 2 jam sampai layanan diserahkan.
-                        Gunakan nomor yang <strong class="text-ink">berbeda</strong> dari nomor pengirim WA Gateway.
+                        Boleh lebih dari satu, pisahkan dengan koma. Digunakan khusus untuk Alert Operasional Admin (pembayaran gagal, provisioning gagal/stuck, tiket masuk &amp; SLA breach, saldo/kuota upstream).
+                        Gunakan nomor yang <strong class="text-ink">berbeda</strong> dari nomor pengirim <a href="{{ route('admin.whatsapp.index') }}" class="font-semibold text-electric hover:underline">WA Gateway Admin</a>.
                     </p>
                     @if (trim((string) $settings->get('admin_notification_whatsapp', '')) === '')
                         <p class="font-mono text-[11px] text-ink mt-1 font-bold">[PERHATIAN] Belum diisi — admin tidak akan menerima notifikasi WhatsApp.</p>
@@ -344,38 +381,54 @@
                     <span class="text-xs text-ink font-medium">Aktifkan digest harian ke admin</span>
                 </label>
 
+                <div class="pt-4 border-t border-hairline space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <span class="font-mono text-[10px] font-bold text-muted uppercase tracking-widest block">Matriks Event Alert WhatsApp Admin (15 Event)</span>
+                            <p class="text-[11px] text-muted mt-0.5">Email HTML tetap terkirim sebagai arsip operasional; centang di bawah mengontrol alert real-time ke nomor WA Admin di atas. Pelanggan 100% Email &amp; Dashboard (tanpa WA).</p>
+                        </div>
+                    </div>
+                    <input type="hidden" name="wa_events_submitted" value="1">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                        @foreach($alertEvents ?? \App\Services\AdminAlertService::EVENTS as $eventKey => $meta)
+                            @php
+                                $checked = ($alertWaSettings[$eventKey] ?? $meta['default_wa'] ?? false);
+                                $sev = $meta['severity'] ?? 'INFO';
+                                $sevBadge = $sev === 'CRITICAL'
+                                    ? 'bg-red-50 text-red-700 border-red-300'
+                                    : ($sev === 'ACTION' ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-blue-50 text-blue-700 border-blue-300');
+                            @endphp
+                            <label class="flex items-start gap-2.5 p-2.5 border border-hairline hover:bg-creamDark/30 cursor-pointer">
+                                <input type="checkbox" name="wa_events[{{ $eventKey }}]" value="1"
+                                       {{ $checked ? 'checked' : '' }}
+                                       class="mt-0.5 w-4 h-4 border-ink accent-electric shrink-0">
+                                <span class="min-w-0 flex-1">
+                                    <span class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="text-xs font-bold text-ink">{{ $meta['label'] }}</span>
+                                        <span class="font-mono text-[9px] font-bold px-1.5 py-0.5 border {{ $sevBadge }}">{{ $sev }}</span>
+                                    </span>
+                                    <span class="block font-mono text-[10px] text-muted mt-0.5">{{ $eventKey }} — {{ $meta['description'] }}</span>
+                                </span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
                 <div class="pt-4 border-t border-hairline">
-                    <span class="font-mono text-[10px] font-bold text-muted uppercase tracking-widest block mb-2">Masa Tenggang per Jenis Produk</span>
+                    <span class="font-mono text-[10px] font-bold text-muted uppercase tracking-widest block mb-2">Masa Tenggang Perpanjangan Cloud VPS</span>
                     <div class="border border-ink bg-creamDark/50 p-3.5 mb-4">
                         <p class="text-[11px] text-ink leading-relaxed">
-                            Tenggang CravaCloud wajib <strong>lebih pendek</strong> daripada batas Supplier.
-                            Supplier menghapus VPS setelah <strong>7 hari</strong> suspensi, sedangkan database
-                            dan aplikasi setelah <strong>30 hari</strong>. Selisihnya adalah ruang Anda untuk bertindak.
+                            Tenggang CravaCloud wajib <strong>lebih pendek</strong> daripada batas penghapusan upstream.
+                            Upstream menghapus instance VPS setelah <strong>7 hari</strong> suspensi — selisih hari memberi ruang aman sebelum terminasi permanen.
                         </p>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <label class="{{ $labelClass }}">Tenggang VPS (hari)</label>
-                            <input type="number" name="renewal_grace_days_vps" required min="1" max="6"
-                                   value="{{ old('renewal_grace_days_vps', $settings->int('renewal_grace_days_vps', 5)) }}"
-                                   class="{{ $inputClass }} font-mono">
-                            <p class="text-[11px] text-muted mt-1">Batas Supplier: 7 hari</p>
-                        </div>
-                        <div>
-                            <label class="{{ $labelClass }}">Tenggang Database (hari)</label>
-                            <input type="number" name="renewal_grace_days_database" required min="1" max="29"
-                                   value="{{ old('renewal_grace_days_database', $settings->int('renewal_grace_days_database', 25)) }}"
-                                   class="{{ $inputClass }} font-mono">
-                            <p class="text-[11px] text-muted mt-1">Batas Supplier: 30 hari</p>
-                        </div>
-                        <div>
-                            <label class="{{ $labelClass }}">Tenggang Aplikasi &amp; AI (hari)</label>
-                            <input type="number" name="renewal_grace_days_app" required min="1" max="29"
-                                   value="{{ old('renewal_grace_days_app', $settings->int('renewal_grace_days_app', 25)) }}"
-                                   class="{{ $inputClass }} font-mono">
-                            <p class="text-[11px] text-muted mt-1">Batas Supplier: 30 hari</p>
-                        </div>
+                    <div class="max-w-xs">
+                        <label class="{{ $labelClass }}">Tenggang Cloud VPS (hari)</label>
+                        <input type="number" name="renewal_grace_days_vps" required min="1" max="6"
+                               value="{{ old('renewal_grace_days_vps', $settings->int('renewal_grace_days_vps', 5)) }}"
+                               class="{{ $inputClass }} font-mono">
+                        <p class="text-[11px] text-muted mt-1">Batas upstream: 7 hari (nilai aman 1–6 hari)</p>
                     </div>
                 </div>
             </div>
@@ -400,6 +453,58 @@
                 Kirim Tes
             </button>
         </form>
+
+        <!-- Riwayat 30 Alert Admin Terakhir (Ring Buffer) -->
+        <div class="bg-white border border-hairline overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-hairline flex items-center justify-between gap-3">
+                <div>
+                    <h3 class="font-display font-bold text-ink text-sm">Log 30 Alert Operasional Terakhir</h3>
+                    <p class="text-[11px] text-muted mt-0.5">Audit pengiriman Email &amp; WhatsApp Admin tanpa perlu membaca log server.</p>
+                </div>
+                <span class="font-mono text-[10px] text-muted uppercase">Cache TTL 7 Hari</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-hairline bg-creamDark/40 font-mono text-[10px] uppercase text-muted">
+                            <th class="px-4 py-2.5">Waktu</th>
+                            <th class="px-4 py-2.5">Event / Judul</th>
+                            <th class="px-4 py-2.5">Email</th>
+                            <th class="px-4 py-2.5">WhatsApp</th>
+                            <th class="px-4 py-2.5">Catatan / Error</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-hairline">
+                        @forelse(($recentAlerts ?? []) as $alertItem)
+                            <tr>
+                                <td class="px-4 py-2.5 font-mono text-[11px] text-muted whitespace-nowrap">
+                                    {{ \Carbon\Carbon::parse($alertItem['sent_at'] ?? now())->timezone('Asia/Jakarta')->format('d M H:i:s') }}
+                                </td>
+                                <td class="px-4 py-2.5">
+                                    <div class="font-bold text-ink">{{ $alertItem['title'] ?? '-' }}</div>
+                                    <div class="font-mono text-[10px] text-muted">{{ $alertItem['event_key'] ?? '-' }} ({{ $alertItem['severity'] ?? 'INFO' }})</div>
+                                </td>
+                                <td class="px-4 py-2.5 font-mono text-[10px]">
+                                    <span class="px-1.5 py-0.5 border {{ !empty($alertItem['email_sent']) ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-hairline text-muted' }}">
+                                        {{ !empty($alertItem['email_sent']) ? 'OK' : 'SKIP/OFF' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-2.5 font-mono text-[10px]">
+                                    <span class="px-1.5 py-0.5 border {{ !empty($alertItem['wa_sent']) ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : (!empty($alertItem['error']) ? 'border-red-300 bg-red-50 text-red-700' : 'border-hairline text-muted') }}">
+                                        {{ !empty($alertItem['wa_sent']) ? 'OK (' . ($alertItem['wa_count'] ?? 1) . ')' : (!empty($alertItem['error']) ? 'FAIL' : 'OFF') }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-2.5 text-[11px] text-muted">{{ $alertItem['error'] ?? '-' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-4 py-6 text-center text-muted text-xs">Belum ada riwayat alert terekam di cache.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- ============ TAB: EMAIL & PENGIRIM ============ -->
@@ -472,10 +577,11 @@
                 <div>
                     <label class="{{ $labelClass }}">Daftar Email Penerima Admin</label>
                     <textarea name="mail_admin_addresses" rows="3"
-                              placeholder="{{ implode(', ', (array) config('mail.admin_addresses', ['support@cravacloud.id', 'admin@gmail.com'])) }}"
+                              placeholder="{{ implode(', ', (array) config('mail.admin_addresses', ['support@cravacloud.id'])) }}"
                               class="{{ $inputClass }} font-mono">{{ old('mail_admin_addresses', $settings->get('mail_admin_addresses', '')) }}</textarea>
                     <p class="text-[11px] text-muted mt-1">
                         Bebas domain. Pisahkan dengan koma atau baris baru. Alert order lunas, provisioning, dan SLA dikirim ke seluruh alamat ini.
+                        Atur naskah email pelanggan di <a href="{{ route('admin.templates.index') }}" class="font-semibold text-electric hover:underline">Template Surel</a>.
                     </p>
                 </div>
             </div>
@@ -667,6 +773,135 @@
                                 </td>
                             </tr>
                         @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ TAB: PROVISIONING & TENCENT ============ -->
+    <div x-show="tab === 'provisioning'" x-cloak class="space-y-6">
+        <form action="{{ route('admin.settings.provisioning') }}" method="POST"
+              class="bg-white border border-hairline overflow-hidden">
+            @csrf
+            <div class="px-5 py-4 border-b border-hairline flex items-center justify-between gap-3">
+                <div>
+                    <h3 class="font-display font-bold text-ink text-base">Kontrol Otomasi Provisioning &amp; Tencent Cloud</h3>
+                    <p class="text-xs text-muted mt-0.5">Kelola sakelar canary, mode guard kuota checkout, whitelist paket otomatis, dan kurs HPP USD.</p>
+                </div>
+                <span class="px-2.5 py-1 font-mono text-[10px] font-bold uppercase {{ $settings->bool('provisioning_auto_enabled', false) ? 'bg-emerald-600 text-white' : 'bg-creamDark text-ink border border-ink' }}">
+                    {{ $settings->bool('provisioning_auto_enabled', false) ? 'Auto ON' : 'Canary OFF' }}
+                </span>
+            </div>
+
+            <div class="p-5 space-y-5">
+                <label class="flex items-start gap-3 p-4 border border-ink bg-creamDark/30 cursor-pointer">
+                    <input type="checkbox" name="provisioning_auto_enabled" value="1"
+                           {{ old('provisioning_auto_enabled', $settings->bool('provisioning_auto_enabled', false)) ? 'checked' : '' }}
+                           class="w-4 h-4 mt-0.5 border-ink accent-electric shrink-0">
+                    <div>
+                        <span class="font-display text-sm font-bold text-ink block">Aktifkan Auto-Provisioning Tencent Cloud (Master Switch)</span>
+                        <span class="text-xs text-muted mt-0.5 block">Bila nonaktif, seluruh order masuk alur setup manual. Bila aktif, order paket yang lolos mapping &amp; whitelist otomatis dieksekusi Tencent Lighthouse + TAT.</span>
+                    </div>
+                </label>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="{{ $labelClass }}">Mode Quota Guard Checkout</label>
+                        @php $qMode = old('quota_guard_mode', $settings->get('quota_guard_mode', 'observe')); @endphp
+                        <select name="quota_guard_mode" class="{{ $inputClass }} font-mono">
+                            <option value="observe" {{ $qMode === 'observe' ? 'selected' : '' }}>observe — Catat log peringatan saja (Checkout tidak diblokir)</option>
+                            <option value="enforce" {{ $qMode === 'enforce' ? 'selected' : '' }}>enforce — Tolak checkout baru jika pool penuh atau pending &ge; 3</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="{{ $labelClass }}">Kurs HPP Upstream USD &rarr; IDR (Rp)</label>
+                        <input type="number" name="tencent_usd_idr" min="1000" max="100000" required
+                               value="{{ old('tencent_usd_idr', $settings->int('tencent_usd_idr', 16500)) }}"
+                               class="{{ $inputClass }} font-mono">
+                        <p class="text-[11px] text-muted mt-1">Dipakai untuk pencatatan otomatis HPP di SupplierPurchase saat VM Tencent aktif.</p>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-hairline space-y-2.5">
+                    <div>
+                        <span class="font-mono text-[10px] font-bold text-muted uppercase tracking-widest block">Canary Whitelist Paket Terpetakan</span>
+                        <p class="text-[11px] text-muted mt-0.5">Kosongkan seluruh centang jika ingin mengizinkan <strong>semua</strong> paket yang sudah memiliki <code class="font-mono bg-creamDark px-1">upstream_bundle_id</code>, atau centang spesifik untuk canary terbatas.</p>
+                    </div>
+                    @php
+                        $whitelist = (array) $settings->get('provisioning_auto_spec_whitelist', []);
+                        if (is_string($whitelist)) {
+                            $whitelist = json_decode($whitelist, true) ?: [];
+                        }
+                        $whitelist = array_map('intval', $whitelist);
+                    @endphp
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                        @forelse(($mappedSpecs ?? collect()) as $mSpec)
+                            <label class="flex items-start gap-2.5 p-3 border border-hairline hover:bg-creamDark/30 cursor-pointer">
+                                <input type="checkbox" name="whitelist_specs[]" value="{{ $mSpec->id }}"
+                                       {{ in_array((int) $mSpec->id, $whitelist, true) ? 'checked' : '' }}
+                                       class="w-4 h-4 mt-0.5 border-ink accent-electric shrink-0">
+                                <span class="text-xs">
+                                    <strong class="text-ink block">{{ $mSpec->name }}</strong>
+                                    <span class="font-mono text-[10px] text-muted">{{ $mSpec->upstream_bundle_id }}</span>
+                                </span>
+                            </label>
+                        @empty
+                            <p class="text-xs text-muted col-span-3">Belum ada paket dengan upstream_bundle_id.</p>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-5 py-4 border-t border-hairline flex justify-end bg-creamDark/30">
+                <button type="submit"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-electric hover:bg-electricHover text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                    Simpan Pengaturan Provisioning
+                </button>
+            </div>
+        </form>
+
+        <!-- Editor Kapasitas Pool Kuota Region -->
+        <div class="bg-white border border-hairline overflow-hidden">
+            <div class="px-5 py-4 border-b border-hairline">
+                <h3 class="font-display font-bold text-ink text-base">Kapasitas Pool Kuota Region Upstream</h3>
+                <p class="text-xs text-muted mt-0.5">Sesuaikan batas maksimal VM per region &amp; tipe bundle mengikuti kuota akun Tencent Cloud Anda.</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-creamDark/60 text-muted font-mono text-[10px] font-bold uppercase tracking-widest border-b border-hairline">
+                        <tr>
+                            <th class="px-5 py-3">Region</th>
+                            <th class="px-5 py-3">Bundle Type</th>
+                            <th class="px-5 py-3">Reserved / Used</th>
+                            <th class="px-5 py-3">Kapasitas Saat Ini</th>
+                            <th class="px-5 py-3">Ubah Kapasitas</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-hairline">
+                        @forelse(($quotaPools ?? collect()) as $pool)
+                            <tr>
+                                <td class="px-5 py-3 font-mono font-bold text-ink">{{ $pool->region_code }}</td>
+                                <td class="px-5 py-3 font-mono text-muted">{{ $pool->bundle_type }}</td>
+                                <td class="px-5 py-3 font-mono text-ink">{{ $pool->reserved }} reserved &middot; {{ $pool->used }} used</td>
+                                <td class="px-5 py-3 font-mono font-bold text-electric">{{ $pool->capacity }}</td>
+                                <td class="px-5 py-3">
+                                    <form action="{{ route('admin.settings.quota-pools.update', $pool->id) }}" method="POST" class="flex items-center gap-2">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="number" name="capacity" min="1" max="500" required
+                                               value="{{ $pool->capacity }}"
+                                               class="w-24 px-2.5 py-1.5 border border-hairline font-mono text-xs bg-white focus:outline-none focus:border-electric">
+                                        <button type="submit"
+                                                class="px-3 py-1.5 bg-ink hover:bg-electric text-white font-mono text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                                            Update
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="px-5 py-6 text-center text-muted text-xs">Belum ada pool kuota upstream.</td></tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>

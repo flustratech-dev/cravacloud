@@ -2,31 +2,26 @@
 
 namespace App\Notifications;
 
-use App\Channels\WhatsAppChannel;
 use App\Models\Subscription;
-use App\Services\WhatsAppMessage;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ServiceTerminatedNotification extends Notification
+class ServiceTerminatedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     use \App\Notifications\Concerns\UsesMailIdentity;
 
     public function __construct(
         public Subscription $subscription
-    ) {}
+    ) {
+        $this->onQueue('notifications');
+    }
 
     public function via(object $notifiable): array
     {
-        $channels = ['mail', 'database'];
-
-        if (config('whatsapp.enabled') && ! empty($notifiable->phone)) {
-            $channels[] = WhatsAppChannel::class;
-        }
-
-        return $channels;
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -47,27 +42,5 @@ class ServiceTerminatedNotification extends Notification
             'subscription_id' => $this->subscription->id,
             'status' => 'terminated',
         ];
-    }
-
-    public function toWhatsApp(object $notifiable): ?WhatsAppMessage
-    {
-        $this->subscription->loadMissing('vpsSpec');
-        $appUrl = rtrim(config('app.url', 'https://cravacloud.id'), '/');
-        $namaPelanggan = $notifiable->full_name ?? 'Pelanggan CravaCloud';
-        $layanan = $this->subscription->vpsSpec?->name ?? 'Cloud VPS';
-
-        $message = implode("\n", [
-            "Halo *{$namaPelanggan}*,",
-            '',
-            '⚠️ *PEMBERITAHUAN TERMINASI LAYANAN*',
-            "Layanan server *{$layanan}* Anda telah dihentikan secara permanen karena telah melewati masa tenggang pembayaran.",
-            '',
-            'Jika Anda ingin memesan layanan server baru, silakan kunjungi:',
-            "{$appUrl}/#pricing",
-            '',
-            '_CravaCloud Solutions_',
-        ]);
-
-        return WhatsAppMessage::create($message);
     }
 }

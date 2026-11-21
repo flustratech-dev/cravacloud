@@ -4,15 +4,19 @@ namespace App\Notifications;
 
 use App\Models\LoginActivity;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NewLoginAlertNotification extends Notification
+class NewLoginAlertNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     use \App\Notifications\Concerns\UsesMailIdentity;
 
-    public function __construct(public LoginActivity $activity) {}
+    public function __construct(public LoginActivity $activity)
+    {
+        $this->onQueue('notifications');
+    }
 
     public function via(object $notifiable): array
     {

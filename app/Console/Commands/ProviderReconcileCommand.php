@@ -72,6 +72,8 @@ class ProviderReconcileCommand extends Command
         }
 
         $divergent = 0; $reconciled = 0; $skipped = 0;
+        $expiryDrifts = [];
+        $orphanList = [];
         $this->info("Cek {$instances->count()} instance.");
 
         foreach ($instances as $instance) {
@@ -134,7 +136,10 @@ class ProviderReconcileCommand extends Command
 
                 // Phase 4D: drift supplier_expires_at vs ExpiredTime upstream.
                 if (($instance->provider ?? 'manual') === 'tencent' && ! $dry) {
-                    $this->checkExpiryDrift($instance, $meta['expired_time'] ?? null);
+                    $drift = $this->checkExpiryDrift($instance, $meta['expired_time'] ?? null);
+                    if ($drift !== null) {
+                        $expiryDrifts[] = $drift;
+                    }
                 }
             } catch (\Throwable $e) {
                 Log::error('reconcile.error', ['vps_id' => $instance->id, 'error' => $e->getMessage()]);
@@ -152,7 +157,19 @@ class ProviderReconcileCommand extends Command
         }
 
         // Phase 4D: orphan crava-* — alert saja, JANGAN auto-terminate.
-        $orphans = $this->scanOrphans($dry);
+        $orphanList = $this->scanOrphans($dry);
+        $orphans = count($orphanList);
+
+        if (! $dry) {
+            Cache::put('reconcile:last_report', [
+                'ran_at' => now()->toIso8601String(),
+                'checked_count' => $instances->count(),
+                'divergent_count' => $divergent,
+                'reconciled_count' => $reconciled,
+                'orphans' => $orphanList,
+                'expiry_drifts' => $expiryDrifts,
+            ], now()->addHours(24));
+        }
 
         $this->info("Selesai. Divergent: {$divergent}, auto-corrected: {$reconciled}, skipped(live task): {$skipped}, orphan: {$orphans}.");
         return self::SUCCESS;
@@ -170,11 +187,13 @@ class ProviderReconcileCommand extends Command
      * Bandingkan supplier_expires_at pembelian terakhir dengan ExpiredTime
      * riil upstream. Toleransi 2 hari (pembulatan/timezone); lebih dari itu
      * dianggap drift → alert admin (tanpa tulis otomatis).
+     *
+     * @return ?array<string, mixed>
      */
-    private function checkExpiryDrift(VpsInstance $instance, ?string $expiredTime): void
+    private function checkExpiryDrift(VpsInstance $instance, ?string $expiredTime): ?array
     {
         if (! $expiredTime) {
-            return;
+            return null;
         }
 
         $purchase = SupplierPurchase::where('vps_instance_id', $instance->id)
@@ -183,18 +202,18 @@ class ProviderReconcileCommand extends Command
             ->first();
 
         if (! $purchase) {
-            return;
+            return null;
         }
 
         try {
             $upstream = Carbon::parse($expiredTime);
         } catch (\Throwable $e) {
-            return;
+            return null;
         }
 
         $diffDays = abs($purchase->supplier_expires_at->diffInDays($upstream, false));
         if ($diffDays <= 2) {
-            return;
+            return null;
         }
 
         Log::warning('reconcile.expiry_drift', [
@@ -210,21 +229,31 @@ class ProviderReconcileCommand extends Command
             .$purchase->supplier_expires_at->format('d M Y H:i').", upstream {$upstream->format('d M Y H:i')} "
             ."selisih {$diffDays} hari. Periksa renewal/terminasi di console upstream."
         );
+
+        return [
+            'vps_id' => $instance->id,
+            'hostname' => $instance->hostname,
+            'recorded_expires' => $purchase->supplier_expires_at->toIso8601String(),
+            'upstream_expired' => $upstream->toIso8601String(),
+            'diff_days' => (int) round($diffDays),
+        ];
     }
 
     /**
      * Pindai semua region pool: instance upstream bernama crava-* yang TIDAK
      * ada di DB (provider_resource_id) = orphan. Alert admin per instance
      * (dedupe harian). TIDAK PERNAH auto-terminate — keputusan manusia.
+     *
+     * @return array<int, array<string, mixed>>
      */
-    private function scanOrphans(bool $dry): int
+    private function scanOrphans(bool $dry): array
     {
         $known = array_flip(
             VpsInstance::whereNotNull('provider_resource_id')->pluck('provider_resource_id')->all()
         );
 
         $regions = UpstreamQuotaPool::distinct()->pluck('region_code')->all();
-        $orphans = 0;
+        $orphanList = [];
 
         foreach ($regions as $region) {
             $offset = 0;
@@ -246,7 +275,13 @@ class ProviderReconcileCommand extends Command
                         continue;
                     }
 
-                    $orphans++;
+                    $orphanList[] = [
+                        'upstream_id' => $id,
+                        'name' => $name,
+                        'region' => $region,
+                        'state' => $state,
+                    ];
+
                     $this->warn("  ! orphan upstream {$id} ({$name}, {$state}) tidak ada di DB — TIDAK di-terminate otomatis.");
                     Log::warning('reconcile.orphan', [
                         'region' => $region,
@@ -270,7 +305,7 @@ class ProviderReconcileCommand extends Command
             } while ($offset < $total);
         }
 
-        return $orphans;
+        return $orphanList;
     }
 
     private function alertOnceDaily(string $cacheKey, string $subject, string $text): void
@@ -281,7 +316,12 @@ class ProviderReconcileCommand extends Command
         }
 
         try {
-            $this->alerts->digest($subject, $text);
+            $this->alerts->alert('upstream.reconcile_anomaly', [
+                'title' => $subject,
+                'body' => $text,
+                'whatsapp_text' => $text,
+                'action_url' => url('/admin/monitoring?tab=upstream'),
+            ]);
         } catch (\Throwable $e) {
             Log::warning('reconcile.alert_failed', ['key' => $cacheKey, 'error' => $e->getMessage()]);
         }

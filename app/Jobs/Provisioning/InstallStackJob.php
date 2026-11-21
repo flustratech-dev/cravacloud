@@ -134,6 +134,27 @@ class InstallStackJob extends AbstractProvisioningJob
                     // ignore
                 }
             }
+
+            try {
+                app(\App\Services\AdminAlertService::class)->alert(
+                    'provisioning.failed',
+                    [
+                        'title' => 'Instalasi stack reinstall gagal',
+                        'order_id' => $task->order_id,
+                        'details' => [
+                            'Task' => "#{$task->id} (install_stack/reinstall)",
+                            'Instance' => '#' . ($instance?->id ?? '?') . ' (' . ($instance?->hostname ?? '-') . ')',
+                            'Error' => \Illuminate\Support\Str::limit($error, 160),
+                        ],
+                        'body' => $error,
+                        'action_url' => url('/admin/monitoring?tab=tasks&status=failed'),
+                    ],
+                    dedupeKey: 'task-' . $task->id,
+                    cooldownSeconds: 3600
+                );
+            } catch (\Throwable) {
+                // ignore
+            }
             return;
         }
 

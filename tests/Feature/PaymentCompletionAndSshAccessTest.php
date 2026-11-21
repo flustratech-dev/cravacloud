@@ -7,7 +7,6 @@ use App\Models\PaymentTransaction;
 use App\Models\User;
 use App\Models\VpsInstance;
 use App\Models\VpsSpec;
-use App\Notifications\AdminFulfillmentOverdueNotification;
 use App\Notifications\AdminNewPaidOrderNotification;
 use App\Notifications\PaymentReceivedNotification;
 use App\Notifications\VpsProvisionedNotification;
@@ -302,86 +301,6 @@ class PaymentCompletionAndSshAccessTest extends TestCase
 
     // ===================== 2. Pengingat bertahap admin =====================
 
-    public function test_admin_reminders_escalate_until_order_delivered(): void
-    {
-        $customer = $this->customer();
-        $order = $this->pendingMidtransOrder($customer);
-        MidtransService::checkAndSyncStatus($order);
-        $this->assertCount(1, $this->adminWhatsAppMessages()); // notifikasi lunas
-
-        $reminders = fn () => collect($this->adminWhatsAppMessages())
-            ->filter(fn ($m) => str_contains($m, 'PENGINGAT'))->count();
-
-        $this->travel(20)->minutes();
-        $this->artisan('fulfillment:remind-admin')->assertSuccessful();
-        $this->assertSame(0, $reminders());
-
-        $this->travel(11)->minutes(); // 31 menit
-        $this->artisan('fulfillment:remind-admin')->assertSuccessful();
-        $this->assertSame(1, $reminders());
-        $this->artisan('fulfillment:remind-admin')->assertSuccessful(); // tidak dobel
-        $this->assertSame(1, $reminders());
-
-        $this->travel(30)->minutes(); // 61 menit
-        $this->artisan('fulfillment:remind-admin')->assertSuccessful();
-        $this->assertSame(2, $reminders());
-
-        $this->travel(110)->minutes(); // 110 menit sejak pengingat terakhir
-        $this->artisan('fulfillment:remind-admin')->assertSuccessful();
-        $this->assertSame(2, $reminders());
-
-        $this->travel(11)->minutes(); // >120 menit
-        $this->artisan('fulfillment:remind-admin')->assertSuccessful();
-        $this->assertSame(3, $reminders());
-        $this->assertSame(3, $this->adminMailCount(AdminFulfillmentOverdueNotification::class));
-
-        // Diserahkan → berhenti.
-        Order::whereKey($order->id)->update(['status' => 'active']);
-        $this->travel(5)->hours();
-        $this->artisan('fulfillment:remind-admin')->assertSuccessful();
-        $this->assertSame(3, $reminders());
-    }
-
-    public function test_reminders_skip_renewals_and_stale_orders_and_group_into_one_message(): void
-    {
-        $customer = $this->customer();
-        $vps = $this->runningVps($customer);
-
-        $base = ['customer_id' => $customer->id, 'organization_id' => $customer->current_organization_id,
-            'vps_spec_id' => $this->spec()->id, 'control_panel' => 'none', 'datacenter_location' => 'indonesia', 'os' => 'ubuntu2404',
-            'status' => 'paid', 'channel' => 'website', 'payment_method' => 'qris', 'amount' => 100000];
-
-        $a = Order::create($base + ['paid_at' => now()->subHour()]);
-        $b = Order::create($base + ['paid_at' => now()->subMinutes(45)]);
-        Order::create($base + ['paid_at' => now()->subHour(), 'order_type' => 'renewal', 'vps_instance_id' => $vps->id]);
-        Order::create($base + ['paid_at' => now()->subDays(8)]);
-
-        $this->artisan('fulfillment:remind-admin')->assertSuccessful();
-
-        $messages = $this->adminWhatsAppMessages();
-        $this->assertCount(1, $messages);
-        $this->assertStringContainsString('2 ORDER LUNAS BELUM DISETUP', $messages[0]);
-        $this->assertStringContainsString("#{$a->id}", $messages[0]);
-        $this->assertStringContainsString("#{$b->id}", $messages[0]);
-    }
-
-    public function test_reminder_is_retried_when_no_channel_succeeds(): void
-    {
-        app(SettingsService::class)->setMany(['admin_notification_whatsapp' => '']);
-        $mockAlerts = \Mockery::mock(\App\Services\AdminAlertService::class);
-        $mockAlerts->shouldReceive('fulfillmentReminder')->andReturn(false);
-        $this->app->instance(\App\Services\AdminAlertService::class, $mockAlerts);
-
-        $customer = $this->customer();
-        $order = Order::create(['customer_id' => $customer->id, 'organization_id' => $customer->current_organization_id,
-            'vps_spec_id' => $this->spec()->id, 'control_panel' => 'none', 'datacenter_location' => 'indonesia', 'os' => 'ubuntu2404',
-            'status' => 'paid', 'channel' => 'website', 'payment_method' => 'qris', 'amount' => 100000,
-            'paid_at' => now()->subHour()]);
-
-        $this->artisan('fulfillment:remind-admin')->assertFailed();
-        $this->assertSame(0, $order->fresh()->admin_reminder_count);
-    }
-
     public function test_admin_can_save_whatsapp_number_and_send_test(): void
     {
         $this->actingAs($this->admin())
@@ -444,13 +363,11 @@ class PaymentCompletionAndSshAccessTest extends TestCase
         $this->assertSame('ssh ubuntu@103.150.10.10 -p 2222', $vps->ssh_command);
 
         Notification::assertSentTo($customer, VpsProvisionedNotification::class, function ($n) use ($customer) {
-            $wa = $n->toWhatsApp($customer)?->getContent() ?? '';
-            $mail = $n->toMail($customer)->render();
+            $mail = (string) $n->toMail($customer)->render();
 
-            return str_contains($wa, '`ubuntu`')
-                && str_contains($wa, 'ssh ubuntu@103.150.10.10 -p 2222')
-                && !str_contains($wa, 'root@')
-                && str_contains((string) $mail, 'ssh ubuntu@103.150.10.10 -p 2222');
+            return $n->via($customer) === ['mail', 'database']
+                && str_contains($mail, 'ssh ubuntu@103.150.10.10 -p 2222')
+                && !str_contains($mail, 'RetailPass#2026');
         });
 
         $this->actingAs($customer)->get("/dashboard/vps/{$vps->id}")
@@ -495,7 +412,9 @@ class PaymentCompletionAndSshAccessTest extends TestCase
 
         $this->assertSame('crava', $vps->fresh()->ssh_username);
         Notification::assertSentTo($customer, VpsSshUsernameChangedNotification::class,
-            fn ($n) => $n->oldUsername === 'root' && str_contains($n->toWhatsApp($customer)->getContent(), 'ssh crava@'));
+            fn ($n) => $n->oldUsername === 'root'
+                && $n->via($customer) === ['mail', 'database']
+                && str_contains((string) $n->toMail($customer)->render(), 'crava'));
         $this->assertDatabaseHas('vps_activity_logs', ['vps_instance_id' => $vps->id, 'action' => 'ssh_username_updated']);
 
         // Tidak berubah → tidak ada notifikasi tambahan.
@@ -509,22 +428,6 @@ class PaymentCompletionAndSshAccessTest extends TestCase
 
         $this->actingAs($customer)->post(route('admin.instances.ssh-username', $vps->id), ['ssh_username' => 'x'])
             ->assertStatus(403);
-    }
-
-    public function test_handover_template_uses_ssh_username(): void
-    {
-        $customer = $this->customer();
-        $vps = $this->runningVps($customer, ['ssh_username' => 'debian']);
-        $order = Order::create(['customer_id' => $customer->id, 'organization_id' => $customer->current_organization_id,
-            'vps_spec_id' => $this->spec()->id, 'control_panel' => 'none', 'datacenter_location' => 'indonesia', 'os' => 'ubuntu2404',
-            'status' => 'active', 'channel' => 'website', 'payment_method' => 'qris', 'amount' => 100000, 'paid_at' => now()]);
-        $vps->update(['order_id' => $order->id]);
-
-        $template = \App\Models\NotificationTemplate::where('code', \App\Models\NotificationTemplate::FULFILLMENT_HANDOVER)->firstOrFail();
-        $text = app(\App\Services\FulfillmentService::class)->handoverText($order->fresh(), $template);
-
-        $this->assertStringContainsString('Pengguna: debian', $text);
-        $this->assertStringNotContainsString('{{pengguna}}', $text);
     }
 
     // ===================== 4. Masa aktif dihitung sejak lunas =====================
@@ -641,9 +544,11 @@ class PaymentCompletionAndSshAccessTest extends TestCase
 
         MidtransService::checkAndSyncStatus($order);
 
+        // Covered renewal routes to payment.paid_auto (WA Admin default OFF; Email admin & customer tetap terkirim).
         $messages = $this->adminWhatsAppMessages();
-        $this->assertCount(1, $messages);
-        $this->assertStringContainsString('Tidak perlu tindakan', $messages[0]);
+        $this->assertCount(0, $messages);
+        Notification::assertSentToTimes($customer, PaymentReceivedNotification::class, 1);
+        $this->assertSame(1, $this->adminMailCount(AdminNewPaidOrderNotification::class));
     }
 
     public function test_supplier_reminder_lists_urgent_gap_and_decision(): void
@@ -704,7 +609,8 @@ class PaymentCompletionAndSshAccessTest extends TestCase
         Notification::assertSentToTimes($customer, \App\Notifications\InstanceRenewalReminderNotification::class, 1);
         Notification::assertSentTo($customer, \App\Notifications\InstanceRenewalReminderNotification::class,
             fn ($n) => $n->stage === \App\Models\RenewalReminder::STAGE_H7
-                && str_contains($n->toWhatsApp($customer)->getContent(), '7 Hari Lagi'));
+                && $n->via($customer) === ['mail', 'database']
+                && str_contains((string) $n->toMail($customer)->render(), '7'));
 
         $this->assertTrue(collect($this->adminWhatsAppMessages())->contains(fn ($m) => str_contains($m, 'RINGKASAN PERPANJANGAN')));
     }

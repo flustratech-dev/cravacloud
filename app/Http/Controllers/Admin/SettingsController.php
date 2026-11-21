@@ -31,17 +31,32 @@ class SettingsController extends Controller
     public function index(Request $request)
     {
         $tab = $request->query('tab', 'brand');
+        if ($tab === 'whatsapp') {
+            return redirect()->route('admin.whatsapp.index');
+        }
+        if ($tab === 'templates') {
+            return redirect()->route('admin.templates.index');
+        }
+        if ($tab === 'audit') {
+            return redirect()->route('admin.audit.index');
+        }
 
         $components = SystemComponent::orderBy('sort_order')->get();
+        $alertService = app(\App\Services\AdminAlertService::class);
 
         return view('admin.settings', [
-            'tab' => in_array($tab, ['brand', 'company', 'support', 'notification', 'mail', 'maintenance'], true)
+            'tab' => in_array($tab, ['brand', 'company', 'support', 'notification', 'mail', 'maintenance', 'provisioning'], true)
                 ? $tab
                 : 'brand',
             'settings' => $this->settings,
             'scopeStates' => $this->maintenance->scopeStates(),
             'components' => $components,
             'componentStatuses' => SystemComponent::STATUSES,
+            'alertEvents' => \App\Services\AdminAlertService::EVENTS,
+            'alertWaSettings' => $alertService->eventWaSettings(),
+            'recentAlerts' => $alertService->recentAlerts(),
+            'quotaPools' => \App\Models\UpstreamQuotaPool::orderBy('region_code')->orderBy('bundle_type')->get(),
+            'mappedSpecs' => \App\Models\VpsSpec::whereNotNull('upstream_bundle_id')->orderBy('sell_price')->get(),
         ]);
     }
 
@@ -137,8 +152,8 @@ class SettingsController extends Controller
             'digest_enabled' => ['nullable'],
             'fulfillment_sla_minutes' => ['required', 'integer', 'min:5', 'max:1440'],
             'renewal_grace_days_vps' => ['required', 'integer', 'min:1', 'max:6'],
-            'renewal_grace_days_database' => ['required', 'integer', 'min:1', 'max:29'],
-            'renewal_grace_days_app' => ['required', 'integer', 'min:1', 'max:29'],
+            'renewal_grace_days_database' => ['nullable', 'integer', 'min:1', 'max:29'],
+            'renewal_grace_days_app' => ['nullable', 'integer', 'min:1', 'max:29'],
         ], [
             'admin_notification_whatsapp.regex' => 'Nomor WA admin hanya boleh berisi angka, +, spasi, atau koma sebagai pemisah.',
             'renewal_grace_days_vps.max' => 'Tenggang VPS wajib di bawah 7 hari, karena Supplier menghapus VPS pada hari ke-7.',
@@ -146,20 +161,36 @@ class SettingsController extends Controller
             'renewal_grace_days_app.max' => 'Tenggang aplikasi wajib di bawah 30 hari, mengikuti batas Supplier.',
         ]);
 
-        $this->settings->setMany([
+        $payload = [
             'admin_notification_whatsapp' => trim((string) ($validated['admin_notification_whatsapp'] ?? '')),
             'fulfillment_sla_minutes' => $validated['fulfillment_sla_minutes'],
             'renewal_grace_days_vps' => $validated['renewal_grace_days_vps'],
-            'renewal_grace_days_database' => $validated['renewal_grace_days_database'],
-            'renewal_grace_days_app' => $validated['renewal_grace_days_app'],
-        ], [
+        ];
+        $types = [
             'fulfillment_sla_minutes' => 'integer',
             'renewal_grace_days_vps' => 'integer',
-            'renewal_grace_days_database' => 'integer',
-            'renewal_grace_days_app' => 'integer',
-        ]);
+        ];
+        if (array_key_exists('renewal_grace_days_database', $validated) && $validated['renewal_grace_days_database'] !== null) {
+            $payload['renewal_grace_days_database'] = $validated['renewal_grace_days_database'];
+            $types['renewal_grace_days_database'] = 'integer';
+        }
+        if (array_key_exists('renewal_grace_days_app', $validated) && $validated['renewal_grace_days_app'] !== null) {
+            $payload['renewal_grace_days_app'] = $validated['renewal_grace_days_app'];
+            $types['renewal_grace_days_app'] = 'integer';
+        }
+
+        $this->settings->setMany($payload, $types);
 
         $this->settings->set('digest_enabled', $request->boolean('digest_enabled'), 'boolean');
+
+        if ($request->has('wa_events_submitted')) {
+            $submitted = (array) $request->input('wa_events', []);
+            $eventMap = [];
+            foreach (array_keys(\App\Services\AdminAlertService::EVENTS) as $eventKey) {
+                $eventMap[$eventKey] = ! empty($submitted[$eventKey]);
+            }
+            $this->settings->set('admin_alert_wa_events', $eventMap, 'json', ['group' => 'notification']);
+        }
 
         $this->audit('settings.notification_updated', 'Memperbarui pengaturan notifikasi.');
 
@@ -356,6 +387,67 @@ class SettingsController extends Controller
         );
 
         return back()->with('success', "Status komponen {$component->name} berhasil diperbarui.");
+    }
+
+    /**
+     * Tab Provisioning & Tencent (Master Switch Canary, Whitelist Spec, Quota Guard, Kurs USD).
+     */
+    public function updateProvisioning(Request $request)
+    {
+        $validated = $request->validate([
+            'provisioning_auto_enabled' => ['nullable'],
+            'quota_guard_mode' => ['required', 'string', 'in:observe,enforce'],
+            'tencent_usd_idr' => ['required', 'integer', 'min:1000', 'max:100000'],
+            'whitelist_specs' => ['nullable', 'array'],
+            'whitelist_specs.*' => ['integer', 'exists:vps_specs,id'],
+        ]);
+
+        $autoEnabled = $request->boolean('provisioning_auto_enabled');
+        $whitelist = array_values(array_unique(array_map('intval', $validated['whitelist_specs'] ?? [])));
+
+        $this->settings->set('provisioning_auto_enabled', $autoEnabled, 'boolean', ['group' => 'provisioning']);
+        $this->settings->set('quota_guard_mode', $validated['quota_guard_mode'], 'string', ['group' => 'provisioning']);
+        $this->settings->set('tencent_usd_idr', (int) $validated['tencent_usd_idr'], 'integer', ['group' => 'provisioning']);
+        $this->settings->set('provisioning_auto_spec_whitelist', $whitelist, 'json', ['group' => 'provisioning']);
+
+        $this->audit(
+            'settings.provisioning_updated',
+            'Memperbarui pengaturan Provisioning Tencent.',
+            null,
+            [
+                'provisioning_auto_enabled' => $autoEnabled,
+                'quota_guard_mode' => $validated['quota_guard_mode'],
+                'tencent_usd_idr' => (int) $validated['tencent_usd_idr'],
+                'whitelist_count' => count($whitelist),
+            ]
+        );
+
+        return redirect()->route('admin.settings.index', ['tab' => 'provisioning'])
+            ->with('success', 'Pengaturan Provisioning & Tencent berhasil diperbarui.');
+    }
+
+    /**
+     * Ubah kapasitas slot pool kuota upstream (UpstreamQuotaPool).
+     */
+    public function updateQuotaPool(Request $request, int $id)
+    {
+        $pool = \App\Models\UpstreamQuotaPool::findOrFail($id);
+
+        $validated = $request->validate([
+            'capacity' => ['required', 'integer', 'min:1', 'max:500'],
+        ]);
+
+        $oldCap = $pool->capacity;
+        $pool->update(['capacity' => (int) $validated['capacity']]);
+
+        $this->audit(
+            'quota_pool.updated',
+            "Mengubah kapasitas pool {$pool->region_code}/{$pool->bundle_type}: {$oldCap} → {$pool->capacity}.",
+            $pool
+        );
+
+        return redirect()->route('admin.settings.index', ['tab' => 'provisioning'])
+            ->with('success', "Kapasitas pool {$pool->region_code}/{$pool->bundle_type} diperbarui menjadi {$pool->capacity}.");
     }
 
     /**

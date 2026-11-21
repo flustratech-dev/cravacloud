@@ -328,7 +328,11 @@ class MidtransService
                 $fraudStatus = strtolower($data['fraud_status'] ?? '');
 
                 if (in_array($txStatus, ['settlement', 'capture', 'paid'], true) && $fraudStatus !== 'challenge') {
-                    self::settleOrderFromMidtrans($order, $data, $refId);
+                    $settled = self::settleOrderFromMidtrans($order, $data, $refId);
+                    if (! $settled) {
+                        return null;
+                    }
+
                     return [
                         'success' => true,
                         'status' => 'settled',
@@ -346,10 +350,47 @@ class MidtransService
     /**
      * Selesaikan order & sinkronkan database ketika terverifikasi lunas oleh Midtrans.
      */
-    public static function settleOrderFromMidtrans(Order $order, array $data, string $refId): void
+    public static function settleOrderFromMidtrans(Order $order, array $data, string $refId): bool
     {
         $order->loadMissing(['customer', 'vpsSpec', 'invoice']);
-        $grossAmount = $data['gross_amount'] ?? $order->amount;
+        $grossAmount = $data['gross_amount'] ?? null;
+        if ($grossAmount !== null && abs((float) $grossAmount - (float) $order->amount) > 0.01) {
+            Log::critical('midtrans.sync_amount_mismatch', [
+                'order_id' => $order->id,
+                'midtrans_amount' => (float) $grossAmount,
+                'order_amount' => (float) $order->amount,
+                'ref_id' => $refId,
+            ]);
+
+            try {
+                app(\App\Services\AdminAlertService::class)->alert(
+                    'payment.failed',
+                    [
+                        'title' => 'Anomali Nominal Sinkronisasi Midtrans',
+                        'order_id' => $order->id,
+                        'details' => [
+                            'Order' => "#{$order->id}",
+                            'Midtrans' => 'Rp ' . number_format((float) $grossAmount, 0, ',', '.'),
+                            'Order DB' => 'Rp ' . number_format((float) $order->amount, 0, ',', '.'),
+                            'Ref' => $refId,
+                        ],
+                        'body' => "Sinkronisasi Midtrans untuk Order #{$order->id} dibatalkan karena nominal tidak cocok: "
+                            . "Midtrans Rp " . number_format((float) $grossAmount, 0, ',', '.')
+                            . " vs Order Rp " . number_format((float) $order->amount, 0, ',', '.')
+                            . " (Ref: {$refId}).",
+                        'action_url' => url('/admin/webhooks?status=failed'),
+                    ],
+                    dedupeKey: 'sync-amt-' . $order->id,
+                    cooldownSeconds: 3600
+                );
+            } catch (\Throwable) {
+                // ignore
+            }
+
+            return false;
+        }
+
+        $grossAmount = $grossAmount ?? $order->amount;
         $txId = $data['transaction_id'] ?? null;
         $paymentType = $data['payment_type'] ?? $order->payment_method;
 
@@ -389,7 +430,7 @@ class MidtransService
             ]);
         }
 
-        // 2. Transisi status order ke paid via OrderStateMachine jika belum paid
+        // 2. Transisi status order ke paid via OrderStateMachine (tanpa bypass state machine).
         if (!in_array($order->status, ['paid', 'provisioning', 'active'], true) || !$order->paid_at) {
             try {
                 $stateMachine = app(\App\Services\OrderStateMachine::class);
@@ -418,20 +459,39 @@ class MidtransService
                     'allowSame' => true,
                 ]);
             } catch (\Throwable $e) {
-                Log::warning('Midtrans order state machine notice: ' . $e->getMessage(), ['order_id' => $order->id]);
-                // Fallback direct update jika state machine rejected
-                $order->update([
-                    'status' => 'paid',
-                    'paid_at' => now(),
-                    'payment_method' => $paymentType ?: $order->payment_method,
+                // Order sudah closed (cancelled / expired / terminated): JANGAN bypass aktifkan order.
+                Log::critical('midtrans.late_settled_on_closed_order', [
+                    'order_id' => $order->id,
+                    'status' => $order->status,
+                    'ref_id' => $refId,
+                    'error' => $e->getMessage(),
                 ]);
-                if ($order->invoice && $order->invoice->status !== 'paid') {
-                    $order->invoice->update([
-                        'status' => 'paid',
-                        'paid_at' => now(),
-                        'paid_via_transaction_id' => $tx->id,
-                    ]);
+
+                try {
+                    app(\App\Services\AdminAlertService::class)->alert(
+                        'payment.late_settled',
+                        [
+                            'title' => 'Dana Masuk pada Order Kedaluwarsa / Dibatalkan',
+                            'order_id' => $order->id,
+                            'details' => [
+                                'Order' => "#{$order->id} (status: {$order->status})",
+                                'Ref' => $refId,
+                                'Nominal' => 'Rp ' . number_format((float) $grossAmount, 0, ',', '.'),
+                                'Payment Tx' => "#{$tx->id}",
+                            ],
+                            'body' => "Order #{$order->id} (status DB: {$order->status}) menerima settlement Midtrans (Ref: {$refId}, Rp "
+                                . number_format((float) $grossAmount, 0, ',', '.')
+                                . "). Dana tercatat pada PaymentTransaction #{$tx->id}; mohon proses refund atau aktivasi manual.",
+                            'action_url' => url('/admin/orders'),
+                        ],
+                        dedupeKey: 'late-sync-' . $order->id,
+                        cooldownSeconds: 86400
+                    );
+                } catch (\Throwable) {
+                    // ignore
                 }
+
+                return false;
             }
         }
 
@@ -465,7 +525,8 @@ class MidtransService
         }
 
         // 4. Notifikasi pelanggan & admin lewat titik pusat (idempoten, tidak dobel).
-        //    Juga menutup jalur fallback update langsung di atas yang tidak lewat state machine.
         app(\App\Services\PaymentCompletionService::class)->handle($order->id);
+
+        return true;
     }
 }

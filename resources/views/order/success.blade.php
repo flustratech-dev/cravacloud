@@ -174,7 +174,7 @@
                 @elseif($isPaid)
                     <div class="bg-white p-5 border border-electric text-center">
                         <p class="font-display text-sm font-bold text-electric">Server Sedang Di-Setup</p>
-                        <p class="text-xs text-muted mt-1 leading-relaxed">Pembayaran telah dikonfirmasi lunas. Tim teknis sedang mempersiapkan VPS Anda. Kredensial akses tersedia di Dashboard setelah setup selesai (maksimal 1x24 jam sejak pembayaran, umumnya lebih cepat) dan dikirimkan melalui email &amp; WhatsApp.</p>
+                        <p class="text-xs text-muted mt-1 leading-relaxed">Pembayaran telah dikonfirmasi lunas. Sistem sedang mempersiapkan VPS Anda secara otomatis. Kredensial akses tersedia aman di Dashboard setelah setup selesai dan pemberitahuan dikirimkan langsung ke email Anda.</p>
                     </div>
                 @else
                     <div class="bg-amber-50 p-5 border border-amber-500 text-center">

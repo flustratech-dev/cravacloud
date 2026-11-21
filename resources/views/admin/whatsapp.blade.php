@@ -13,13 +13,15 @@
         $labelClass = 'block font-mono text-[10px] font-bold text-muted uppercase tracking-widest mb-1.5';
     @endphp
 
+    @include('admin.partials.system-tabs')
+
     <!-- 1. KARTU STATUS KONEKSI -->
     <div class="bg-white border border-hairline p-5 sm:p-6 space-y-4">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <h2 class="font-display text-base font-bold text-ink">Status Koneksi WhatsApp Gateway</h2>
                 <p class="text-xs text-muted mt-0.5">
-                    Notifikasi pelanggan dikirim melalui CravaCloud WA Gateway. Penautan nomor, QR code, dan riwayat pengiriman dikelola di dashboard gateway.
+                    Gateway ini digunakan khusus untuk pengiriman <strong>Admin Operations Alerts</strong> ke nomor WhatsApp admin. Notifikasi pelanggan dikirim melalui Email &amp; Dashboard.
                 </p>
             </div>
             <span id="wa-badge" class="inline-flex items-center gap-1.5 px-3 py-1 font-mono text-[10px] font-bold uppercase bg-creamDark text-ink border border-hairline">

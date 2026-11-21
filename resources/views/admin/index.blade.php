@@ -33,48 +33,73 @@
         </div>
     </div>
 
-    <!-- KPI Metric Grid (1px Hairline) -->
+    <!-- KPI Metric Grid (PRD 7.3.6: Action Needed, Running Auto vs Manual, Upstream Balance & Quota, Monthly Revenue & Margin) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-hairline border border-hairline">
+        <!-- KPI 1: Perlu Tindakan Admin -->
         <div class="bg-white p-5 flex items-center justify-between">
             <div>
-                <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-muted">Antrean Pending</p>
-                <p class="font-display text-3xl font-bold text-ink mt-1">{{ $pending_orders }}</p>
-                <a href="{{ route('admin.orders') }}?status=pending" class="font-mono text-[11px] font-bold text-electric hover:underline mt-1 inline-block">
-                    Perlu provisioning &rarr;
+                <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-muted">Perlu Tindakan Admin</p>
+                <p class="font-display text-3xl font-bold {{ ($actionNeededTotal ?? 0) > 0 ? 'text-red-600' : 'text-ink' }} mt-1">{{ $actionNeededTotal ?? $pending_orders }}</p>
+                <div class="font-mono text-[10px] text-muted mt-1 space-x-1">
+                    <span>Gagal: {{ $ordersFailed ?? 0 }}</span> &middot;
+                    <span>Manual: {{ $ordersNeedsManual ?? 0 }}</span> &middot;
+                    <span>Tiket: {{ $openTicketsCount ?? 0 }}</span>
+                </div>
+                <a href="{{ route('admin.orders') }}?status=needs_provision" class="font-mono text-[11px] font-bold text-electric hover:underline mt-1 inline-block">
+                    Buka Antrean &rarr;
                 </a>
             </div>
-            <div class="w-10 h-10 bg-creamDark border border-hairline text-ink flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div class="w-10 h-10 {{ ($actionNeededTotal ?? 0) > 0 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-creamDark text-ink' }} border border-hairline flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0l-7.1 12.25A2 2 0 004.99 19z"/></svg>
             </div>
         </div>
 
+        <!-- KPI 2: VPS Running (Auto vs Manual) -->
         <div class="bg-white p-5 flex items-center justify-between">
             <div>
-                <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-muted">VPS Berjalan</p>
-                <p class="font-display text-3xl font-bold text-ink mt-1">{{ $active_vps }}</p>
-                <p class="text-[11px] text-muted mt-1">Instance berstatus running</p>
+                <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-muted">VPS Running</p>
+                <p class="font-display text-3xl font-bold text-ink mt-1">{{ $vpsRunningTotal ?? $active_vps }}</p>
+                <p class="font-mono text-[11px] text-muted mt-1">
+                    <span class="text-emerald-700 font-semibold">Tencent: {{ $vpsRunningAuto ?? 0 }}</span> &middot;
+                    <span>Manual: {{ $vpsRunningManual ?? 0 }}</span>
+                </p>
+                <a href="{{ route('admin.instances') }}" class="font-mono text-[11px] font-bold text-electric hover:underline mt-1 inline-block">
+                    Kelola VPS &rarr;
+                </a>
             </div>
             <div class="w-10 h-10 bg-creamDark border border-hairline text-ink flex items-center justify-center shrink-0">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg>
             </div>
         </div>
 
+        <!-- KPI 3: Saldo Tencent & Kuota Region -->
         <div class="bg-white p-5 flex items-center justify-between">
             <div>
-                <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-muted">Total Pelanggan</p>
-                <p class="font-display text-3xl font-bold text-ink mt-1">{{ $total_customers }}</p>
-                <p class="font-mono text-[11px] text-muted mt-1">Web: {{ $orders_web }} &middot; Shopee: {{ $orders_shopee }}</p>
+                <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-muted">Saldo Tencent &amp; Kuota</p>
+                <p class="font-display text-2xl font-bold font-mono text-ink mt-1">${{ number_format($balanceUsd ?? 0, 2) }}</p>
+                <p class="font-mono text-[10px] text-muted mt-1">
+                    JKT: {{ $jktQuota ?? '-' }} &middot; SGP: {{ $sgpQuota ?? '-' }}
+                </p>
+                <a href="{{ route('admin.monitoring') }}?tab=upstream" class="font-mono text-[11px] font-bold text-electric hover:underline mt-1 inline-block">
+                    Monitor Quota &rarr;
+                </a>
             </div>
             <div class="w-10 h-10 bg-creamDark border border-hairline text-ink flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
             </div>
         </div>
 
+        <!-- KPI 4: Omzet & Margin Riil Bulan Ini -->
         <div class="bg-white p-5 flex items-center justify-between">
             <div>
-                <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-muted">Estimasi Omzet</p>
-                <p class="font-display text-2xl font-bold text-ink mt-1">Rp {{ number_format($total_revenue, 0, ',', '.') }}</p>
-                <p class="text-[11px] text-muted mt-1">Faktur terbayar aktif</p>
+                <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-muted">Omzet &amp; Margin Bulan Ini</p>
+                <p class="font-display text-2xl font-bold text-ink mt-1">Rp {{ number_format($monthlyRevenue ?? $total_revenue, 0, ',', '.') }}</p>
+                <p class="font-mono text-[11px] text-muted mt-1">
+                    Margin Riil: <span class="font-bold text-emerald-700">{{ $monthlyMarginPercent ?? 0 }}%</span>
+                </p>
+                <a href="{{ route('admin.billing.index') }}" class="font-mono text-[11px] font-bold text-electric hover:underline mt-1 inline-block">
+                    Billing Center &rarr;
+                </a>
             </div>
             <div class="w-10 h-10 bg-creamDark border border-hairline text-ink flex items-center justify-center shrink-0">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>

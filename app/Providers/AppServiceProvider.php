@@ -7,6 +7,7 @@ use App\Models\MaintenanceWindow;
 use App\Models\Order;
 use App\Models\SupportTicket;
 use App\Models\User;
+use App\Models\VpsInstance;
 use App\Models\WebhookEvent;
 use App\Observers\LinkedAccountObserver;
 use App\Services\ImpersonationService;
@@ -90,23 +91,37 @@ class AppServiceProvider extends ServiceProvider
             $view->with('userOpenTickets', $userOpenTickets);
         });
 
-        // Share admin sidebar counts with admin layout.
+        // Share admin sidebar counts with admin layout and merged tab partials.
         // Cached for 60 seconds to avoid 8+ COUNT queries on every page load.
-        View::composer('layouts.admin', function ($view) {
+        View::composer(['layouts.admin', 'admin.partials.*'], function ($view) {
             $counts = \Illuminate\Support\Facades\Cache::remember('admin.sidebar.counts', 60, function () {
                 $data = [];
                 $data['adminPendingOrders'] = Order::where('status', 'pending')->count();
                 $data['adminOpenTickets'] = SupportTicket::whereIn('status', ['open', 'in_progress'])->count();
                 $data['adminOpenAbuse'] = Schema::hasTable('abuse_cases') ? AbuseCase::unresolved()->count() : 0;
                 $data['adminRunningMaintenance'] = Schema::hasTable('maintenance_windows') ? MaintenanceWindow::active()->count() : 0;
-                $data['adminFulfillmentWorking'] = Order::whereIn('status', ['paid', 'failed', 'provisioning'])->count();
                 $data['adminPendingRefunds'] = \App\Models\Refund::where('status', 'pending')->count();
                 $data['adminSupplierUrgent'] = Schema::hasTable('supplier_purchases')
                     ? app(\App\Services\SupplierCoverageService::class)->urgentCount()
                     : 0;
-                $data['adminFailedWebhooks'] = Schema::hasColumn('webhook_events', 'http_status')
+
+                // PRD §8.1: adminActionOrders & adminFailedTasks
+                $ordersFailed = Order::where('status', 'failed')->count();
+                $ordersNeedsManual = Order::where('status', 'paid')
+                    ->whereDoesntHave('vpsInstance')
+                    ->count();
+                $instancesRenewPending = VpsInstance::where('provider_meta->renew_pending', true)->count();
+                $data['adminActionOrders'] = $ordersFailed + $ordersNeedsManual + $instancesRenewPending;
+
+                $failedTasks = Schema::hasTable('provisioning_tasks')
+                    ? \App\Models\ProvisioningTask::where('status', 'failed')->count()
+                    : 0;
+                $failedWebhooks = Schema::hasColumn('webhook_events', 'http_status')
                     ? WebhookEvent::where('processing_status', 'failed')->count()
                     : 0;
+                $data['adminFailedTasks'] = $failedTasks + $failedWebhooks;
+                $data['adminFailedWebhooks'] = $failedWebhooks;
+
                 return $data;
             });
 

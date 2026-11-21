@@ -2,14 +2,13 @@
 
 namespace App\Notifications;
 
-use App\Channels\WhatsAppChannel;
 use App\Models\Subscription;
-use App\Services\WhatsAppMessage;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class BillingReminderNotification extends Notification
+class BillingReminderNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     use \App\Notifications\Concerns\UsesMailIdentity;
@@ -17,17 +16,13 @@ class BillingReminderNotification extends Notification
     public function __construct(
         public Subscription $subscription,
         public int $daysUntil
-    ) {}
+    ) {
+        $this->onQueue('notifications');
+    }
 
     public function via(object $notifiable): array
     {
-        $channels = ['mail', 'database'];
-
-        if (config('whatsapp.enabled') && ! empty($notifiable->phone)) {
-            $channels[] = WhatsAppChannel::class;
-        }
-
-        return $channels;
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -68,38 +63,5 @@ class BillingReminderNotification extends Notification
             'amount' => (float) $this->subscription->unit_amount,
             'due_at' => $this->subscription->next_billing_at?->toIso8601String(),
         ];
-    }
-
-    public function toWhatsApp(object $notifiable): ?WhatsAppMessage
-    {
-        $this->subscription->loadMissing(['vpsSpec']);
-        $appUrl = rtrim(config('app.url', 'https://cravacloud.id'), '/');
-        $namaPelanggan = $notifiable->full_name ?? 'Pelanggan CravaCloud';
-        $layanan = $this->subscription->vpsSpec?->name ?? 'Cloud VPS';
-        $nominal = number_format((float) $this->subscription->unit_amount, 0, ',', '.');
-        $batasWaktu = $this->subscription->next_billing_at?->timezone('Asia/Jakarta')->translatedFormat('d F Y') ?? '-';
-        $billingUrl = "{$appUrl}/dashboard/billing";
-
-        $statusWaktu = $this->daysUntil === 0
-            ? '*Jatuh Tempo Hari Ini!*'
-            : "Akan jatuh tempo dalam *{$this->daysUntil} hari lagi*.";
-
-        $message = implode("\n", [
-            "Halo *{$namaPelanggan}*,",
-            '',
-            '⏰ *PENGINGAT JATUH TEMPO TAGIHAN*',
-            "Tagihan perpanjangan layanan {$statusWaktu}",
-            '',
-            "• *Layanan:* {$layanan}",
-            "• *Nominal:* Rp {$nominal}",
-            "• *Batas Waktu:* {$batasWaktu}",
-            '',
-            'Untuk menghindari penghentian layanan otomatis, silakan selesaikan pembayaran di:',
-            $billingUrl,
-            '',
-            '_CravaCloud Solutions_',
-        ]);
-
-        return WhatsAppMessage::create($message);
     }
 }

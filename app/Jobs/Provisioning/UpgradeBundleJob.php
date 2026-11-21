@@ -68,6 +68,7 @@ class UpgradeBundleJob extends AbstractProvisioningJob
 
         // Point the original order at the new spec (renewal bills the new plan).
         $originalOrder = $instance->order;
+        $fromSpec = $originalOrder?->vpsSpec ?? VpsSpec::find($task->input['from_spec_id'] ?? null);
         if ($originalOrder && $targetSpec && $originalOrder->id !== $upgradeOrder?->id) {
             $originalOrder->update(['vps_spec_id' => $targetSpec->id]);
         }
@@ -75,7 +76,33 @@ class UpgradeBundleJob extends AbstractProvisioningJob
             $upgradeOrder->update(['vps_spec_id' => $targetSpec->id]);
         }
 
+        // Cross-pool quota migration (Starter -> General) once per upgrade order.
+        if ($fromSpec && $targetSpec
+            && $fromSpec->upstream_bundle_type && $targetSpec->upstream_bundle_type
+            && $fromSpec->upstream_bundle_type !== $targetSpec->upstream_bundle_type
+            && empty(($upgradeOrder?->metadata ?? [])['quota_migrated'])) {
+            $quota = app(\App\Services\UpstreamQuotaService::class);
+            $region = $instance->datacenterRegion?->code
+                ?: $quota->regionForLocation((string) ($originalOrder?->datacenter_location ?? $instance->datacenter_location));
+            if ($region) {
+                $quota->migrateUsedSlot($region, (string) $fromSpec->upstream_bundle_type, (string) $targetSpec->upstream_bundle_type);
+                if ($upgradeOrder) {
+                    $meta = $upgradeOrder->metadata ?? [];
+                    $meta['quota_migrated'] = true;
+                    $upgradeOrder->update(['metadata' => $meta]);
+                }
+            }
+        }
+
         $this->recordPurchase($instance, $upgradeOrder, $targetSpec, $output);
+
+        if ($targetSpec) {
+            try {
+                app(\App\Services\SubscriptionSyncService::class)->syncFromUpgrade($instance->fresh(), $targetSpec);
+            } catch (\Throwable $e) {
+                Log::warning('upgrade.subscription_sync_failed', ['instance_id' => $instance->id, 'error' => $e->getMessage()]);
+            }
+        }
 
         if ($upgradeOrder) {
             try {
@@ -148,11 +175,23 @@ class UpgradeBundleJob extends AbstractProvisioningJob
 
         // The running server is left intact; admin reconciles billing/refund.
         try {
-            app(AdminAlertService::class)->digest(
-                'Upgrade server gagal',
-                'Order upgrade #'.($upgradeOrder?->id ?? '?').' untuk server '
-                .($instance?->hostname ?? '?').' gagal diproses otomatis: '.$error
-                .' Server tetap berjalan pada paket lama. Mohon rekonsiliasi billing/refund manual.',
+            app(AdminAlertService::class)->alert(
+                'provisioning.failed',
+                [
+                    'title' => 'Upgrade server gagal',
+                    'order_id' => $upgradeOrder?->id,
+                    'details' => [
+                        'Task' => "#{$task->id} (upgrade)",
+                        'Order' => '#' . ($upgradeOrder?->id ?? '?'),
+                        'Instance' => $instance?->hostname ?? '?',
+                    ],
+                    'body' => 'Order upgrade #' . ($upgradeOrder?->id ?? '?') . ' untuk server '
+                        . ($instance?->hostname ?? '?') . ' gagal diproses otomatis: ' . $error
+                        . ' Server tetap berjalan pada paket lama. Mohon rekonsiliasi billing/refund manual.',
+                    'action_url' => url('/admin/monitoring?tab=tasks&status=failed'),
+                ],
+                dedupeKey: 'task-' . $task->id,
+                cooldownSeconds: 3600
             );
         } catch (\Throwable $e) {
             Log::error('upgrade.notify_admin_failed', ['task_id' => $task->id, 'error' => $e->getMessage()]);

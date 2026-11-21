@@ -15,6 +15,8 @@
         $labelClass = 'block font-mono text-[10px] font-bold text-muted uppercase tracking-widest mb-1.5';
     @endphp
 
+    @include('admin.partials.helpdesk-tabs')
+
     @if($errors->any())
         <div class="bg-white p-5 border-2 border-ink">
             <span class="font-mono text-[10px] font-bold text-ink uppercase tracking-widest block mb-2">Periksa Kembali Isian Anda</span>
@@ -131,7 +133,7 @@
                                 </span>
                             </td>
                             <td class="px-5 py-3.5 text-ink">
-                                <div class="font-semibold text-ink">{{ $case->user?->name ?? '-' }}</div>
+                                <div class="font-semibold text-ink">{{ $case->user?->full_name ?? '-' }}</div>
                                 <div class="text-[11px] font-mono text-muted">{{ $case->user?->email ?? '-' }}</div>
                             </td>
                             <td class="px-5 py-3.5 font-mono text-ink">
@@ -300,9 +302,14 @@
                     <input type="number" name="deadline_days" required min="1" max="30" value="3"
                            class="{{ $inputClass }} font-mono">
                     <p class="text-[11px] text-muted mt-1">
-                        Untuk VPS, sebaiknya di bawah 5 hari agar masih tersisa waktu sebelum Supplier menghapus data.
+                        Untuk VPS, sebaiknya di bawah 5 hari agar masih tersisa waktu sebelum layanan ditangguhkan/dihentikan permanen.
                     </p>
                 </div>
+
+                <label class="flex items-start gap-2 cursor-pointer text-xs text-ink">
+                    <input type="checkbox" name="suspend_upstream" value="1" class="w-4 h-4 mt-0.5 border-ink accent-electric">
+                    <span>Sekaligus suspend VPS di upstream (jika server otomatis)</span>
+                </label>
 
                 <div class="flex items-center justify-end gap-2 pt-2 border-t border-hairline">
                     <button type="button" @click="notifyModalOpen = false"
@@ -345,6 +352,11 @@
                     <label class="{{ $labelClass }}">Catatan Penyelesaian</label>
                     <textarea name="resolution" rows="3" required maxlength="1000" class="{{ $inputClass }}"></textarea>
                 </div>
+
+                <label class="flex items-start gap-2 cursor-pointer text-xs text-ink">
+                    <input type="checkbox" name="terminate_upstream" value="1" class="w-4 h-4 mt-0.5 border-ink accent-electric">
+                    <span>Sekaligus terminate permanen VPS di upstream (khusus hasil Diterminasi)</span>
+                </label>
 
                 <div class="flex items-center justify-end gap-2 pt-2 border-t border-hairline">
                     <button type="button" @click="resolveModalOpen = false"

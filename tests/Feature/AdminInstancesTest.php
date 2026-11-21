@@ -29,7 +29,7 @@ class AdminInstancesTest extends TestCase
         ]);
     }
 
-    public function test_admin_instances_page_renders_with_category_stat_cards(): void
+    public function test_admin_instances_page_renders_with_provider_stat_cards(): void
     {
         $admin = User::where('email', 'admin@gmail.com')->first();
 
@@ -37,37 +37,38 @@ class AdminInstancesTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Daftar VPS Instance Aktif');
         $response->assertSee('Total Cloud Instances');
-        $response->assertSee('Cloud VPS Standar');
-        $response->assertSee('AI Agent & Workstation', false);
-        $response->assertSee('Managed Database');
+        $response->assertSee('Running (Online)');
+        $response->assertSee('Tencent Auto-Cloud');
+        $response->assertSee('Perlu Perhatian');
+        $response->assertDontSee('AI Agent & Workstation', false);
+        $response->assertDontSee('Managed Database');
     }
 
-    public function test_admin_can_filter_instances_by_ai_category(): void
+    public function test_admin_can_filter_instances_by_tencent_provider(): void
     {
         $admin = User::where('email', 'admin@gmail.com')->first();
         $customer = $this->createTestCustomer();
 
-        $aiInstance = VpsInstance::create([
+        VpsInstance::create([
             'customer_id' => $customer->id,
-            'hostname' => 'ai-hermes-test',
+            'hostname' => 'tencent-auto-test',
             'public_ip' => '103.150.190.10',
             'status' => 'running',
             'os' => 'ubuntu2404',
-            'provider' => 'cravacloud',
-            'control_panel' => 'hermes_agent',
-            'app_url' => 'http://103.150.190.10:8080',
-            'app_name' => 'Hermes Agent Instance',
+            'provider' => 'tencent',
+            'provider_resource_id' => 'lhins-test001',
+            'control_panel' => 'coolify',
             'cpu' => 4,
             'ram' => 8,
             'disk' => 50,
         ]);
 
-        $vpsInstance = VpsInstance::create([
+        VpsInstance::create([
             'customer_id' => $customer->id,
-            'hostname' => 'vps-standard-test',
+            'hostname' => 'manual-legacy-test',
             'public_ip' => '103.150.190.11',
             'status' => 'running',
-            'os' => 'debian12',
+            'os' => 'ubuntu2404',
             'provider' => 'cravacloud',
             'control_panel' => 'none',
             'cpu' => 2,
@@ -75,36 +76,34 @@ class AdminInstancesTest extends TestCase
             'disk' => 40,
         ]);
 
-        $response = $this->actingAs($admin)->get('/admin/instances?category=ai');
+        $response = $this->actingAs($admin)->get('/admin/instances?provider=tencent');
         $response->assertStatus(200);
-        $response->assertSee('ai-hermes-test');
-        $response->assertDontSee('vps-standard-test');
+        $response->assertSee('tencent-auto-test');
+        $response->assertDontSee('manual-legacy-test');
     }
 
-    public function test_admin_can_filter_instances_by_database_category(): void
+    public function test_admin_can_filter_instances_by_manual_provider(): void
     {
         $admin = User::where('email', 'admin@gmail.com')->first();
         $customer = $this->createTestCustomer();
 
-        $dbInstance = VpsInstance::create([
+        VpsInstance::create([
             'customer_id' => $customer->id,
-            'hostname' => 'cv-db-postgres-prod',
+            'hostname' => 'tencent-cloud-node',
             'public_ip' => '103.150.190.20',
             'status' => 'running',
             'os' => 'ubuntu2404',
-            'provider' => 'cravacloud',
-            'control_panel' => 'managed_database',
-            'db_engine' => 'postgres',
-            'db_name' => 'cravadb_production',
-            'db_port' => 5432,
+            'provider' => 'tencent',
+            'provider_resource_id' => 'lhins-test002',
+            'control_panel' => 'docker',
             'cpu' => 4,
             'ram' => 8,
             'disk' => 80,
         ]);
 
-        $vpsInstance = VpsInstance::create([
+        VpsInstance::create([
             'customer_id' => $customer->id,
-            'hostname' => 'vps-web-app-test',
+            'hostname' => 'vps-manual-node',
             'public_ip' => '103.150.190.21',
             'status' => 'running',
             'os' => 'ubuntu2404',
@@ -115,10 +114,10 @@ class AdminInstancesTest extends TestCase
             'disk' => 40,
         ]);
 
-        $response = $this->actingAs($admin)->get('/admin/instances?category=database');
+        $response = $this->actingAs($admin)->get('/admin/instances?provider=manual');
         $response->assertStatus(200);
-        $response->assertSee('cv-db-postgres-prod');
-        $response->assertDontSee('vps-web-app-test');
+        $response->assertSee('vps-manual-node');
+        $response->assertDontSee('tencent-cloud-node');
     }
 
     public function test_admin_instances_page_has_no_emojis_or_non_monochrome_colors(): void

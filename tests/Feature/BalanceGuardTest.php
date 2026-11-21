@@ -86,7 +86,7 @@ class BalanceGuardTest extends TestCase
         $this->fakeBalance(500); // $5 < $20
 
         $alerts = $this->mock(AdminAlertService::class);
-        $alerts->shouldReceive('digest')->once()->andReturnTrue();
+        $alerts->shouldReceive('alert')->once()->andReturn(['email' => true, 'whatsapp' => true, 'skipped_dedupe' => false]);
 
         $this->artisan('tencent:check-balance')->assertSuccessful();
         $this->artisan('tencent:check-balance')->assertSuccessful(); // deduped
@@ -97,7 +97,7 @@ class BalanceGuardTest extends TestCase
         config(['services.tencent.balance_divisor' => 100, 'services.tencent.low_balance_usd' => 20]);
 
         $alerts = $this->mock(AdminAlertService::class);
-        $alerts->shouldReceive('digest')->twice()->andReturnTrue();
+        $alerts->shouldReceive('alert')->twice()->andReturn(['email' => true, 'whatsapp' => true, 'skipped_dedupe' => false]);
 
         // Sequential responses: $10 first, then $3 (worse than last alerted).
         Http::fake(['*' => Http::sequence()
@@ -114,7 +114,7 @@ class BalanceGuardTest extends TestCase
         $this->fakeBalance(10000); // $100
 
         $alerts = $this->mock(AdminAlertService::class);
-        $alerts->shouldNotReceive('digest');
+        $alerts->shouldNotReceive('alert');
 
         $this->artisan('tencent:check-balance')->assertSuccessful();
     }
@@ -144,7 +144,7 @@ class BalanceGuardTest extends TestCase
 
         // ...but below the $105 HPP of the pending Extreme order.
         $alerts = $this->mock(AdminAlertService::class);
-        $alerts->shouldReceive('digest')->once()->andReturnTrue();
+        $alerts->shouldReceive('alert')->once()->andReturn(['email' => true, 'whatsapp' => true, 'skipped_dedupe' => false]);
 
         $this->artisan('tencent:check-balance')->assertSuccessful();
     }

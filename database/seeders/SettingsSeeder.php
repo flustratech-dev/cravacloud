@@ -208,6 +208,16 @@ class SettingsSeeder extends Seeder
                 'value' => 25, 'type' => 'integer', 'group' => 'notification',
                 'label' => 'Tenggang Aplikasi & AI (hari)', 'is_public' => false, 'sort_order' => 6,
             ],
+            'admin_alert_wa_events' => [
+                'value' => collect(\App\Services\AdminAlertService::EVENTS)
+                    ->map(fn (array $meta) => (bool) $meta['default_wa'])
+                    ->all(),
+                'type' => 'json',
+                'group' => 'notification',
+                'label' => 'Routing Event WhatsApp Alert Admin',
+                'is_public' => false,
+                'sort_order' => 7,
+            ],
 
             // ---------- Maintenance ----------
             'maintenance_global_enabled' => [

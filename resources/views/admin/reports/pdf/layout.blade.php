@@ -273,7 +273,7 @@
                         @endif
                         <td style="vertical-align: middle;">
                             <div class="brand-title">CRAVACLOUD INDONESIA</div>
-                            <div class="brand-subtitle">Cloud Infrastructure, Autonomous AI & Database</div>
+                            <div class="brand-subtitle">Cloud VPS Infrastructure &amp; 1-Click Application Stacks</div>
                             <div class="brand-address">{{ \App\Support\MailIdentity::contactEmail() }} • cravacloud.id</div>
                         </td>
                     </tr>
@@ -294,7 +294,7 @@
     <!-- Document Title Section -->
     <div class="doc-title-bar">
         <h1 class="doc-title">{{ $reportTitle ?? 'Laporan Operasional CravaCloud' }}</h1>
-        <p class="doc-desc">{{ $subTitle ?? 'Konsolidasi Finansial, Infrastruktur Cloud VPS, AI Agent Workstation, dan Database' }}</p>
+        <p class="doc-desc">{{ $subTitle ?? 'Konsolidasi Finansial, Infrastruktur Cloud VPS, dan Metrik Operasional' }}</p>
     </div>
 
     <!-- Main Content Injection -->

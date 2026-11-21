@@ -17,7 +17,7 @@ class TestBrevoMailCommand extends Command
 
     public function handle(): int
     {
-        $recipient = $this->argument('to') ?: env('CRAVACLOUD_ADMIN_EMAIL', 'admin@gmail.com');
+        $recipient = $this->argument('to') ?: \App\Support\MailIdentity::contactEmail();
 
         $this->info("Menguji pengiriman email Brevo SMTP ke: {$recipient}");
         $this->info("Host: " . config('mail.mailers.smtp.host') . ":" . config('mail.mailers.smtp.port'));

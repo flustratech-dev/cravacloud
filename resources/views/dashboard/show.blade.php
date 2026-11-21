@@ -6,13 +6,8 @@
     $liveAutoTask = $isAutomated ? $vps->latestProvisioningTask : null;
     $hasLiveAutoTask = $liveAutoTask && in_array($liveAutoTask->status, ['pending', 'running'], true);
     $isAutoReinstalling = $isAutomated && ($vps->status === 'reinstalling' || ($hasLiveAutoTask && $liveAutoTask->kind === 'reinstall'));
-    $hasPanelTab = !$vps->isAiPackage() && !$vps->isDatabasePackage()
-        && (($vps->control_panel && $vps->control_panel !== 'none') || $vps->panel_url);
-    $defaultTab = $vps->isAiPackage()
-        ? 'webapp'
-        : ($vps->isDatabasePackage()
-            ? 'database'
-            : ($isAutomated ? 'day2' : 'overview'));
+    $hasPanelTab = ($vps->control_panel && $vps->control_panel !== 'none') || $vps->panel_url;
+    $defaultTab = $isAutomated ? 'day2' : 'overview';
     $visibleOpenRequestsCount = $isAutomated
         ? $openRequests->except([\App\Models\SupportTicket::TYPE_REINSTALL])->count()
         : $openRequests->count();
@@ -202,10 +197,8 @@
             <div>
                 <div class="flex flex-wrap items-center gap-2.5">
                     <h1 class="font-display text-xl font-bold text-ink">{{ $vps->hostname ?? 'VPS-' . $vps->id }}</h1>
-                    @if($vps->isDatabasePackage())
-                        <span class="px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-emerald-100 text-emerald-900 border border-emerald-400">Managed DB</span>
-                    @elseif($vps->isAiPackage())
-                        <span class="px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-electric text-white">AI Combo</span>
+                    @if($vps->order?->vpsSpec?->name)
+                        <span class="px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-creamDark text-ink border border-hairline">{{ $vps->order->vpsSpec->name }}</span>
                     @endif
                     @php $customerStatus = $vps->customer_status; @endphp
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase border {{ $customerStatus['class'] }}" title="Status layanan">
@@ -239,23 +232,11 @@
                 </a>
             @endif
 
-            @if($vps->public_ip && $vps->status === 'running')
-                @if($vps->isAiPackage() && $vps->app_url)
-                    <a href="{{ $vps->app_url }}" target="_blank" rel="noopener" class="rounded-none px-4 py-2.5 bg-electric hover:bg-electricHover text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors inline-flex items-center gap-1.5">
-                        <span>Buka Web App</span>
-                        <span>↗</span>
-                    </a>
-                @elseif($vps->isDatabasePackage() && $vps->web_manager_url_resolved)
-                    <a href="{{ $vps->web_manager_url_resolved }}" target="_blank" rel="noopener" class="rounded-none px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors inline-flex items-center gap-1.5">
-                        <span>Buka Web Manager</span>
-                        <span>↗</span>
-                    </a>
-                @elseif(!$vps->isDatabasePackage() && $vps->panel_url)
-                    <a href="{{ $vps->panel_url }}" target="_blank" rel="noopener" class="rounded-none px-4 py-2.5 bg-ink hover:bg-electric text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors inline-flex items-center gap-1.5">
-                        <span>Panel Web</span>
-                        <span>↗</span>
-                    </a>
-                @endif
+            @if($vps->public_ip && $vps->status === 'running' && $vps->panel_url)
+                <a href="{{ $vps->panel_url }}" target="_blank" rel="noopener" class="rounded-none px-4 py-2.5 bg-ink hover:bg-electric text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors inline-flex items-center gap-1.5">
+                    <span>Panel Web</span>
+                    <span>↗</span>
+                </a>
             @endif
 
             @if($isAutomated)
@@ -297,7 +278,7 @@
 
     <!-- Tab Navigation -->
     <div class="flex flex-wrap gap-px bg-hairline border border-hairline font-mono text-xs font-bold uppercase">
-        @if($isAutomated && !$vps->isAiPackage() && !$vps->isDatabasePackage())
+        @if($isAutomated)
             <button type="button" @click="activeTab = 'day2'"
                     :class="activeTab === 'day2' ? 'bg-electric text-white' : 'bg-white text-ink hover:bg-creamDark/60'"
                     class="py-3 px-5 transition-colors flex items-center gap-2 cursor-pointer">
@@ -306,68 +287,16 @@
             </button>
         @endif
 
-        @if($vps->isDatabasePackage())
-            <button type="button" @click="activeTab = 'database'"
-                    :class="activeTab === 'database' ? 'bg-electric text-white' : 'bg-white text-ink hover:bg-creamDark/60'"
-                    class="py-3 px-5 transition-colors flex items-center gap-2 cursor-pointer">
-                <span>Koneksi Database (.env)</span>
-                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            </button>
-            @if($isAutomated)
-                <button type="button" @click="activeTab = 'day2'"
-                        :class="activeTab === 'day2' ? 'bg-electric text-white' : 'bg-white text-ink hover:bg-creamDark/60'"
-                        class="py-3 px-5 transition-colors flex items-center gap-2 cursor-pointer">
-                    <span>Kontrol Server</span>
-                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                </button>
-            @endif
-            <button type="button" @click="activeTab = 'overview'"
-                    :class="activeTab === 'overview' ? 'bg-electric text-white' : 'bg-white text-ink hover:bg-creamDark/60'"
-                    class="py-3 px-5 transition-colors cursor-pointer">
-                Ringkasan Server
-            </button>
-            <button type="button" @click="activeTab = 'access'"
-                    :class="activeTab === 'access' ? 'bg-electric text-white' : 'bg-white text-ink hover:bg-creamDark/60'"
-                    class="py-3 px-5 transition-colors cursor-pointer">
-                Akses SSH Server
-            </button>
-        @elseif($vps->isAiPackage())
-            <button type="button" @click="activeTab = 'webapp'"
-                    :class="activeTab === 'webapp' ? 'bg-electric text-white' : 'bg-white text-ink hover:bg-creamDark/60'"
-                    class="py-3 px-5 transition-colors flex items-center gap-2 cursor-pointer">
-                <span>Akses Web App</span>
-                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            </button>
-            @if($isAutomated)
-                <button type="button" @click="activeTab = 'day2'"
-                        :class="activeTab === 'day2' ? 'bg-electric text-white' : 'bg-white text-ink hover:bg-creamDark/60'"
-                        class="py-3 px-5 transition-colors flex items-center gap-2 cursor-pointer">
-                    <span>Kontrol Server</span>
-                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                </button>
-            @endif
-            <button type="button" @click="activeTab = 'overview'"
-                    :class="activeTab === 'overview' ? 'bg-electric text-white' : 'bg-white text-ink hover:bg-creamDark/60'"
-                    class="py-3 px-5 transition-colors cursor-pointer">
-                Ringkasan Server
-            </button>
-            <button type="button" @click="activeTab = 'access'"
-                    :class="activeTab === 'access' ? 'bg-electric text-white' : 'bg-white text-ink hover:bg-creamDark/60'"
-                    class="py-3 px-5 transition-colors cursor-pointer">
-                Akses SSH (Lanjutan)
-            </button>
-        @else
-            <button type="button" @click="activeTab = 'overview'"
-                    :class="activeTab === 'overview' ? 'bg-electric text-white' : 'bg-white text-ink hover:bg-creamDark/60'"
-                    class="py-3 px-5 transition-colors cursor-pointer">
-                Ringkasan Server
-            </button>
-            <button type="button" @click="activeTab = 'access'"
-                    :class="activeTab === 'access' ? 'bg-electric text-white' : 'bg-white text-ink hover:bg-creamDark/60'"
-                    class="py-3 px-5 transition-colors cursor-pointer">
-                Detail Akses &amp; SSH
-            </button>
-        @endif
+        <button type="button" @click="activeTab = 'overview'"
+                :class="activeTab === 'overview' ? 'bg-electric text-white' : 'bg-white text-ink hover:bg-creamDark/60'"
+                class="py-3 px-5 transition-colors cursor-pointer">
+            Ringkasan Server
+        </button>
+        <button type="button" @click="activeTab = 'access'"
+                :class="activeTab === 'access' ? 'bg-electric text-white' : 'bg-white text-ink hover:bg-creamDark/60'"
+                class="py-3 px-5 transition-colors cursor-pointer">
+            Detail Akses &amp; SSH
+        </button>
 
         <button type="button" @click="activeTab = 'subscription'"
                 :class="activeTab === 'subscription' ? 'bg-electric text-white' : 'bg-white text-ink hover:bg-creamDark/60'"
@@ -404,253 +333,9 @@
         </button>
     </div>
 
-    @if($vps->isDatabasePackage())
-    @php
-        $dbHost = $vps->public_ip ?? '103.xxx.xxx.xxx';
-        $dbPort = $vps->db_port_resolved;
-        $dbConn = $vps->db_connection_driver;
-        $dbName = $vps->db_name ?? 'cravadb_production';
-        $dbUser = $vps->db_user ?? 'admin_crava';
-        $dbPass = $vps->db_password ?: ($vps->initial_root_password ?: 'cravapass123');
-        $dbUrl = $vps->database_url;
-        $webMgrUrl = $vps->web_manager_url_resolved;
-        $dbEngineLabel = match($vps->db_engine) {
-            'mysql' => 'MySQL 8.0 / MariaDB 11',
-            'redis' => 'Redis 7 In-Memory Cache',
-            'mongodb' => 'MongoDB 7 Community',
-            'vector' => 'Qdrant / pgvector (AI & RAG)',
-            default => 'PostgreSQL 16',
-        };
-        $fullEnvConfig = "DB_CONNECTION={$dbConn}\n"
-                       . "DB_HOST={$dbHost}\n"
-                       . "DB_PORT={$dbPort}\n"
-                       . "DB_DATABASE={$dbName}\n"
-                       . "DB_USERNAME={$dbUser}\n"
-                       . "DB_PASSWORD={$dbPass}\n"
-                       . "DATABASE_URL={$dbUrl}";
-        if ($webMgrUrl) {
-            $fullEnvConfig .= "\nWEB_MANAGER_URL={$webMgrUrl} (CloudBeaver)";
-        }
-    @endphp
-    <!-- Tab Database -->
-    <div x-show="activeTab === 'database'" class="space-y-6">
-        <div class="bg-white border border-hairline p-6 space-y-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-hairline">
-                <div>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <h3 class="font-display text-base font-bold text-ink">Format Connection String Database</h3>
-                        <span class="px-2 py-0.5 font-mono text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-400">
-                            {{ $dbEngineLabel }}
-                        </span>
-                    </div>
-                    <p class="text-xs text-muted mt-1">Salin konfigurasi siap pakai ke file <code class="bg-creamDark px-1.5 py-0.5 font-mono text-ink">.env</code> aplikasi backend Anda.</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    @if($webMgrUrl && $vps->status === 'running')
-                        <a href="{{ $webMgrUrl }}" target="_blank" rel="noopener" class="rounded-none px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-mono text-xs font-bold uppercase transition-colors">
-                            Buka Web GUI ↗
-                        </a>
-                    @endif
-                    <button type="button" @click="copyText(@js($fullEnvConfig))" class="rounded-none px-4 py-2 bg-ink hover:bg-electric text-white font-mono text-xs font-bold uppercase transition-colors cursor-pointer">
-                        Salin Format .env
-                    </button>
-                </div>
-            </div>
-
-            <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                    <span class="font-mono text-xs font-bold text-ink uppercase">Konfigurasi .env Aplikasi</span>
-                    <button type="button" @click="showDbPassword = !showDbPassword" class="font-mono text-xs font-bold text-electric hover:underline cursor-pointer">
-                        <span x-text="showDbPassword ? 'Sembunyikan Password' : 'Lihat Password'"></span>
-                    </button>
-                </div>
-
-                <div class="relative">
-                    <pre class="bg-ink text-cream p-5 font-mono text-xs sm:text-sm overflow-x-auto leading-relaxed border border-ink select-all"><code>DB_CONNECTION={{ $dbConn }}
-DB_HOST={{ $dbHost }}
-DB_PORT={{ $dbPort }}
-DB_DATABASE={{ $dbName }}
-DB_USERNAME={{ $dbUser }}
-DB_PASSWORD=<span x-text="showDbPassword ? '{{ $dbPass }}' : '****************'">****************</span>
-DATABASE_URL={{ $dbUrl }}
-@if($webMgrUrl)
-WEB_MANAGER_URL={{ $webMgrUrl }} (CloudBeaver)
-@endif</code></pre>
-                    <button type="button" @click="copyText(@js($fullEnvConfig))" class="absolute top-3 right-3 px-3 py-1.5 bg-electric hover:bg-electricHover text-white font-mono text-[11px] font-bold uppercase transition-colors cursor-pointer">
-                        Salin .env
-                    </button>
-                </div>
-            </div>
-
-            <!-- Parameters Grid -->
-            <div class="space-y-3 pt-2">
-                <h4 class="font-mono text-[11px] font-bold uppercase tracking-wider text-muted">Rincian Parameter Koneksi</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-hairline border border-hairline">
-                    @foreach([
-                        ['DB_CONNECTION', $dbConn],
-                        ['DB_HOST', $dbHost],
-                        ['DB_PORT', $dbPort],
-                        ['DB_DATABASE', $dbName],
-                        ['DB_USERNAME', $dbUser],
-                    ] as [$k, $v])
-                    <div class="p-3.5 bg-white flex items-center justify-between gap-2">
-                        <div class="min-w-0">
-                            <span class="font-mono text-[10px] text-muted font-bold uppercase block">{{ $k }}</span>
-                            <span class="font-mono font-bold text-ink text-xs truncate block">{{ $v }}</span>
-                        </div>
-                        <button type="button" @click="copyText('{{ $v }}')" class="p-1.5 border border-hairline hover:border-ink text-muted hover:text-ink cursor-pointer" title="Salin">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                        </button>
-                    </div>
-                    @endforeach
-
-                    <div class="p-3.5 bg-white flex items-center justify-between gap-2">
-                        <div class="min-w-0">
-                            <span class="font-mono text-[10px] text-muted font-bold uppercase block">DB_PASSWORD</span>
-                            <span class="font-mono font-bold text-ink text-xs" x-text="showDbPassword ? '{{ $dbPass }}' : '••••••••••••••••'"></span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <button type="button" @click="showDbPassword = !showDbPassword" class="p-1.5 border border-hairline hover:border-ink text-muted hover:text-ink cursor-pointer" title="Lihat/Sembunyikan">
-                                <svg x-show="!showDbPassword" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                <svg x-show="showDbPassword" x-cloak class="w-3.5 h-3.5 text-electric" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
-                            </button>
-                            <button type="button" @click="copyText('{{ $dbPass }}')" class="p-1.5 border border-hairline hover:border-ink text-muted hover:text-ink cursor-pointer" title="Salin Password">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="sm:col-span-2 p-3.5 bg-white flex items-center justify-between gap-2">
-                        <div class="min-w-0 flex-1">
-                            <span class="font-mono text-[10px] text-muted font-bold uppercase block">DATABASE_URL</span>
-                            <span class="font-mono font-bold text-ink text-xs truncate block">{{ $dbUrl }}</span>
-                        </div>
-                        <button type="button" @click="copyText('{{ $dbUrl }}')" class="p-1.5 border border-hairline hover:border-ink text-muted hover:text-ink shrink-0 cursor-pointer" title="Salin URL">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                        </button>
-                    </div>
-
-                    <div class="p-3.5 bg-white flex items-center justify-between gap-2">
-                        <div class="min-w-0">
-                            <span class="font-mono text-[10px] text-muted font-bold uppercase block">WEB_MANAGER_URL</span>
-                            @if($webMgrUrl)
-                                <span class="font-mono font-bold text-emerald-700 text-xs truncate block">{{ $webMgrUrl }}</span>
-                            @else
-                                <span class="text-muted text-xs font-mono">CLI Only (Disabled)</span>
-                            @endif
-                        </div>
-                        @if($webMgrUrl)
-                            <button type="button" @click="copyText('{{ $webMgrUrl }}')" class="p-1.5 border border-hairline hover:border-ink text-muted hover:text-ink shrink-0 cursor-pointer" title="Salin">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                            </button>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <!-- Remote DB Guide -->
-            <div class="p-4 bg-creamDark/60 border border-hairline space-y-3">
-                <h4 class="font-mono font-bold text-ink text-xs uppercase tracking-wider">Panduan Remote Database Client</h4>
-                <p class="text-xs text-muted leading-relaxed">
-                    Hubungkan aplikasi backend (Vercel, Railway, VPS eksternal) atau remote client (DBeaver, TablePlus, DataGrip, psql) via Dedicated IP Publik server:
-                </p>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
-                    <div class="bg-white p-2.5 border border-hairline"><span class="text-muted block text-[10px]">PostgreSQL</span><span class="font-bold text-ink">Port 5432</span></div>
-                    <div class="bg-white p-2.5 border border-hairline"><span class="text-muted block text-[10px]">MySQL / MariaDB</span><span class="font-bold text-ink">Port 3306</span></div>
-                    <div class="bg-white p-2.5 border border-hairline"><span class="text-muted block text-[10px]">Redis Cache</span><span class="font-bold text-ink">Port 6379</span></div>
-                    <div class="bg-white p-2.5 border border-hairline"><span class="text-muted block text-[10px]">Vector Qdrant</span><span class="font-bold text-ink">Port 6333</span></div>
-                </div>
-                <p class="text-[11px] text-muted">
-                    Disarankan SSH Tunneling (<code class="bg-white px-1.5 py-0.5 border border-hairline text-ink font-mono">ssh -L {{ $dbPort }}:localhost:{{ $dbPort }} {{ $vps->ssh_user }}&#64;{{ $dbHost }}</code>) untuk keamanan optimal.
-                </p>
-            </div>
-        </div>
-    </div>
-    @endif
-
-    @if($vps->isAiPackage())
-    <!-- Tab Web App (AI Combo) -->
-    <div x-show="activeTab === 'webapp'" class="space-y-6">
-        <div class="bg-white border border-hairline p-6 space-y-5">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-hairline">
-                <div>
-                    <h3 class="font-display text-base font-bold text-ink">Akses Web App {{ $vps->app_name ?? $vps->control_panel_label }}</h3>
-                    <p class="text-xs text-muted mt-0.5">Tautan langsung menuju antarmuka runtime AI yang telah aktif di server Anda.</p>
-                </div>
-                @if($vps->app_url && $vps->status === 'running')
-                    <a href="{{ $vps->app_url }}" target="_blank" rel="noopener" class="rounded-none px-4 py-2.5 bg-electric hover:bg-electricHover text-white font-mono text-xs font-bold uppercase transition-colors inline-flex items-center gap-2 self-start sm:self-auto">
-                        <span>Buka Web App di Tab Baru</span>
-                        <span>↗</span>
-                    </a>
-                @endif
-            </div>
-
-            <div class="p-4 bg-creamDark/40 border border-hairline space-y-2.5">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <span class="font-mono text-xs font-bold uppercase text-muted">URL Akses Web</span>
-                    <div class="flex items-center gap-2">
-                        <span class="font-mono font-bold text-ink text-xs bg-white px-3 py-1.5 border border-hairline select-all">
-                            {{ $vps->app_url ?? 'Sedang mengalokasikan...' }}
-                        </span>
-                        @if($vps->app_url)
-                            <button type="button" @click="copyText('{{ $vps->app_url }}')" class="px-3 py-1.5 border border-ink bg-white hover:bg-creamDark font-mono text-xs font-bold uppercase cursor-pointer">
-                                Salin
-                            </button>
-                        @endif
-                    </div>
-                </div>
-                <p class="text-[11px] text-muted">Akses URL di atas melalui browser modern (Chrome, Safari, Firefox, Edge).</p>
-            </div>
-
-            <div class="space-y-3 pt-2">
-                <h4 class="font-mono text-[11px] font-bold uppercase tracking-wider text-muted">Panduan Penggunaan Cepat</h4>
-
-                @if($vps->control_panel === 'claude_opencode')
-                    <div class="p-4 border border-hairline bg-white space-y-2 text-xs">
-                        <p class="font-display font-bold text-ink">Combo Terminal Coding Agent</p>
-                        <ol class="list-decimal list-inside space-y-1.5 text-muted">
-                            <li>Buka Web Terminal melalui URL di atas atau sambungkan terminal lokal via SSH.</li>
-                            <li>Ketik <code class="bg-creamDark px-1.5 py-0.5 text-ink font-mono">claude</code> untuk menjalankan Claude Code CLI resmi Anthropic.</li>
-                            <li>Ketik <code class="bg-creamDark px-1.5 py-0.5 text-ink font-mono">opencode</code> untuk multi-provider AI model open-source.</li>
-                            <li>Masukkan API Key saat pertama diminta. Environment Docker, Git, Node.js LTS, dan Python 3.12 siap dipakai.</li>
-                        </ol>
-                    </div>
-                @elseif($vps->control_panel === 'vscode_server')
-                    <div class="p-4 border border-hairline bg-white space-y-2 text-xs">
-                        <p class="font-display font-bold text-ink">Combo Cloud AI Workstation</p>
-                        <ol class="list-decimal list-inside space-y-1.5 text-muted">
-                            <li>Buka URL Web App di browser perangkat Anda (laptop/iPad).</li>
-                            <li>Masukkan password VPS jika diminta untuk membuka sesi Web VS Code Server.</li>
-                            <li>Buka terminal VS Code (<code class="bg-creamDark px-1.5 py-0.5 text-ink font-mono">Ctrl + `</code>) dan jalankan <code class="bg-creamDark px-1.5 py-0.5 text-ink font-mono">claude</code>.</li>
-                        </ol>
-                    </div>
-                @elseif(in_array($vps->control_panel, ['hermes_omniroute', 'hermes_agent', 'omniroute', '9router']))
-                    <div class="p-4 border border-hairline bg-white space-y-2 text-xs">
-                        <p class="font-display font-bold text-ink">Combo Hermes Autonomous Hub</p>
-                        <ol class="list-decimal list-inside space-y-1.5 text-muted">
-                            <li>Buka antarmuka OmniRoute di URL di atas untuk konfigurasi routing AI providers &amp; API keys.</li>
-                            <li>Hermes Agent runtime telah berjalan di background sebagai service 24/7.</li>
-                            <li>Semua task dan automasi diproses melalui proxy routing terpadu.</li>
-                        </ol>
-                    </div>
-                @else
-                    <div class="p-4 border border-hairline bg-white space-y-2 text-xs">
-                        <p class="font-display font-bold text-ink">Combo Enterprise Private AI &amp; RAG</p>
-                        <ol class="list-decimal list-inside space-y-1.5 text-muted">
-                            <li>Buka URL Web App di browser untuk mengakses dashboard studio AI.</li>
-                            <li>Buat Knowledge Base baru dan unggah dokumen PDF / data privat organisasi.</li>
-                            <li>Pilih local model via Ollama yang telah terintegrasi di server privat Anda.</li>
-                        </ol>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
-    @endif
-
     <!-- Tab Overview -->
     <div x-show="activeTab === 'overview'" class="space-y-6" @if($defaultTab !== 'overview') style="display: none;" @endif>
-        @if(!$vps->isAiPackage() && !$vps->isDatabasePackage() && $vps->status === 'running')
+        @if($vps->status === 'running')
             <div class="bg-white border border-ink p-6">
                 <h3 class="font-display text-base font-bold text-ink">Mulai di Sini</h3>
                 <p class="text-xs text-muted mt-0.5 mb-5">Tiga langkah pertama setelah server Anda aktif.</p>
@@ -848,27 +533,6 @@ WEB_MANAGER_URL={{ $webMgrUrl }} (CloudBeaver)
                         </button>
                     </div>
                 </div>
-
-                @if($vps->isDatabasePackage())
-                    <div class="mt-4 p-4 bg-creamDark/60 border border-hairline space-y-3">
-                        <h4 class="font-mono font-bold text-ink text-xs uppercase tracking-wider">Panduan Remote Database Client</h4>
-                        <p class="text-xs text-muted leading-relaxed">
-                            Hubungkan backend atau remote client via IP Publik Dedicated server:
-                        </p>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
-                            <div class="bg-white p-2.5 border border-hairline"><span class="text-muted block text-[10px]">PostgreSQL</span><span class="font-bold text-ink">Port 5432</span></div>
-                            <div class="bg-white p-2.5 border border-hairline"><span class="text-muted block text-[10px]">MySQL / MariaDB</span><span class="font-bold text-ink">Port 3306</span></div>
-                            <div class="bg-white p-2.5 border border-hairline"><span class="text-muted block text-[10px]">Redis Cache</span><span class="font-bold text-ink">Port 6379</span></div>
-                            <div class="bg-white p-2.5 border border-hairline"><span class="text-muted block text-[10px]">Vector Qdrant</span><span class="font-bold text-ink">Port 6333</span></div>
-                        </div>
-                        <div class="bg-ink text-cream p-3 font-mono text-[11px] overflow-x-auto">
-                            DATABASE_URL="postgresql://username:password&#64;{{ $vps->public_ip }}:5432/database_name"
-                        </div>
-                        <p class="text-[11px] text-muted">
-                            Disarankan SSH Tunneling (<code class="bg-white px-1 border border-hairline text-ink font-mono">ssh -L 5432:localhost:5432 {{ $vps->ssh_user }}&#64;{{ $vps->public_ip }}</code>) di production.
-                        </p>
-                    </div>
-                @endif
             </div>
         </div>
     </div>

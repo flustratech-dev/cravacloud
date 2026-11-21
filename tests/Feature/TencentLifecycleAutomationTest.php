@@ -253,20 +253,23 @@ class TencentLifecycleAutomationTest extends TestCase
 
     private function subscriptionFor(VpsInstance $instance, string $status, array $attrs = []): Subscription
     {
-        return Subscription::create(array_merge([
-            'customer_id' => $instance->customer_id,
-            'vps_spec_id' => $instance->order?->vps_spec_id ?? $this->starterSpec()->id,
-            'vps_instance_id' => $instance->id,
-            'order_id' => $instance->order_id,
-            'status' => $status,
-            'billing_cycle' => 'monthly',
-            'unit_amount' => 115000,
-            'currency' => 'IDR',
-            'auto_renew' => false,
-            'current_period_start' => now()->subMonth(),
-            'current_period_end' => $instance->expires_at ?? now()->addMonth(),
-            'next_billing_at' => $instance->expires_at ?? now()->addMonth(),
-        ], $attrs));
+        return Subscription::updateOrCreate(
+            ['vps_instance_id' => $instance->id],
+            array_merge([
+                'customer_id' => $instance->customer_id,
+                'organization_id' => $instance->organization_id,
+                'vps_spec_id' => $instance->order?->vps_spec_id ?? $this->starterSpec()->id,
+                'order_id' => $instance->order_id,
+                'status' => $status,
+                'billing_cycle' => 'monthly',
+                'unit_amount' => 115000,
+                'currency' => 'IDR',
+                'auto_renew' => false,
+                'current_period_start' => now()->subMonth(),
+                'current_period_end' => $instance->expires_at ?? now()->addMonth(),
+                'next_billing_at' => $instance->expires_at ?? now()->addMonth(),
+            ], $attrs)
+        );
     }
 
     private function manualInstance(User $customer): VpsInstance
@@ -513,9 +516,10 @@ class TencentLifecycleAutomationTest extends TestCase
         $this->assertSame(0, $this->sentCount('RenewInstances'));
         $this->assertSame(1, SupplierPurchase::where('vps_instance_id', $instance->id)->count());
 
-        $alerts->shouldHaveReceived('digest')
+        $alerts->shouldHaveReceived('alert')
             ->once()
-            ->withArgs(fn (string $subject) => str_contains($subject, 'saldo tidak cukup'));
+            ->withArgs(fn (string $eventKey, array $context) => $eventKey === 'provisioning.failed'
+                && str_contains($context['title'] ?? '', 'saldo tidak cukup'));
     }
 
     // ============ 5. suspend overdue: stop upstream dulu, suspended setelah sukses ============

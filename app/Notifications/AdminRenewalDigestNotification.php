@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -13,7 +14,7 @@ use Illuminate\Notifications\Notification;
  * surel per layanan. Dengan operator tunggal, dua puluh layanan yang jatuh
  * tempo bersamaan tidak boleh menghasilkan dua puluh surel.
  */
-class AdminRenewalDigestNotification extends Notification
+class AdminRenewalDigestNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     use \App\Notifications\Concerns\UsesMailIdentity;
@@ -24,6 +25,7 @@ class AdminRenewalDigestNotification extends Notification
     public function __construct(
         public array $digest
     ) {
+        $this->onQueue('notifications');
     }
 
     public function via(object $notifiable): array

@@ -42,12 +42,6 @@
         </thead>
         <tbody>
             @forelse($orders as $order)
-                @php
-                    $isAi = $order->isAiPackage();
-                    $isDb = $order->isDatabasePackage();
-                    $catLabel = $isAi ? 'AI AGENT' : ($isDb ? 'MANAGED DB' : 'CLOUD VPS');
-                    $badgeClass = $isAi ? 'badge-info' : ($isDb ? 'badge-neutral' : 'badge-neutral');
-                @endphp
                 <tr>
                     <td class="font-mono">#ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</td>
                     <td>
@@ -55,10 +49,10 @@
                         <div style="font-size: 7px; color: #64748b;">{{ $order->customer?->email ?? '-' }}</div>
                     </td>
                     <td>
-                        <span class="badge {{ $badgeClass }}">{{ $catLabel }}</span>
+                        <span class="badge badge-neutral">CLOUD VPS</span>
                     </td>
                     <td>
-                        <div style="font-weight: 600;">{{ $order->vpsSpec?->name ?? 'Standard Service' }}</div>
+                        <div style="font-weight: 600;">{{ $order->vpsSpec?->name ?? 'Cloud VPS' }}</div>
                         <div style="font-size: 7px; color: #64748b;">{{ $order->control_panel_label }}</div>
                     </td>
                     <td style="font-size: 7px; color: #475569;">{{ strtoupper($order->channel ?? 'DIRECT') }}</td>

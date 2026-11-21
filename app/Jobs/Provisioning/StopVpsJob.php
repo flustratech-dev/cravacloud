@@ -47,10 +47,22 @@ class StopVpsJob extends AbstractProvisioningJob
         // harus tahu supaya bisa menindaklanjuti manual.
         if (($task->input['target_status'] ?? null) === 'suspended') {
             $instance = $task->vpsInstance;
-            app(\App\Services\AdminAlertService::class)->digest(
-                'Suspend upstream gagal',
-                'Instance #'.($instance?->id ?? '?').' ('.($instance?->hostname ?? '-').") gagal dimatikan di upstream (task #{$task->id}). "
-                ."Status VPS belum suspended; periksa manual.\n\nError: {$error}"
+            app(\App\Services\AdminAlertService::class)->alert(
+                'provisioning.failed',
+                [
+                    'title' => 'Suspend upstream gagal',
+                    'order_id' => $task->order_id,
+                    'details' => [
+                        'Task' => "#{$task->id} (suspend)",
+                        'Instance' => '#' . ($instance?->id ?? '?') . ' (' . ($instance?->hostname ?? '-') . ')',
+                        'Error' => \Illuminate\Support\Str::limit($error, 160),
+                    ],
+                    'body' => 'Instance #' . ($instance?->id ?? '?') . ' (' . ($instance?->hostname ?? '-') . ") gagal dimatikan di upstream (task #{$task->id}). "
+                        . "Status VPS belum suspended; periksa manual.\n\nError: {$error}",
+                    'action_url' => url('/admin/monitoring?tab=tasks&status=failed'),
+                ],
+                dedupeKey: 'task-' . $task->id,
+                cooldownSeconds: 3600
             );
         }
     }

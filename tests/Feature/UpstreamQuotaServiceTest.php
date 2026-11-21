@@ -273,7 +273,7 @@ class UpstreamQuotaServiceTest extends TestCase
         ]])]);
 
         $alerts = $this->mock(AdminAlertService::class);
-        $alerts->shouldReceive('digest')->once()->andReturnTrue();
+        $alerts->shouldReceive('alert')->once()->andReturn(['email' => true, 'whatsapp' => true, 'skipped_dedupe' => false]);
 
         $this->pool(used: 5); // drift: DB says 5, reality 2 (TERMINATED excluded)
 
@@ -296,7 +296,7 @@ class UpstreamQuotaServiceTest extends TestCase
             ],
         ]])]);
 
-        $this->mock(AdminAlertService::class)->shouldReceive('digest')->andReturnTrue();
+        $this->mock(AdminAlertService::class)->shouldReceive('alert')->andReturn(['email' => true, 'whatsapp' => true, 'skipped_dedupe' => false]);
         $this->pool('ap-jakarta', 'GENERAL_BUNDLE', 20);
 
         $this->service()->syncFromProvider('ap-jakarta');
@@ -309,7 +309,7 @@ class UpstreamQuotaServiceTest extends TestCase
     public function test_high_usage_alert_fires_once_per_day(): void
     {
         $alerts = $this->mock(AdminAlertService::class);
-        $alerts->shouldReceive('digest')->once()->andReturnTrue();
+        $alerts->shouldReceive('alert')->once()->andReturn(['email' => true, 'whatsapp' => true, 'skipped_dedupe' => false]);
 
         $this->pool(capacity: 20, used: 15);
 
@@ -323,7 +323,7 @@ class UpstreamQuotaServiceTest extends TestCase
     public function test_low_usage_does_not_alert(): void
     {
         $alerts = $this->mock(AdminAlertService::class);
-        $alerts->shouldNotReceive('digest');
+        $alerts->shouldNotReceive('alert');
 
         $this->pool(capacity: 20, used: 1);
         $this->service()->reserveHard('ap-jakarta', 'STARTER_BUNDLE');

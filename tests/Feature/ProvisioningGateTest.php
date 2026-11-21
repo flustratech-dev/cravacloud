@@ -56,11 +56,23 @@ class ProvisioningGateTest extends TestCase
         $settings = app(SettingsService::class);
         $settings->set('provisioning_auto_enabled', true, 'boolean');
 
-        $dbSpec = VpsSpec::where('category', 'managed_db')->firstOrFail();
-        $settings->set('provisioning_auto_spec_whitelist', [(int) $dbSpec->id], 'json');
+        $unmappedSpec = VpsSpec::create([
+            'name' => 'Custom Unmapped VPS',
+            'category' => 'vps',
+            'cpu' => 4,
+            'ram' => 8,
+            'disk' => 80,
+            'bandwidth' => 1000,
+            'cost_price' => 300000,
+            'sell_price' => 500000,
+            'is_active' => true,
+            'upstream_bundle_id' => null,
+            'upstream_bundle_type' => null,
+        ]);
+        $settings->set('provisioning_auto_spec_whitelist', [(int) $unmappedSpec->id], 'json');
 
-        // D3 HOLD: no upstream mapping → manual flow regardless of settings.
-        $this->assertFalse($this->gate()->allows($dbSpec));
+        // Unmapped spec must stay manual regardless of whitelist.
+        $this->assertFalse($this->gate()->allows($unmappedSpec));
     }
 
     public function test_rollback_by_disabling_master_switch(): void

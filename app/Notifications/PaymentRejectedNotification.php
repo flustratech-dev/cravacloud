@@ -2,15 +2,14 @@
 
 namespace App\Notifications;
 
-use App\Channels\WhatsAppChannel;
 use App\Models\Invoice;
 use App\Models\Order;
-use App\Services\WhatsAppMessage;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class PaymentRejectedNotification extends Notification
+class PaymentRejectedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     use \App\Notifications\Concerns\UsesMailIdentity;
@@ -19,17 +18,13 @@ class PaymentRejectedNotification extends Notification
         public Order $order,
         public ?Invoice $invoice = null,
         public string $reason = 'Mutasi pembayaran tidak ditemukan atau tidak sesuai'
-    ) {}
+    ) {
+        $this->onQueue('notifications');
+    }
 
     public function via(object $notifiable): array
     {
-        $channels = ['mail', 'database'];
-
-        if (config('whatsapp.enabled') && ! empty($notifiable->phone)) {
-            $channels[] = WhatsAppChannel::class;
-        }
-
-        return $channels;
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -53,28 +48,5 @@ class PaymentRejectedNotification extends Notification
             'amount' => (float) $this->order->amount,
             'reason' => $this->reason,
         ];
-    }
-
-    public function toWhatsApp(object $notifiable): ?WhatsAppMessage
-    {
-        $appUrl = rtrim(config('app.url', 'https://cravacloud.id'), '/');
-        $namaPelanggan = $notifiable->full_name ?? 'Pelanggan CravaCloud';
-        $bayarUrl = "{$appUrl}/order/payment/{$this->order->id}";
-
-        $message = implode("\n", [
-            "Halo *{$namaPelanggan}*,",
-            '',
-            '❌ *PEMBAYARAN DIBATALKAN / KADALUARSA*',
-            "Transaksi pembayaran untuk pesanan #{$this->order->id} belum terkonfirmasi oleh gateway atau telah dibatalkan.",
-            '',
-            "• *Alasan:* {$this->reason}",
-            '',
-            'Silakan periksa detail pesanan Anda melalui tautan berikut:',
-            $bayarUrl,
-            '',
-            '_Jika ada kendala, tim CravaCloud siap membantu Anda._',
-        ]);
-
-        return WhatsAppMessage::create($message);
     }
 }

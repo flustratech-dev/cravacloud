@@ -25,6 +25,8 @@
         $labelClass = 'block font-mono text-[10px] font-bold text-muted uppercase tracking-widest mb-1.5';
     @endphp
 
+    @include('admin.partials.system-tabs')
+
     <div class="bg-creamDark/60 p-4 border border-ink text-xs text-ink">
         <strong class="font-mono text-[11px] font-bold uppercase tracking-wider block mb-0.5">Mode Manual</strong>
         Jadwal otomatis (<code class="font-mono bg-white px-1 border border-hairline">maintenance:sync</code>) dimatikan untuk menghemat beban server. Jendela maintenance tidak mulai atau selesai sendiri,

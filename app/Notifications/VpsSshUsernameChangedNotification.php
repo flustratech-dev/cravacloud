@@ -2,17 +2,16 @@
 
 namespace App\Notifications;
 
-use App\Channels\WhatsAppChannel;
 use App\Models\VpsInstance;
-use App\Services\WhatsAppMessage;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
  * Dikirim ke pelanggan saat admin mengubah username SSH pada VPS aktif.
  */
-class VpsSshUsernameChangedNotification extends Notification
+class VpsSshUsernameChangedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     use \App\Notifications\Concerns\UsesMailIdentity;
@@ -21,17 +20,12 @@ class VpsSshUsernameChangedNotification extends Notification
         public VpsInstance $instance,
         public string $oldUsername,
     ) {
+        $this->onQueue('notifications');
     }
 
     public function via(object $notifiable): array
     {
-        $channels = ['mail', 'database'];
-
-        if (config('whatsapp.enabled') && ! empty($notifiable->phone)) {
-            $channels[] = WhatsAppChannel::class;
-        }
-
-        return $channels;
+        return ['mail', 'database'];
     }
 
     private function serverName(): string
@@ -70,28 +64,5 @@ class VpsSshUsernameChangedNotification extends Notification
             'old_ssh_username' => $this->oldUsername,
             'ssh_username' => $this->instance->ssh_user,
         ];
-    }
-
-    public function toWhatsApp(object $notifiable): ?WhatsAppMessage
-    {
-        $appUrl = rtrim((string) config('app.url', 'https://cravacloud.id'), '/');
-
-        return WhatsAppMessage::create(implode("\n", [
-            'Halo *' . ($notifiable->full_name ?? 'Pelanggan CravaCloud') . '*,',
-            '',
-            '🔐 *USERNAME SSH SERVER DIPERBARUI*',
-            "Server: `{$this->serverName()}`",
-            '',
-            "• *Username lama:* `{$this->oldUsername}`",
-            "• *Username baru:* `{$this->instance->ssh_user}`",
-            '',
-            '💻 *Login SSH:*',
-            "`{$this->instance->ssh_command}`",
-            '',
-            'Password tidak berubah, lihat di Dashboard > Detail VPS > tab Akses (klik ikon mata):',
-            "{$appUrl}/dashboard/vps/{$this->instance->id}",
-            '',
-            '_CravaCloud Solutions_',
-        ]));
     }
 }

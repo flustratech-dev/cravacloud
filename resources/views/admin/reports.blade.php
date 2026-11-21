@@ -105,7 +105,7 @@
                                 <span class="font-display font-bold text-ink">Laporan Khusus Cloud VPS</span>
                                 <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 bg-creamDark border border-hairline text-ink">{{ $vpsOrders->count() }} unit</span>
                             </div>
-                            <p class="text-[11px] text-muted mt-0.5 mb-2">Infrastruktur compute Linux, spesifikasi CPU/RAM &amp; datacenter</p>
+                            <p class="text-[11px] text-muted mt-0.5 mb-2">Infrastruktur compute Linux KVM, 1-Click Stack &amp; datacenter</p>
                             <div class="flex items-center gap-1.5">
                                 <button type="button"
                                         @click="exportDropdownOpen = false; openPdfPreview('vps', 'Laporan Khusus Infrastruktur Cloud VPS')"
@@ -123,55 +123,7 @@
                             </div>
                         </div>
 
-                        <!-- 2. Laporan Khusus AI Agent & Combo -->
-                        <div class="p-3.5 hover:bg-creamDark/30 transition-colors">
-                            <div class="flex items-center justify-between">
-                                <span class="font-display font-bold text-ink">Laporan Khusus AI Agent</span>
-                                <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 bg-creamDark border border-hairline text-ink">{{ $aiOrders->count() }} unit</span>
-                            </div>
-                            <p class="text-[11px] text-muted mt-0.5 mb-2">Workstation AI, Claude Code, OpenCode, Ollama &amp; Private RAG</p>
-                            <div class="flex items-center gap-1.5">
-                                <button type="button"
-                                        @click="exportDropdownOpen = false; openPdfPreview('ai_combo', 'Laporan Khusus AI Agent & Autonomous Workstation')"
-                                        class="px-2.5 py-1 bg-white hover:border-ink text-ink border border-hairline font-mono font-bold text-[10px] uppercase transition-colors cursor-pointer">
-                                    Preview PDF
-                                </button>
-                                <a :href="'{{ route('admin.reports.export') }}?type=ai_combo&days=' + currentDays + '&format=docx'"
-                                   class="px-2.5 py-1 bg-white hover:border-ink text-ink border border-hairline font-mono font-bold text-[10px] uppercase transition-colors">
-                                    Word
-                                </a>
-                                <a :href="'{{ route('admin.reports.export') }}?type=ai_combo&days=' + currentDays + '&format=csv'"
-                                   class="px-2.5 py-1 bg-white hover:border-ink text-ink border border-hairline font-mono font-bold text-[10px] uppercase transition-colors">
-                                    CSV
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- 3. Laporan Khusus Managed Database -->
-                        <div class="p-3.5 hover:bg-creamDark/30 transition-colors">
-                            <div class="flex items-center justify-between">
-                                <span class="font-display font-bold text-ink">Laporan Khusus Managed DB</span>
-                                <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 bg-creamDark border border-hairline text-ink">{{ $dbOrders->count() }} unit</span>
-                            </div>
-                            <p class="text-[11px] text-muted mt-0.5 mb-2">Dedicated Database Server (Postgres, MySQL, Redis, MongoDB)</p>
-                            <div class="flex items-center gap-1.5">
-                                <button type="button"
-                                        @click="exportDropdownOpen = false; openPdfPreview('database', 'Laporan Khusus Managed Database Server')"
-                                        class="px-2.5 py-1 bg-white hover:border-ink text-ink border border-hairline font-mono font-bold text-[10px] uppercase transition-colors cursor-pointer">
-                                    Preview PDF
-                                </button>
-                                <a :href="'{{ route('admin.reports.export') }}?type=database&days=' + currentDays + '&format=docx'"
-                                   class="px-2.5 py-1 bg-white hover:border-ink text-ink border border-hairline font-mono font-bold text-[10px] uppercase transition-colors">
-                                    Word
-                                </a>
-                                <a :href="'{{ route('admin.reports.export') }}?type=database&days=' + currentDays + '&format=csv'"
-                                   class="px-2.5 py-1 bg-white hover:border-ink text-ink border border-hairline font-mono font-bold text-[10px] uppercase transition-colors">
-                                    CSV
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- 4. Laporan Semua Pesanan Layanan -->
+                        <!-- 2. Laporan Semua Pesanan Layanan -->
                         <div class="p-3.5 hover:bg-creamDark/30 transition-colors">
                             <div class="font-display font-bold text-ink">Laporan Seluruh Pesanan (Semua)</div>
                             <div class="font-mono text-[11px] text-muted mb-2">{{ $orders->count() }} total seluruh transaksi</div>
@@ -291,12 +243,12 @@
         </div>
     </div>
 
-    <!-- 3 Pilar Layanan Utama CravaCloud -->
+    <!-- Ekspor Cepat Laporan Operasional -->
     <div>
         <div class="flex items-center justify-between mb-3">
             <div>
-                <h3 class="font-display font-bold text-sm text-ink uppercase tracking-wider">Performa Kategori Layanan</h3>
-                <p class="text-xs text-muted mt-0.5">Rincian performa penjualan, instans aktif, dan ekspor dokumen khusus per kategori layanan.</p>
+                <h3 class="font-display font-bold text-sm text-ink uppercase tracking-wider">Dokumen Laporan Operasional</h3>
+                <p class="text-xs text-muted mt-0.5">Ekspor rincian infrastruktur Cloud VPS, invoice penagihan, dan performa tiket SLA dalam format PDF, Word, atau CSV.</p>
             </div>
         </div>
 
@@ -305,7 +257,7 @@
             <div class="bg-white border border-hairline p-5 flex flex-col justify-between">
                 <div>
                     <div class="flex items-center justify-between">
-                        <span class="font-display font-bold text-sm text-ink">Cloud VPS</span>
+                        <span class="font-display font-bold text-sm text-ink">Cloud VPS KVM</span>
                         <span class="font-mono text-[10px] font-bold uppercase px-2 py-0.5 bg-creamDark border border-hairline text-ink">Compute</span>
                     </div>
                     <div class="mt-3">
@@ -334,66 +286,66 @@
                 </div>
             </div>
 
-            <!-- 2. AI Agent & Combo -->
+            <!-- 2. Invoice & Penagihan -->
             <div class="bg-white border border-hairline p-5 flex flex-col justify-between">
                 <div>
                     <div class="flex items-center justify-between">
-                        <span class="font-display font-bold text-sm text-ink">AI Agent &amp; Workstation</span>
-                        <span class="font-mono text-[10px] font-bold uppercase px-2 py-0.5 bg-creamDark border border-hairline text-ink">Autonomous</span>
+                        <span class="font-display font-bold text-sm text-ink">Invoice &amp; Penagihan</span>
+                        <span class="font-mono text-[10px] font-bold uppercase px-2 py-0.5 bg-creamDark border border-hairline text-ink">Billing</span>
                     </div>
                     <div class="mt-3">
-                        <p class="font-display text-2xl font-bold text-ink">Rp {{ number_format($aiRevenue, 0, ',', '.') }}</p>
+                        <p class="font-display text-2xl font-bold text-ink">Rp {{ number_format($revenue, 0, ',', '.') }}</p>
                         <div class="flex items-center gap-2 font-mono text-[11px] text-muted mt-1">
-                            <span><strong class="text-ink">{{ $aiOrders->count() }}</strong> total pesanan</span>
+                            <span><strong class="text-ink">{{ $invoices->count() }}</strong> invoice terbit</span>
                             <span>&middot;</span>
-                            <span class="text-electric font-bold">{{ $aiOrders->where('status', 'active')->count() }} aktif</span>
+                            <span class="text-electric font-bold">{{ $paidInvoices }} lunas</span>
                         </div>
                     </div>
                 </div>
                 <div class="pt-4 mt-4 border-t border-hairline flex items-center gap-1.5">
                     <button type="button"
-                            @click="openPdfPreview('ai_combo', 'Laporan Khusus AI Agent & Autonomous Workstation')"
+                            @click="openPdfPreview('invoices', 'Laporan Faktur Penagihan & Pendapatan')"
                             class="flex-1 py-1.5 text-center font-mono text-[11px] font-bold uppercase bg-creamDark hover:border-ink text-ink border border-hairline transition-colors cursor-pointer">
                         Preview PDF
                     </button>
-                    <a :href="'{{ route('admin.reports.export') }}?type=ai_combo&days=' + currentDays + '&format=docx'"
+                    <a :href="'{{ route('admin.reports.export') }}?type=invoices&days=' + currentDays + '&format=docx'"
                        class="px-2.5 py-1.5 font-mono text-[11px] font-bold uppercase bg-white hover:border-ink text-ink border border-hairline transition-colors">
                         Word
                     </a>
-                    <a :href="'{{ route('admin.reports.export') }}?type=ai_combo&days=' + currentDays + '&format=csv'"
+                    <a :href="'{{ route('admin.reports.export') }}?type=invoices&days=' + currentDays + '&format=csv'"
                        class="px-2.5 py-1.5 font-mono text-[11px] font-bold uppercase bg-white hover:border-ink text-ink border border-hairline transition-colors">
                         CSV
                     </a>
                 </div>
             </div>
 
-            <!-- 3. Managed Database Server -->
+            <!-- 3. Tiket Support & SLA -->
             <div class="bg-white border border-hairline p-5 flex flex-col justify-between">
                 <div>
                     <div class="flex items-center justify-between">
-                        <span class="font-display font-bold text-sm text-ink">Managed Database</span>
-                        <span class="font-mono text-[10px] font-bold uppercase px-2 py-0.5 bg-creamDark border border-hairline text-ink">Isolated</span>
+                        <span class="font-display font-bold text-sm text-ink">Tiket Support &amp; SLA</span>
+                        <span class="font-mono text-[10px] font-bold uppercase px-2 py-0.5 bg-creamDark border border-hairline text-ink">Helpdesk</span>
                     </div>
                     <div class="mt-3">
-                        <p class="font-display text-2xl font-bold text-ink">Rp {{ number_format($dbRevenue, 0, ',', '.') }}</p>
+                        <p class="font-display text-2xl font-bold text-ink">{{ $avgFirstResponse ? round($avgFirstResponse / 60, 1) . ' jam' : '-' }}</p>
                         <div class="flex items-center gap-2 font-mono text-[11px] text-muted mt-1">
-                            <span><strong class="text-ink">{{ $dbOrders->count() }}</strong> total pesanan</span>
+                            <span><strong class="text-ink">{{ $tickets->count() }}</strong> total tiket</span>
                             <span>&middot;</span>
-                            <span class="text-electric font-bold">{{ $dbOrders->where('status', 'active')->count() }} aktif</span>
+                            <span class="text-electric font-bold">{{ $tickets->whereIn('status', ['resolved', 'closed'])->count() }} selesai</span>
                         </div>
                     </div>
                 </div>
                 <div class="pt-4 mt-4 border-t border-hairline flex items-center gap-1.5">
                     <button type="button"
-                            @click="openPdfPreview('database', 'Laporan Khusus Managed Database Server')"
+                            @click="openPdfPreview('tickets', 'Laporan Layanan & Performa Tiket Dukungan (SLA)')"
                             class="flex-1 py-1.5 text-center font-mono text-[11px] font-bold uppercase bg-creamDark hover:border-ink text-ink border border-hairline transition-colors cursor-pointer">
                         Preview PDF
                     </button>
-                    <a :href="'{{ route('admin.reports.export') }}?type=database&days=' + currentDays + '&format=docx'"
+                    <a :href="'{{ route('admin.reports.export') }}?type=tickets&days=' + currentDays + '&format=docx'"
                        class="px-2.5 py-1.5 font-mono text-[11px] font-bold uppercase bg-white hover:border-ink text-ink border border-hairline transition-colors">
                         Word
                     </a>
-                    <a :href="'{{ route('admin.reports.export') }}?type=database&days=' + currentDays + '&format=csv'"
+                    <a :href="'{{ route('admin.reports.export') }}?type=tickets&days=' + currentDays + '&format=csv'"
                        class="px-2.5 py-1.5 font-mono text-[11px] font-bold uppercase bg-white hover:border-ink text-ink border border-hairline transition-colors">
                         CSV
                     </a>

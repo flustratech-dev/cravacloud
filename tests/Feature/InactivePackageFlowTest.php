@@ -19,17 +19,9 @@ class InactivePackageFlowTest extends TestCase
 
     public function test_inactive_packages_remain_visible_on_landing_page(): void
     {
-        // Deactivate standard VPS package
+        // Deactivate official Cloud VPS package
         $vpsSpec = VpsSpec::where('category', 'vps')->first();
         $vpsSpec->update(['is_active' => false]);
-
-        // Deactivate AI combo package
-        $aiSpec = VpsSpec::where('category', 'ai_combo')->first();
-        $aiSpec->update(['is_active' => false]);
-
-        // Deactivate Managed DB package
-        $dbSpec = VpsSpec::where('category', 'managed_db')->first();
-        $dbSpec->update(['is_active' => false]);
 
         $response = $this->get('/');
         $response->assertStatus(200);
@@ -47,12 +39,6 @@ class InactivePackageFlowTest extends TestCase
     {
         $vpsSpec = VpsSpec::where('category', 'vps')->first();
         $vpsSpec->update(['is_active' => false]);
-
-        $aiSpec = VpsSpec::where('category', 'ai_combo')->first();
-        $aiSpec->update(['is_active' => false]);
-
-        $dbSpec = VpsSpec::where('category', 'managed_db')->first();
-        $dbSpec->update(['is_active' => false]);
 
         // Check VPS product comparison page
         $this->get('/vps')->assertStatus(200)->assertSee($vpsSpec->name);
@@ -77,28 +63,10 @@ class InactivePackageFlowTest extends TestCase
         $response->assertSee('Pemesanan Dikunci');
     }
 
-    public function test_checkout_page_renders_maintenance_warning_for_inactive_ai_package(): void
+    public function test_retired_legacy_categories_are_absent_from_catalog(): void
     {
-        $aiSpec = VpsSpec::where('category', 'ai_combo')->first();
-        $aiSpec->update(['is_active' => false]);
-
-        $response = $this->get('/checkout/' . $aiSpec->id);
-        $response->assertStatus(200);
-
-        $response->assertSee('Paket Sementara Dinonaktifkan');
-        $response->assertSee('Pemesanan Dikunci');
-    }
-
-    public function test_checkout_page_renders_maintenance_warning_for_inactive_database_package(): void
-    {
-        $dbSpec = VpsSpec::where('category', 'managed_db')->first();
-        $dbSpec->update(['is_active' => false]);
-
-        $response = $this->get('/checkout/' . $dbSpec->id);
-        $response->assertStatus(200);
-
-        $response->assertSee('Paket Sementara Dinonaktifkan');
-        $response->assertSee('Pemesanan Dikunci');
+        $this->assertSame(0, VpsSpec::whereIn('category', ['ai_combo', 'managed_db'])->count());
+        $this->assertSame(8, VpsSpec::where('category', 'vps')->count());
     }
 
     public function test_order_creation_is_rejected_when_package_is_inactive(): void

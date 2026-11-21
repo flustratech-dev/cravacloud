@@ -100,7 +100,7 @@ class AdminReportsExportTest extends TestCase
 
     public function test_admin_can_preview_all_report_types(): void
     {
-        foreach (['executive', 'orders', 'vps', 'ai_combo', 'database', 'invoices', 'tickets'] as $type) {
+        foreach (['executive', 'orders', 'vps', 'invoices', 'tickets'] as $type) {
             $response = $this->actingAs($this->admin)->get(route('admin.reports.preview', [
                 'type' => $type,
                 'days' => 'all',
@@ -112,11 +112,15 @@ class AdminReportsExportTest extends TestCase
             $this->assertStringContainsString('inline', $disposition);
             $this->assertStringStartsWith('%PDF', $response->getContent());
         }
+
+        // Retired legacy category reports must return 404
+        $this->actingAs($this->admin)->get(route('admin.reports.preview', ['type' => 'ai_combo']))->assertStatus(404);
+        $this->actingAs($this->admin)->get(route('admin.reports.preview', ['type' => 'database']))->assertStatus(404);
     }
 
-    public function test_admin_can_export_specialized_vps_ai_and_database_reports(): void
+    public function test_admin_can_export_specialized_vps_invoices_and_tickets_reports(): void
     {
-        foreach (['vps', 'ai_combo', 'database'] as $type) {
+        foreach (['vps', 'invoices', 'tickets'] as $type) {
             // PDF export
             $pdfRes = $this->actingAs($this->admin)->get(route('admin.reports.export', [
                 'type' => $type,

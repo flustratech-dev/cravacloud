@@ -49,10 +49,13 @@ class BillingService
         ?string $couponCode = null,
         bool $applyCredit = false,
         ?User $customer = null,
-        ?TaxRate $taxRate = null
+        ?TaxRate $taxRate = null,
+        ?float $overrideBaseMonthly = null
     ): array {
         $cycleConf = self::CYCLE_CONFIG[$cycle] ?? self::CYCLE_CONFIG['monthly'];
-        $baseMonthly = (float) $spec->sell_price;
+        $baseMonthly = $overrideBaseMonthly !== null
+            ? $this->round($overrideBaseMonthly)
+            : (float) $spec->sell_price;
         $months = $cycleConf['months'];
         $cycleDiscountPercent = $cycleConf['discount_percent'];
 
@@ -230,6 +233,7 @@ class BillingService
 
             $invoice = Invoice::create([
                 'order_id' => $order->id,
+                'organization_id' => $order->organization_id,
                 'subscription_id' => $subscriptionId,
                 'tax_rate_id' => $breakdown['tax']['id'] ?? null,
                 'invoice_number' => $invoiceNumber,
@@ -291,6 +295,8 @@ class BillingService
         }
 
         return DB::transaction(function () use ($customer, $amount, $reason, $refs) {
+            User::whereKey($customer->id)->lockForUpdate()->first();
+
             $newBalance = CreditTransaction::balanceFor($customer->id) + $amount;
             return CreditTransaction::create([
                 'customer_id' => $customer->id,
@@ -308,25 +314,31 @@ class BillingService
 
     /**
      * Kurangi credit customer (apply / adjustment negative).
+     * Dikunci per user dengan lockForUpdate untuk mencegah double-spend paralel.
      */
     public function deductCredit(User $customer, float $amount, string $reason, ?Invoice $invoice = null): CreditTransaction
     {
         if ($amount <= 0) {
             throw new \InvalidArgumentException('Deduct amount must be positive.');
         }
-        $currentBalance = CreditTransaction::balanceFor($customer->id);
-        if ($currentBalance < $amount) {
-            throw new \RuntimeException("Saldo credit tidak cukup (butuh {$amount}, ada {$currentBalance}).");
-        }
 
-        return CreditTransaction::create([
-            'customer_id' => $customer->id,
-            'type' => 'apply',
-            'amount' => -$amount,
-            'balance_after' => $currentBalance - $amount,
-            'reason' => $reason,
-            'invoice_id' => $invoice?->id,
-        ]);
+        return DB::transaction(function () use ($customer, $amount, $reason, $invoice) {
+            User::whereKey($customer->id)->lockForUpdate()->first();
+
+            $currentBalance = CreditTransaction::balanceFor($customer->id);
+            if ($currentBalance < $amount) {
+                throw new \RuntimeException("Saldo credit tidak cukup (butuh {$amount}, ada {$currentBalance}).");
+            }
+
+            return CreditTransaction::create([
+                'customer_id' => $customer->id,
+                'type' => 'apply',
+                'amount' => -$amount,
+                'balance_after' => $this->round($currentBalance - $amount),
+                'reason' => $reason,
+                'invoice_id' => $invoice?->id,
+            ]);
+        });
     }
 
     /**
@@ -373,41 +385,77 @@ class BillingService
     {
         if (!$subscription->auto_renew) return null;
         if (!in_array($subscription->status, ['active', 'past_due', 'grace_period'], true)) return null;
-        if (!$subscription->vpsSpec) return null;
+        if (!$subscription->vpsSpec || !$subscription->vpsInstance) return null;
 
         return DB::transaction(function () use ($subscription) {
-            $spec = $subscription->vpsSpec;
-            $cycle = $subscription->billing_cycle;
-            $customer = $subscription->customer;
+            /** @var Subscription|null $locked */
+            $locked = Subscription::whereKey($subscription->id)
+                ->with(['customer', 'vpsSpec', 'vpsInstance.order.vpsSpec'])
+                ->lockForUpdate()
+                ->first();
+
+            if (!$locked || !$locked->auto_renew || !$locked->vpsInstance) {
+                return null;
+            }
+
+            $instance = $locked->vpsInstance;
+            if (!$instance->canBeRenewed()) {
+                return null;
+            }
+
+            // Idempotency anti-spam invoice: jangan buat order renewal kedua dalam 7 hari.
+            $existingRenewal = Order::where('vps_instance_id', $instance->id)
+                ->where('order_type', 'renewal')
+                ->whereIn('status', ['pending', 'paid', 'provisioning', 'active'])
+                ->where('created_at', '>=', now()->subDays(7))
+                ->exists();
+            if ($existingRenewal) {
+                return null;
+            }
+
+            $spec = $instance->renewal_spec ?? $locked->vpsSpec;
+            if (!$spec) {
+                return null;
+            }
+
+            // Siklus renewal dikunci ke 1 bulan ('monthly' = Period=1 upstream).
+            $cycle = 'monthly';
+            $customer = $locked->customer;
             $taxRate = TaxRate::defaultForCountry($customer->country ?? 'ID');
+            $renewalBase = $instance->renewal_price > 0 ? (float) $instance->renewal_price : (float) $spec->sell_price;
 
-            $breakdown = $this->calculatePrice($spec, $cycle, null, false, $customer, $taxRate);
+            $breakdown = $this->calculatePrice($spec, $cycle, null, false, $customer, $taxRate, $renewalBase);
 
-            // Buat order renewal (order baru sebagai wrapper transaksi).
             $renewalOrder = Order::create([
-                'customer_id' => $subscription->customer_id,
+                'customer_id' => $locked->customer_id,
+                'organization_id' => $locked->organization_id ?? $instance->organization_id,
                 'vps_spec_id' => $spec->id,
-                'subscription_id' => $subscription->id,
-                'control_panel' => $subscription->vpsInstance?->control_panel ?? 'coolify',
-                'datacenter_location' => $subscription->vpsInstance?->datacenter_location ?? 'indonesia',
-                'os' => $subscription->vpsInstance?->os ?? 'ubuntu2404',
+                'subscription_id' => $locked->id,
+                'order_type' => 'renewal',
+                'vps_instance_id' => $instance->id,
+                'control_panel' => $instance->control_panel ?? 'none',
+                'datacenter_location' => $instance->datacenter_location ?? 'indonesia',
+                'os' => $instance->os ?? 'ubuntu2404',
+                'hostname' => $instance->hostname,
                 'billing_cycle' => $cycle,
                 'status' => 'pending',
                 'channel' => 'website',
-                'payment_method' => 'renewal',
+                'payment_method' => 'midtrans_snap',
                 'amount' => $breakdown['total'],
                 'currency' => 'IDR',
                 'setup_fee' => 0,
+                'fulfillment_stage' => 'delivered',
+                'terms_version' => config('legal.terms_version', 'v3'),
                 'last_status_change_at' => now(),
             ]);
 
             $months = self::CYCLE_CONFIG[$cycle]['months'] ?? 1;
-            $periodStart = $subscription->current_period_end ?? now();
+            $periodStart = $locked->current_period_end ?? $instance->expires_at ?? now();
             $periodEnd = $periodStart->copy()->addMonths($months);
 
             $invoice = $this->generateInvoice($renewalOrder, $breakdown, [
                 'is_renewal' => true,
-                'subscription_id' => $subscription->id,
+                'subscription_id' => $locked->id,
                 'period_start' => $periodStart,
                 'period_end' => $periodEnd,
             ]);
@@ -419,7 +467,18 @@ class BillingService
                 $subscriptionUpdates['next_billing_at'] = $periodEnd;
                 $subscriptionUpdates['current_period_end'] = $periodEnd;
             }
-            $subscription->update($subscriptionUpdates);
+            $locked->update($subscriptionUpdates);
+
+            if ($invoice->status === 'paid') {
+                app(OrderStateMachine::class)->transition($renewalOrder, 'paid', [
+                    'reason' => 'Auto-renewal lunas otomatis.',
+                    'actor_type' => 'system',
+                    'onLocked' => function (Order $o) {
+                        $o->paid_at = now();
+                        $o->save();
+                    },
+                ]);
+            }
 
             return $invoice;
         });

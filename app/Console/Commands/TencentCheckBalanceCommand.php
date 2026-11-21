@@ -68,7 +68,17 @@ class TencentCheckBalanceCommand extends Command
                 .'Order yang sudah dibayar customer akan ditahan aman (failed + retry-provision) bila saldo kurang saat create.';
 
             try {
-                $alerts->digest('Saldo upstream rendah', $text);
+                $alerts->alert('upstream.balance_low', [
+                    'title' => 'Saldo upstream rendah',
+                    'details' => [
+                        'Saldo Saat Ini' => '$' . number_format($balance, 2) . ' USD',
+                        'Threshold' => '$' . number_format($threshold, 2) . ' USD',
+                        'HPP Pending Terendah' => $minPendingHpp !== null ? '$' . number_format($minPendingHpp, 2) : '-',
+                    ],
+                    'body' => $text,
+                    'whatsapp_text' => $text,
+                    'action_url' => url('/admin/monitoring?tab=upstream'),
+                ]);
                 Cache::put($dayKey, $balance, now()->addDay());
                 $this->warn('Alert terkirim ke admin (WA+email).');
             } catch (\Throwable $e) {

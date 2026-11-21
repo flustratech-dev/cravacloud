@@ -84,12 +84,7 @@ class VpsInstance extends Model
 
     public function isAiPackage(): bool
     {
-        if ($this->order && $this->order->vpsSpec) {
-            return $this->order->vpsSpec->isAiPackage();
-        }
-        // Catatan: app_url TIDAK dipakai sebagai penanda paket AI, karena VPS biasa
-        // juga menyimpan link control panel (mis. Coolify) di kolom yang sama.
-        return in_array($this->control_panel, ['vscode_server', 'hermes_agent', 'hermes_omniroute', 'claude_opencode', 'dify_ollama', 'anythingllm', 'ollama'], true);
+        return (bool) ($this->order?->vpsSpec?->isAiPackage());
     }
 
     public function isDatabasePackage(): bool
@@ -97,9 +92,7 @@ class VpsInstance extends Model
         if ($this->order && $this->order->vpsSpec) {
             return $this->order->vpsSpec->isDatabasePackage();
         }
-        return in_array($this->control_panel, ['managed_database'], true)
-            || !empty($this->attributes['db_engine'])
-            || str_starts_with(strtolower((string)$this->hostname), 'cv-db-');
+        return $this->control_panel === 'managed_database';
     }
 
     public function getDbConnectionDriverAttribute(): string
@@ -189,6 +182,14 @@ class VpsInstance extends Model
 
         if (!$this->public_ip) {
             return null;
+        }
+
+        // Try resolving from 177 stack registry first
+        if (!empty($this->control_panel)) {
+            $stackDef = app(\App\Services\Provisioning\Stacks\StackRegistry::class)->get((string) $this->control_panel);
+            if ($stackDef && $stackDef->appUrlTemplate) {
+                return str_replace('{ip}', $this->public_ip, $stackDef->appUrlTemplate);
+            }
         }
 
         return match ($this->control_panel) {
@@ -305,6 +306,11 @@ class VpsInstance extends Model
     }
 
     /** Username login SSH. VPS lama (sebelum kolom ada) otomatis 'root'. */
+    public static function defaultSshUsernameForOs(?string $os): string
+    {
+        return str_starts_with(strtolower((string) ($os ?? '')), 'ubuntu') ? 'ubuntu' : 'root';
+    }
+
     public function getSshUserAttribute(): string
     {
         return self::normalizeSshUsername($this->ssh_username ?? null);
@@ -416,7 +422,7 @@ class VpsInstance extends Model
                 'dot' => 'bg-blue-500',
             ],
             'rebooting', 'reinstalling' => [
-                'label' => 'Sedang Diproses Tim',
+                'label' => ($this->provider === 'tencent' ? 'Sedang Diproses' : 'Sedang Diproses Tim'),
                 'class' => 'border-blue-300 text-blue-800 bg-blue-50',
                 'dot' => 'bg-blue-500',
             ],
@@ -500,8 +506,11 @@ class VpsInstance extends Model
             return [(string) $this->control_panel => $this->control_panel_label];
         }
 
-        return collect(app(StackRegistry::class)->all())
-            ->filter(fn (StackDefinition $definition) => $definition->visibleOnCheckout)
+        $registry = app(StackRegistry::class);
+        $disabled = $registry->disabledKeys();
+
+        return collect($registry->all())
+            ->filter(fn (StackDefinition $definition) => $definition->visibleOnCheckout && ! in_array($definition->key, $disabled, true))
             ->mapWithKeys(fn (StackDefinition $definition) => [$definition->key => $definition->label])
             ->all();
     }
@@ -578,6 +587,30 @@ class VpsInstance extends Model
     public function getEolReplacementSpecAttribute(): ?VpsSpec
     {
         return $this->order?->vpsSpec?->replacementSpec;
+    }
+
+    /**
+     * Status flag apakah perpanjangan upstream Tencent masih tertunda (mis. menunggu top-up saldo).
+     */
+    public function getRenewPendingAttribute(): bool
+    {
+        return ! empty($this->provider_meta['renew_pending']);
+    }
+
+    /**
+     * Kode region upstream (mis. ap-jakarta, ap-singapore) dari relasi DatacenterRegion atau provider_meta.
+     */
+    public function getRegionCodeAttribute(): ?string
+    {
+        if ($this->relationLoaded('datacenterRegion') && $this->datacenterRegion?->code) {
+            return $this->datacenterRegion->code;
+        }
+
+        if (! empty($this->provider_meta['region'])) {
+            return (string) $this->provider_meta['region'];
+        }
+
+        return $this->datacenterRegion?->code;
     }
 
     /**

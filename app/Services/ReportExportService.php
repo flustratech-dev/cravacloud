@@ -43,13 +43,6 @@ class ReportExportService
      */
     public function getReportData(string $type, mixed $days): array
     {
-        // Normalize alias types
-        $type = match ($type) {
-            'ai' => 'ai_combo',
-            'managed_db' => 'database',
-            default => $type,
-        };
-
         [$from, $periodLabel, $periodKey] = $this->parseDateFilter($days);
 
         $invoicesQuery = Invoice::with(['order.customer', 'order.vpsSpec'])->latest('created_at');
@@ -66,26 +59,13 @@ class ReportExportService
         $orders = $ordersQuery->get();
         $tickets = $ticketsQuery->get();
 
-        // Categorize orders: VPS, AI Agent, Managed Database
-        $vpsOrders = $orders->filter(fn ($o) => !$o->isAiPackage() && !$o->isDatabasePackage());
-        $aiOrders = $orders->filter(fn ($o) => $o->isAiPackage());
-        $dbOrders = $orders->filter(fn ($o) => $o->isDatabasePackage());
+        // Seluruh katalog aktif CravaCloud adalah Cloud VPS KVM + 1-Click Stack
+        $vpsOrders = $orders;
 
         // Financial aggregations
         $revenue = (float) $invoices->where('status', 'paid')->sum('amount');
         $paidInvoices = $invoices->where('status', 'paid')->count();
-
-        $vpsRevenue = (float) $invoices->where('status', 'paid')
-            ->filter(fn ($i) => $i->order && !$i->order->isAiPackage() && !$i->order->isDatabasePackage())
-            ->sum('amount');
-
-        $aiRevenue = (float) $invoices->where('status', 'paid')
-            ->filter(fn ($i) => $i->order && $i->order->isAiPackage())
-            ->sum('amount');
-
-        $dbRevenue = (float) $invoices->where('status', 'paid')
-            ->filter(fn ($i) => $i->order && $i->order->isDatabasePackage())
-            ->sum('amount');
+        $vpsRevenue = $revenue;
 
         $avgFirstResponse = $tickets->filter(fn ($t) => $t->first_response_at)
             ->map(fn ($t) => $t->created_at->diffInMinutes($t->first_response_at))
@@ -99,13 +79,7 @@ class ReportExportService
         $orderStatuses = $orders->groupBy('status')->map->count();
         $ticketStatuses = $tickets->groupBy('status')->map->count();
 
-        // Filtered order set based on report type
-        $filteredOrders = match ($type) {
-            'vps' => $vpsOrders,
-            'ai_combo' => $aiOrders,
-            'database' => $dbOrders,
-            default => $orders,
-        };
+        $filteredOrders = $orders;
 
         // Prepare Base64 Logo for PDF rendering (rock-solid in DomPDF)
         $logoPath = public_path('images/logo.png');
@@ -125,14 +99,10 @@ class ReportExportService
             'orders' => $orders,
             'filteredOrders' => $filteredOrders,
             'vpsOrders' => $vpsOrders,
-            'aiOrders' => $aiOrders,
-            'dbOrders' => $dbOrders,
             'tickets' => $tickets,
             'revenue' => $revenue,
             'paidInvoices' => $paidInvoices,
             'vpsRevenue' => $vpsRevenue,
-            'aiRevenue' => $aiRevenue,
-            'dbRevenue' => $dbRevenue,
             'avgFirstResponse' => $avgFirstResponse,
             'dailyRevenue' => $dailyRevenue,
             'orderStatuses' => $orderStatuses,
@@ -145,40 +115,20 @@ class ReportExportService
      */
     public function getMeta(string $type, string $periodLabel): array
     {
-        $type = match ($type) {
-            'ai' => 'ai_combo',
-            'managed_db' => 'database',
-            default => $type,
-        };
-
         return match ($type) {
             'vps' => [
                 'reportTitle' => 'Laporan Khusus Infrastruktur Cloud VPS',
                 'reportCategory' => 'Cloud VPS Infrastructure & Compute Services',
                 'viewName' => 'admin.reports.pdf.vps',
                 'filenamePrefix' => 'CravaCloud-Laporan-VPS',
-                'subTitle' => 'Rincian Alokasi Komputasi vCPU, RAM, Disk NVMe, Sistem Operasi & Lokasi Datacenter Cloud VPS',
-            ],
-            'ai_combo' => [
-                'reportTitle' => 'Laporan Khusus AI Agent & Autonomous Workstation',
-                'reportCategory' => 'Artificial Intelligence & Autonomous Agent Platforms',
-                'viewName' => 'admin.reports.pdf.ai',
-                'filenamePrefix' => 'CravaCloud-Laporan-AIAgent',
-                'subTitle' => 'Rincian Deployment AI Coding CLI (Claude/OpenCode), LLM Engine (Ollama), & Private RAG Studio',
-            ],
-            'database' => [
-                'reportTitle' => 'Laporan Khusus Managed Database Server',
-                'reportCategory' => 'Dedicated & Clustered Managed Database Solutions',
-                'viewName' => 'admin.reports.pdf.database',
-                'filenamePrefix' => 'CravaCloud-Laporan-Database',
-                'subTitle' => 'Rincian Database Terisolasi (PostgreSQL, MySQL, Redis, MongoDB, Qdrant) & Manajemen Koneksi',
+                'subTitle' => 'Rincian Alokasi Komputasi vCPU, RAM, Disk NVMe, Sistem Operasi, 1-Click Stack & Lokasi Datacenter Cloud VPS',
             ],
             'orders' => [
                 'reportTitle' => 'Laporan Konsolidasi Seluruh Pesanan Layanan',
                 'reportCategory' => 'Enterprise Service Provisioning & Order Operations',
                 'viewName' => 'admin.reports.pdf.orders',
                 'filenamePrefix' => 'CravaCloud-Laporan-Orders',
-                'subTitle' => 'Rekapitulasi Lengkap Seluruh Pesanan Cloud Hosting, VPS, AI Agent Workstation, dan Database',
+                'subTitle' => 'Rekapitulasi Lengkap Seluruh Pesanan Infrastruktur Cloud VPS & 1-Click Application Stacks',
             ],
             'invoices' => [
                 'reportTitle' => 'Laporan Faktur Penagihan & Arus Kas Pendapatan',
@@ -196,10 +146,10 @@ class ReportExportService
             ],
             default => [
                 'reportTitle' => 'Laporan Eksekutif & Ringkasan Portofolio Bisnis',
-                'reportCategory' => 'Executive Corporate & Multi-Service Portfolio Summary',
+                'reportCategory' => 'Executive Corporate & Cloud VPS Portfolio Summary',
                 'viewName' => 'admin.reports.pdf.executive',
                 'filenamePrefix' => 'CravaCloud-Laporan-Eksekutif',
-                'subTitle' => 'Konsolidasi Finansial, Performa Penjualan Multi-Layanan, Arus Kas Harian, dan Metrik Operasional',
+                'subTitle' => 'Konsolidasi Finansial, Performa Penjualan Cloud VPS, Arus Kas Harian, dan Metrik Operasional',
             ],
         };
     }
@@ -276,7 +226,7 @@ class ReportExportService
 
         $cBrand = $headerTable->addCell(6500);
         $cBrand->addText('CRAVACLOUD INDONESIA', ['name' => 'Arial', 'size' => 13, 'bold' => true, 'color' => '0F172A']);
-        $cBrand->addText('Cloud Infrastructure, Autonomous AI & Managed Database Platform', ['name' => 'Arial', 'size' => 8, 'bold' => true, 'color' => '475569']);
+        $cBrand->addText('Cloud VPS Infrastructure & 1-Click Application Stacks', ['name' => 'Arial', 'size' => 8, 'bold' => true, 'color' => '475569']);
         $cBrand->addText(\App\Support\MailIdentity::contactEmail() . ' • cravacloud.id', ['name' => 'Arial', 'size' => 7.5, 'color' => '64748B']);
 
         $section->addTextBreak(1);
@@ -332,9 +282,9 @@ class ReportExportService
         $kpi2->addText("{$data['orders']->where('status', 'active')->count()} aktif beroperasi", ['size' => 7, 'color' => '64748B']);
 
         $kpi3 = $kpiTable->addCell(2375, ['bgColor' => 'F8FAFC']);
-        $kpi3->addText('DISTRIBUSI PORTOFOLIO', ['size' => 7.5, 'bold' => true, 'color' => '64748B']);
-        $kpi3->addText("VPS: {$data['vpsOrders']->count()} | AI: {$data['aiOrders']->count()} | DB: {$data['dbOrders']->count()}", ['size' => 8.5, 'bold' => true, 'color' => '0F172A']);
-        $kpi3->addText('3 pilar utama layanan', ['size' => 7, 'color' => '64748B']);
+        $kpi3->addText('CLOUD VPS AKTIF', ['size' => 7.5, 'bold' => true, 'color' => '64748B']);
+        $kpi3->addText((string) $data['vpsOrders']->where('status', 'active')->count() . ' unit', ['size' => 11, 'bold' => true, 'color' => '0F172A']);
+        $kpi3->addText('Cloud VPS KVM + 1-Click Stack', ['size' => 7, 'color' => '64748B']);
 
         $kpi4 = $kpiTable->addCell(2375, ['bgColor' => 'F8FAFC']);
         $kpi4->addText('SLA TIKET SUPPORT', ['size' => 7.5, 'bold' => true, 'color' => '64748B']);
@@ -377,70 +327,23 @@ class ReportExportService
                 $table->addCell(1400, ['bgColor' => $bg])->addText(strtoupper(str_replace('_', ' ', $order->status)), ['size' => 8, 'bold' => true]);
                 $table->addCell(1500, ['bgColor' => $bg])->addText('Rp ' . number_format($order->amount, 0, ',', '.'), ['size' => 8, 'bold' => true]);
             }
-        } elseif ($type === 'ai_combo') {
-            $section->addText('DAFTAR RINCIAN WORKSTATION & AI AGENT', ['name' => 'Arial', 'size' => 10, 'bold' => true, 'color' => '0F172A']);
-            $table = $section->addTable('DataTable');
-            $table->addRow();
-            $table->addCell(1400, ['bgColor' => '0F172A'])->addText('ORDER ID', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
-            $table->addCell(2400, ['bgColor' => '0F172A'])->addText('PELANGGAN', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
-            $table->addCell(2400, ['bgColor' => '0F172A'])->addText('PAKET AI / ENGINE', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
-            $table->addCell(1800, ['bgColor' => '0F172A'])->addText('AI STACK / RUNTIME', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
-            $table->addCell(1200, ['bgColor' => '0F172A'])->addText('STATUS', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
-            $table->addCell(1500, ['bgColor' => '0F172A'])->addText('NILAI (IDR)', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
-
-            foreach ($data['aiOrders'] as $idx => $order) {
-                $bg = $idx % 2 === 1 ? 'F8FAFC' : 'FFFFFF';
-                $table->addRow();
-                $table->addCell(1400, ['bgColor' => $bg])->addText('#ORD-' . str_pad($order->id, 5, '0', STR_PAD_LEFT), ['size' => 8]);
-                $table->addCell(2400, ['bgColor' => $bg])->addText($order->customer?->email ?? '-', ['size' => 8]);
-                $table->addCell(2400, ['bgColor' => $bg])->addText($order->vpsSpec?->name ?? 'AI Workstation', ['size' => 8, 'bold' => true]);
-                $table->addCell(1800, ['bgColor' => $bg])->addText($order->control_panel_label, ['size' => 7.5]);
-                $table->addCell(1200, ['bgColor' => $bg])->addText(strtoupper(str_replace('_', ' ', $order->status)), ['size' => 8, 'bold' => true]);
-                $table->addCell(1500, ['bgColor' => $bg])->addText('Rp ' . number_format($order->amount, 0, ',', '.'), ['size' => 8, 'bold' => true]);
-            }
-        } elseif ($type === 'database') {
-            $section->addText('DAFTAR RINCIAN MANAGED DATABASE SERVER', ['name' => 'Arial', 'size' => 10, 'bold' => true, 'color' => '0F172A']);
-            $table = $section->addTable('DataTable');
-            $table->addRow();
-            $table->addCell(1400, ['bgColor' => '0F172A'])->addText('ORDER ID', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
-            $table->addCell(2400, ['bgColor' => '0F172A'])->addText('PELANGGAN', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
-            $table->addCell(2200, ['bgColor' => '0F172A'])->addText('PAKET DATABASE', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
-            $table->addCell(1800, ['bgColor' => '0F172A'])->addText('ENGINE & MANAGER', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
-            $table->addCell(1200, ['bgColor' => '0F172A'])->addText('STATUS', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
-            $table->addCell(1500, ['bgColor' => '0F172A'])->addText('NILAI (IDR)', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
-
-            foreach ($data['dbOrders'] as $idx => $order) {
-                $bg = $idx % 2 === 1 ? 'F8FAFC' : 'FFFFFF';
-                $table->addRow();
-                $table->addCell(1400, ['bgColor' => $bg])->addText('#ORD-' . str_pad($order->id, 5, '0', STR_PAD_LEFT), ['size' => 8]);
-                $table->addCell(2400, ['bgColor' => $bg])->addText($order->customer?->email ?? '-', ['size' => 8]);
-                $table->addCell(2200, ['bgColor' => $bg])->addText($order->vpsSpec?->name ?? 'DB Micro Server', ['size' => 8, 'bold' => true]);
-                $engineText = strtoupper($order->db_engine ?? 'PostgreSQL / MySQL');
-                if ($order->db_manager) {
-                    $engineText .= ' (' . ucfirst($order->db_manager) . ')';
-                }
-                $table->addCell(1800, ['bgColor' => $bg])->addText($engineText, ['size' => 7.5]);
-                $table->addCell(1200, ['bgColor' => $bg])->addText(strtoupper(str_replace('_', ' ', $order->status)), ['size' => 8, 'bold' => true]);
-                $table->addCell(1500, ['bgColor' => $bg])->addText('Rp ' . number_format($order->amount, 0, ',', '.'), ['size' => 8, 'bold' => true]);
-            }
         } elseif ($type === 'orders') {
             $section->addText('DAFTAR KONSOLIDASI SELURUH PESANAN LAYANAN', ['name' => 'Arial', 'size' => 10, 'bold' => true, 'color' => '0F172A']);
             $table = $section->addTable('DataTable');
             $table->addRow();
             $table->addCell(1400, ['bgColor' => '0F172A'])->addText('NO. ORDER', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
             $table->addCell(2200, ['bgColor' => '0F172A'])->addText('PELANGGAN', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
-            $table->addCell(1600, ['bgColor' => '0F172A'])->addText('KATEGORI', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
+            $table->addCell(1600, ['bgColor' => '0F172A'])->addText('PAKET', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
             $table->addCell(1400, ['bgColor' => '0F172A'])->addText('STATUS', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
             $table->addCell(1500, ['bgColor' => '0F172A'])->addText('TOTAL (IDR)', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
             $table->addCell(1400, ['bgColor' => '0F172A'])->addText('TANGGAL', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
 
             foreach ($data['orders'] as $idx => $order) {
                 $bg = $idx % 2 === 1 ? 'F8FAFC' : 'FFFFFF';
-                $cat = $order->isAiPackage() ? 'AI AGENT' : ($order->isDatabasePackage() ? 'MANAGED DB' : 'CLOUD VPS');
                 $table->addRow();
                 $table->addCell(1400, ['bgColor' => $bg])->addText('#ORD-' . str_pad($order->id, 5, '0', STR_PAD_LEFT), ['size' => 8]);
                 $table->addCell(2200, ['bgColor' => $bg])->addText($order->customer?->email ?? '-', ['size' => 8]);
-                $table->addCell(1600, ['bgColor' => $bg])->addText($cat, ['size' => 7.5, 'bold' => true]);
+                $table->addCell(1600, ['bgColor' => $bg])->addText($order->vpsSpec?->name ?? 'Cloud VPS', ['size' => 7.5, 'bold' => true]);
                 $table->addCell(1400, ['bgColor' => $bg])->addText(strtoupper(str_replace('_', ' ', $order->status)), ['size' => 8, 'bold' => true]);
                 $table->addCell(1500, ['bgColor' => $bg])->addText('Rp ' . number_format($order->amount, 0, ',', '.'), ['size' => 8, 'bold' => true]);
                 $table->addCell(1400, ['bgColor' => $bg])->addText($order->created_at ? $order->created_at->format('d/m/Y') : '-', ['size' => 8]);
@@ -486,19 +389,24 @@ class ReportExportService
                 $table->addCell(1800, ['bgColor' => $bg])->addText(strtoupper(str_replace('_', ' ', $ticket->status)), ['size' => 8, 'bold' => true]);
             }
         } else {
-            // Executive Summary: 3-Pillar Category Breakdown + Daily Revenue + Recent Orders
-            $section->addText('KOMPARASI KINERJA 3 PILAR LAYANAN UTAMA', ['name' => 'Arial', 'size' => 10, 'bold' => true, 'color' => '0F172A']);
+            // Executive Summary: Cloud VPS Starter vs Enterprise Series + Daily Revenue
+            $section->addText('RINGKASAN PORTOFOLIO CLOUD VPS (STARTER & ENTERPRISE SERIES)', ['name' => 'Arial', 'size' => 10, 'bold' => true, 'color' => '0F172A']);
             $tableCat = $section->addTable('DataTable');
             $tableCat->addRow();
-            $tableCat->addCell(3000, ['bgColor' => '0F172A'])->addText('PILAR LAYANAN', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
+            $tableCat->addCell(3000, ['bgColor' => '0F172A'])->addText('LINI PAKET', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
             $tableCat->addCell(2000, ['bgColor' => '0F172A'])->addText('TOTAL ORDER', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
             $tableCat->addCell(2000, ['bgColor' => '0F172A'])->addText('AKTIF RUNNING', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
             $tableCat->addCell(2500, ['bgColor' => '0F172A'])->addText('TOTAL OMZET (IDR)', ['bold' => true, 'size' => 8, 'color' => 'FFFFFF']);
 
+            $starterOrders = $data['vpsOrders']->filter(fn ($o) => str_starts_with(strtolower((string) ($o->vpsSpec?->name ?? '')), 'starter'));
+            $enterpriseOrders = $data['vpsOrders']->filter(fn ($o) => str_starts_with(strtolower((string) ($o->vpsSpec?->name ?? '')), 'enterprise'));
+            $starterRev = (float) $data['invoices']->where('status', 'paid')->filter(fn ($i) => $i->order && $starterOrders->contains('id', $i->order->id))->sum('amount');
+            $enterpriseRev = (float) $data['invoices']->where('status', 'paid')->filter(fn ($i) => $i->order && $enterpriseOrders->contains('id', $i->order->id))->sum('amount');
+
             $cats = [
-                ['Cloud VPS (Compute)', $data['vpsOrders']->count(), $data['vpsOrders']->where('status', 'active')->count(), $data['vpsRevenue']],
-                ['AI Agent & Workstation', $data['aiOrders']->count(), $data['aiOrders']->where('status', 'active')->count(), $data['aiRevenue']],
-                ['Managed Database Server', $data['dbOrders']->count(), $data['dbOrders']->where('status', 'active')->count(), $data['dbRevenue']],
+                ['Starter Series (XS / S / M / L)', $starterOrders->count(), $starterOrders->where('status', 'active')->count(), $starterRev],
+                ['Enterprise Series (Pro / Max / Ultra / Extreme)', $enterpriseOrders->count(), $enterpriseOrders->where('status', 'active')->count(), $enterpriseRev],
+                ['Total Konsolidasi Cloud VPS', $data['vpsOrders']->count(), $data['vpsOrders']->where('status', 'active')->count(), $data['vpsRevenue']],
             ];
 
             foreach ($cats as $idx => $row) {
@@ -626,50 +534,15 @@ class ReportExportService
                         $row->created_at ? $row->created_at->format('Y-m-d H:i:s') : '',
                     ]);
                 }
-            } elseif ($type === 'ai_combo') {
-                fputcsv($out, ['ID Order', 'Email Pelanggan', 'Nama Pelanggan', 'Paket AI Agent', 'AI Stacks / Pre-installed', 'CPU (Core)', 'RAM (GB)', 'Status', 'Nominal (IDR)', 'Siklus', 'Tanggal Dibuat']);
-                foreach ($data['aiOrders'] as $row) {
-                    fputcsv($out, [
-                        'ORD-' . str_pad($row->id, 5, '0', STR_PAD_LEFT),
-                        $row->customer?->email ?? '',
-                        $row->customer?->full_name ?? ($row->customer?->username ?? ''),
-                        $row->vpsSpec?->name ?? 'AI Workstation',
-                        $row->control_panel_label,
-                        $row->vpsSpec?->cpu ?? 2,
-                        $row->vpsSpec?->ram ?? 4,
-                        $row->status,
-                        $row->amount,
-                        $row->billing_cycle ?? 'monthly',
-                        $row->created_at ? $row->created_at->format('Y-m-d H:i:s') : '',
-                    ]);
-                }
-            } elseif ($type === 'database') {
-                fputcsv($out, ['ID Order', 'Email Pelanggan', 'Nama Pelanggan', 'Paket Database', 'Database Engine', 'DB Manager', 'Port', 'Status', 'Nominal (IDR)', 'Siklus', 'Tanggal Dibuat']);
-                foreach ($data['dbOrders'] as $row) {
-                    fputcsv($out, [
-                        'ORD-' . str_pad($row->id, 5, '0', STR_PAD_LEFT),
-                        $row->customer?->email ?? '',
-                        $row->customer?->full_name ?? ($row->customer?->username ?? ''),
-                        $row->vpsSpec?->name ?? 'DB Micro Server',
-                        strtoupper($row->db_engine ?? 'PostgreSQL'),
-                        $row->db_manager ?? 'Direct/CloudBeaver',
-                        $row->db_port ?? '5432',
-                        $row->status,
-                        $row->amount,
-                        $row->billing_cycle ?? 'monthly',
-                        $row->created_at ? $row->created_at->format('Y-m-d H:i:s') : '',
-                    ]);
-                }
             } elseif ($type === 'orders') {
                 fputcsv($out, ['ID Order', 'Email Pelanggan', 'Nama Pelanggan', 'Kategori Layanan', 'Paket Layanan', 'Stack / Panel', 'Channel', 'Status', 'Nominal (IDR)', 'Siklus Tagihan', 'Dibuat Pada']);
                 foreach ($data['orders'] as $row) {
-                    $cat = $row->isAiPackage() ? 'AI AGENT' : ($row->isDatabasePackage() ? 'MANAGED DB' : 'CLOUD VPS');
                     fputcsv($out, [
                         'ORD-' . str_pad($row->id, 5, '0', STR_PAD_LEFT),
                         $row->customer?->email ?? '',
                         $row->customer?->full_name ?? ($row->customer?->username ?? ''),
-                        $cat,
-                        $row->vpsSpec?->name ?? 'Standard Plan',
+                        'CLOUD VPS',
+                        $row->vpsSpec?->name ?? 'Cloud VPS',
                         $row->control_panel_label,
                         strtoupper($row->channel ?? 'DIRECT'),
                         $row->status,
@@ -716,13 +589,9 @@ class ReportExportService
                 fputcsv($out, ['Dicetak Oleh', $data['generatedBy'], '']);
                 fputcsv($out, ['Total Omzet Lunas', $data['revenue'], 'IDR']);
                 fputcsv($out, ['Omzet Cloud VPS', $data['vpsRevenue'], 'IDR']);
-                fputcsv($out, ['Omzet AI Agent & Combo', $data['aiRevenue'], 'IDR']);
-                fputcsv($out, ['Omzet Managed Database', $data['dbRevenue'], 'IDR']);
                 fputcsv($out, ['Jumlah Invoice Lunas', $data['paidInvoices'], 'Transaksi Berhasil']);
                 fputcsv($out, ['Total Jumlah Pesanan', $data['orders']->count(), 'Pesanan']);
                 fputcsv($out, ['Pesanan Cloud VPS', $data['vpsOrders']->count(), 'Pesanan']);
-                fputcsv($out, ['Pesanan AI Agent', $data['aiOrders']->count(), 'Pesanan']);
-                fputcsv($out, ['Pesanan Managed DB', $data['dbOrders']->count(), 'Pesanan']);
                 fputcsv($out, ['Pesanan Aktif Berjalan', $data['orders']->where('status', 'active')->count(), 'Layanan Aktif']);
                 fputcsv($out, ['Rata-rata Respon SLA', $data['avgFirstResponse'] ? round($data['avgFirstResponse'] / 60, 2) . ' Jam' : 'N/A', 'Waktu Respons Pertama']);
                 fputcsv($out, []);

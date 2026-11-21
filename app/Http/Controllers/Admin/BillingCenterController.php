@@ -42,6 +42,10 @@ class BillingCenterController extends Controller
 
     public function index(Request $request)
     {
+        if ($request->query('tab') === 'supplier') {
+            return redirect()->route('admin.supplier.index');
+        }
+
         $tab = in_array($request->query('tab'), self::TABS, true) ? $request->query('tab') : 'invoices';
 
         $data = [
@@ -160,6 +164,27 @@ class BillingCenterController extends Controller
                 . " untuk faktur {$invoice->invoice_number}.",
             $refund
         );
+
+        try {
+            app(\App\Services\AdminAlertService::class)->alert(
+                'billing.refund_or_abuse',
+                [
+                    'title' => "Pengajuan Refund Baru #{$refund->id}",
+                    'order_id' => $refund->order_id,
+                    'details' => [
+                        'Faktur' => $invoice->invoice_number,
+                        'Nominal' => 'Rp ' . number_format((float) $refund->amount, 0, ',', '.'),
+                        'Metode' => strtoupper((string) $refund->method),
+                        'Alasan' => \Illuminate\Support\Str::limit((string) $refund->reason, 120),
+                    ],
+                    'action_url' => url('/admin/billing?tab=refunds'),
+                ],
+                dedupeKey: 'refund-' . $refund->id,
+                cooldownSeconds: 86400
+            );
+        } catch (\Throwable) {
+            // ignore
+        }
 
         return back()->with('success', 'Pengajuan pengembalian dana tercatat. Setujui untuk memprosesnya.');
     }

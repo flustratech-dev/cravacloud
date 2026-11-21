@@ -135,7 +135,6 @@ class ClientPortalViewsSmokeTest extends TestCase
 
         $adminRoutes = [
             route('admin.index'),
-            route('admin.payments'),
             route('admin.orders'),
             route('admin.orders.history', $order->id),
             route('admin.shopee'),
@@ -154,7 +153,6 @@ class ClientPortalViewsSmokeTest extends TestCase
             route('admin.whatsapp.index'),
             route('admin.gateways.index'),
             route('admin.webhooks.index'),
-            route('admin.fulfillment.index'),
             route('admin.billing.index'),
             route('admin.audit.index'),
             route('admin.supplier.index'),
@@ -168,6 +166,10 @@ class ClientPortalViewsSmokeTest extends TestCase
             $this->assertStringNotContainsString('rounded-lg', $html, "Found rounded-lg on brutalist admin view {$url}");
             $this->assertStringContainsString('images/logo.svg', $html, "Missing SVG logo on {$url}");
         }
+
+        // Decommissioned fulfillment workboard redirects to orders
+        $this->actingAs($admin)->get(route('admin.fulfillment.index'))
+            ->assertRedirect(route('admin.orders', ['status' => 'needs_provision']));
 
         // Inactive spec with 0 orders is excluded from /admin distribution & accent defaults to #001AFF
         $retired = \App\Models\VpsSpec::create([

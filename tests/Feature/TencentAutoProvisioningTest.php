@@ -565,9 +565,10 @@ class TencentAutoProvisioningTest extends TestCase
         $this->assertSame(0, $singapore->reserved);
         $this->assertSame(0, $singapore->used);
 
-        $alerts->shouldHaveReceived('digest')
+        $alerts->shouldHaveReceived('alert')
             ->once()
-            ->withArgs(fn (string $subject) => str_contains($subject, 'pool penuh'));
+            ->withArgs(fn (string $eventKey, array $context) => $eventKey === 'upstream.quota_hold'
+                && str_contains($context['title'] ?? '', 'pool penuh'));
     }
 
     // ============ 6. white-label — no vendor words to customer ============
@@ -593,9 +594,8 @@ class TencentAutoProvisioningTest extends TestCase
         $this->assertNoVendorWords($mail->render());
         $this->assertNoVendorWords($mail->subject ?? '');
 
-        // Pesan WhatsApp bebas nama vendor.
-        $wa = (new VpsProvisionedNotification($instance->fresh()))->toWhatsApp($customer);
-        $this->assertNoVendorWords((string) $wa?->getContent());
+        // Notifikasi kredensial pelanggan hanya email + database (zero WA).
+        $this->assertSame(['mail', 'database'], (new VpsProvisionedNotification($instance->fresh()))->via($customer));
 
         // Endpoint polling dashboard: error mentah provider disanitasi.
         $task = ProvisioningTask::where('order_id', $order->id)->firstOrFail();

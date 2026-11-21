@@ -2,10 +2,9 @@
 
 namespace App\Notifications;
 
-use App\Channels\WhatsAppChannel;
 use App\Models\VpsInstance;
-use App\Services\WhatsAppMessage;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -15,24 +14,19 @@ use Illuminate\Notifications\Notification;
  * in the message — the customer reveals it from the dashboard (encrypted at
  * rest, rate-limited reveal).
  */
-class VpsPasswordResetNotification extends Notification
+class VpsPasswordResetNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     use \App\Notifications\Concerns\UsesMailIdentity;
 
     public function __construct(public VpsInstance $instance)
     {
+        $this->onQueue('notifications');
     }
 
     public function via(object $notifiable): array
     {
-        $channels = ['mail', 'database'];
-
-        if (config('whatsapp.enabled') && ! empty($notifiable->phone)) {
-            $channels[] = WhatsAppChannel::class;
-        }
-
-        return $channels;
+        return ['mail', 'database'];
     }
 
     private function serverName(): string
@@ -49,7 +43,7 @@ class VpsPasswordResetNotification extends Notification
             ."Password login untuk server {$this->serverName()} telah berhasil diperbarui.\n\n"
             ."Username: {$this->instance->ssh_user}\n"
             ."Perintah login: {$this->instance->ssh_command}\n\n"
-            ."Demi keamanan, password baru tidak dikirim melalui email/WhatsApp. "
+            ."Demi keamanan, password baru tidak dikirim melalui email. "
             ."Lihat password baru di Dashboard > Detail VPS > tab Akses (klik ikon mata):\n"
             ."{$dashboardUrl}\n\n"
             ."Segera ganti password setelah login pertama kali. "
@@ -73,27 +67,5 @@ class VpsPasswordResetNotification extends Notification
             'hostname' => $this->instance->hostname,
             'ssh_username' => $this->instance->ssh_user,
         ];
-    }
-
-    public function toWhatsApp(object $notifiable): ?WhatsAppMessage
-    {
-        $appUrl = rtrim((string) config('app.url', 'https://cravacloud.id'), '/');
-
-        return WhatsAppMessage::create(implode("\n", [
-            'Halo *'.($notifiable->full_name ?? 'Pelanggan CravaCloud').'*,',
-            '',
-            '🔐 *PASSWORD SERVER DIPERBARUI*',
-            "Server: `{$this->serverName()}`",
-            '',
-            "• *Username:* `{$this->instance->ssh_user}`",
-            '',
-            '💻 *Login SSH:*',
-            "`{$this->instance->ssh_command}`",
-            '',
-            'Password baru tidak dikirim demi keamanan. Lihat di Dashboard > Detail VPS > tab Akses (klik ikon mata):',
-            "{$appUrl}/dashboard/vps/{$this->instance->id}",
-            '',
-            '_CravaCloud Solutions_',
-        ]));
     }
 }

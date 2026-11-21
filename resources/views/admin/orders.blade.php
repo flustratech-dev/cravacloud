@@ -13,10 +13,6 @@
             'os_label' => $order->os_label,
             'control_panel' => $order->control_panel,
             'stack' => $order->control_panel_label,
-            'is_db' => $order->isDatabasePackage(),
-            'db_engine' => $order->db_engine,
-            'db_manager' => $order->db_manager,
-            'is_ai' => $order->isAiPackage(),
             'amount' => number_format($order->amount, 0, ',', '.'),
             'invoice' => $order->invoice->invoice_number ?? ('INV-' . $order->id),
             'customer' => [
@@ -37,6 +33,7 @@
     publicIp: '',
     privateIp: '',
     sshPort: 22,
+    sshUsername: 'ubuntu',
     rootPassword: '',
     showRootPassword: true,
     appUrl: '',
@@ -46,6 +43,7 @@
         this.publicIp = '';
         this.privateIp = '';
         this.sshPort = 22;
+        this.sshUsername = String(this.currentOrder?.os || 'ubuntu2404').toLowerCase().startsWith('ubuntu') ? 'ubuntu' : 'root';
         this.rootPassword = '';
         this.showRootPassword = true;
         this.appUrl = '';
@@ -53,12 +51,12 @@
     },
     hasPanel() {
         if (!this.currentOrder) return false;
-        if (this.currentOrder.is_db) {
-            return this.currentOrder.db_manager === 'cloudbeaver';
-        }
         return this.currentOrder.control_panel && this.currentOrder.control_panel !== 'none';
     }
 }">
+    <!-- Sub-Tab Orders & Shopee -->
+    @include('admin.partials.orders-tabs')
+
     <!-- Top Filter Tabs -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
         <div class="flex flex-wrap items-center gap-1.5 font-mono text-xs">
@@ -76,6 +74,19 @@
                         {{ $pendingProvisionCount }}
                     </span>
                 @endif
+            </a>
+
+            <a href="{{ route('admin.orders') }}?status=failed"
+               class="px-3.5 py-2 transition-colors whitespace-nowrap flex items-center gap-1.5 {{ request('status') === 'failed' ? 'bg-electric text-white font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
+                <span>Gagal / Stuck</span>
+                @if(($failedCount ?? 0) > 0)
+                    <span class="px-1.5 py-0.5 text-[10px] font-bold {{ request('status') === 'failed' ? 'bg-white text-electric' : 'bg-ink text-cream' }}">{{ $failedCount }}</span>
+                @endif
+            </a>
+
+            <a href="{{ route('admin.orders') }}?status=provisioning"
+               class="px-3.5 py-2 transition-colors whitespace-nowrap {{ request('status') === 'provisioning' ? 'bg-electric text-white font-bold' : 'bg-white text-ink border border-hairline hover:border-ink' }}">
+                Provisioning
             </a>
 
             <a href="{{ route('admin.orders') }}?status=active"
@@ -150,12 +161,7 @@
                             </td>
                             <td class="px-5 py-3.5">
                                 <div class="flex items-center gap-1.5 flex-wrap">
-                                    <span class="font-semibold text-ink">{{ $order->vpsSpec->name ?? 'Standard' }}</span>
-                                    @if($order->isAiPackage())
-                                        <span class="px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-creamDark text-ink border border-hairline">
-                                            AI Combo
-                                        </span>
-                                    @endif
+                                    <span class="font-semibold text-ink">{{ $order->vpsSpec->name ?? 'Cloud VPS' }}</span>
                                     @if($order->hostname)
                                         <span class="text-[10px] font-mono px-1.5 py-0.5 bg-creamDark/60 text-ink font-semibold border border-hairline" title="VPS Name">
                                             {{ $order->hostname }}
@@ -174,10 +180,14 @@
                                         Paid &middot; Siap Setup
                                     </span>
                                 @elseif($order->status === 'provisioning')
+                                    @php $latestTask = $order->provisioningTasks?->first(); @endphp
                                     <span class="px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase border border-ink bg-creamDark text-ink inline-flex items-center gap-1 w-fit">
                                         <span class="w-1.5 h-1.5 bg-electric animate-pulse"></span>
-                                        Provisioning
+                                        Provisioning {{ $latestTask ? "({$latestTask->progress}%)" : '' }}
                                     </span>
+                                    @if($latestTask && $latestTask->current_step)
+                                        <span class="block text-[10px] font-mono text-muted mt-1">{{ $latestTask->current_step }}</span>
+                                    @endif
                                 @elseif($order->status === 'active')
                                     <span class="px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase bg-ink text-cream w-fit inline-block">
                                         Active
@@ -198,6 +208,14 @@
                             <td class="px-5 py-3.5 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
                                     @if(in_array($order->status, ['paid', 'provisioning', 'failed']) && !$order->vpsInstance)
+                                        @if($order->status === 'failed' && $order->vpsSpec?->hasUpstreamMapping())
+                                            <form action="{{ route('admin.orders.retry-provision', $order->id) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="px-3 py-1.5 bg-ink hover:bg-electric text-white font-mono font-bold text-[10px] uppercase cursor-pointer">
+                                                    Retry Auto
+                                                </button>
+                                            </form>
+                                        @endif
                                         <button type="button"
                                                 onclick="openProvisionModal({{ $order->id }})"
                                                 @click.stop="openProvision({{ $order->id }})"
@@ -209,6 +227,12 @@
                                             Audit
                                         </a>
                                     @elseif($order->status === 'pending')
+                                        <form action="{{ route('admin.orders.sync-midtrans', $order->id) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="px-2.5 py-1.5 border border-ink bg-white hover:bg-creamDark text-ink font-mono text-[10px] font-bold uppercase cursor-pointer" title="Cek Status Midtrans">
+                                                Cek Midtrans
+                                            </button>
+                                        </form>
                                         <form action="{{ route('admin.orders.mark-paid', $order->id) }}" method="POST" data-confirm="Tandai order ini sudah dibayar manual?">
                                             @csrf
                                             <button type="submit" class="px-2.5 py-1.5 bg-electric hover:bg-electricHover text-white font-mono text-[10px] font-bold uppercase cursor-pointer" title="Mark Paid Manual">
@@ -329,21 +353,21 @@
 
                 <div>
                     <label class="block font-mono text-[10px] font-bold uppercase tracking-widest text-ink mb-1">Username SSH</label>
-                    <input type="text" name="ssh_username" value="root" maxlength="32" pattern="[A-Za-z_][A-Za-z0-9._\-]{0,31}" autocomplete="off" spellcheck="false"
+                    <input id="modalSshUsername" type="text" name="ssh_username" x-model="sshUsername" maxlength="32" pattern="[A-Za-z_][A-Za-z0-9._\-]{0,31}" autocomplete="off" spellcheck="false"
                            class="w-full px-3 py-2 border border-hairline font-mono bg-white text-ink focus:outline-none focus:border-electric">
-                    <p class="text-[11px] text-muted mt-0.5">Default <code class="font-mono">root</code>. Ganti bila supplier memberi user lain (mis. <code class="font-mono">ubuntu</code>).</p>
+                    <p class="text-[11px] text-muted mt-0.5">Otomatis <code class="font-mono">ubuntu</code> untuk OS Ubuntu, atau <code class="font-mono">root</code> untuk Debian/Rocky/CentOS.</p>
                 </div>
 
                 <div>
                     <label class="block font-mono text-[10px] font-bold uppercase tracking-widest text-ink mb-1">Password SSH Server <span class="text-electric">*</span></label>
                     <div class="relative">
-                        <input id="modalRootPassword" :type="showRootPassword ? 'text' : 'password'" name="root_password" required minlength="8" x-model="rootPassword" placeholder="Masukkan password root dari retail (min 8 karakter)"
+                        <input id="modalRootPassword" :type="showRootPassword ? 'text' : 'password'" name="root_password" required minlength="8" x-model="rootPassword" placeholder="Masukkan password SSH dari retail (min 8 karakter)"
                                class="w-full px-3 py-2 pr-20 border border-hairline font-mono bg-white text-ink focus:outline-none focus:border-electric">
                         <button type="button" @click="showRootPassword = !showRootPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center font-mono text-[11px] text-muted hover:text-ink cursor-pointer font-bold">
                             <span x-text="showRootPassword ? 'Sembunyikan' : 'Lihat'">Sembunyikan</span>
                         </button>
                     </div>
-                    <p class="text-[11px] text-muted mt-0.5">Password root server yang digenerate otomatis oleh provider retail upstream.</p>
+                    <p class="text-[11px] text-muted mt-0.5">Password SSH server yang diterbitkan oleh provider retail upstream.</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
@@ -430,9 +454,10 @@ window.openProvisionModal = function(orderId) {
     if (privIp) privIp.value = '';
     var sshP = document.getElementById('modalSshPort');
     if (sshP) sshP.value = '22';
+    var sshU = document.getElementById('modalSshUsername');
+    if (sshU) sshU.value = String(order.os || 'ubuntu2404').toLowerCase().startsWith('ubuntu') ? 'ubuntu' : 'root';
 
-    var isDb = order.is_db;
-    var hasPanel = isDb ? (order.db_manager === 'cloudbeaver') : (order.control_panel && order.control_panel !== 'none');
+    var hasPanel = Boolean(order.control_panel && order.control_panel !== 'none');
     var panelWrap = document.getElementById('modalPanelWrapper');
     var appUrlInput = document.getElementById('modalAppUrl');
 

@@ -7,9 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Klien CravaCloud WhatsApp Gateway.
- *
- * Menangani pengiriman pesan teks, dokumen/media, dan broadcast ke pengguna.
+ * Klien CravaCloud WhatsApp Gateway (khusus Alert Internal Admin Operasional).
  *
  * Prinsip: Pengiriman WhatsApp tidak boleh pernah menggagalkan proses bisnis
  * (order, invoice, atau provisioning). Semua kegagalan dicatat ke log sistem
@@ -18,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 class WhatsAppGateway
 {
     /**
-     * Mengirim satu pesan teks ke pengguna.
+     * Mengirim satu pesan teks ke nomor WhatsApp admin tujuan.
      *
      * @param string|null $phone Nomor tujuan
      * @param string $message Isi pesan teks
@@ -65,159 +63,6 @@ class WhatsAppGateway
         ]);
 
         return false;
-    }
-
-    /**
-     * Mengirim berkas media (dokumen PDF / gambar) dengan caption opsional.
-     *
-     * @param string|null $phone Nomor tujuan
-     * @param string|resource $fileContent Isi berkas mentah atau resource stream
-     * @param string $filename Nama berkas (mis. Invoice-INV-2026.pdf)
-     * @param string $type Tipe media: 'document', 'image', 'video', 'audio'
-     * @param string|null $caption Teks keterangan di bawah berkas
-     * @param string|null $sessionId ID sesi gateway opsional
-     * @return bool
-     */
-    public static function sendMedia(
-        ?string $phone,
-        mixed $fileContent,
-        string $filename,
-        string $type = 'document',
-        ?string $caption = null,
-        ?string $sessionId = null
-    ): bool {
-        $key = config('whatsapp.key');
-
-        if (! config('whatsapp.enabled') || ! $key) {
-            return false;
-        }
-
-        $phone = self::normalize($phone);
-
-        if ($phone === null || empty($fileContent)) {
-            return false;
-        }
-
-        try {
-            $req = self::request($key)
-                ->timeout(max(15, (int) config('whatsapp.timeout', 10)))
-                ->attach('file', $fileContent, $filename);
-
-            $payload = array_filter([
-                'session_id' => $sessionId ?? config('whatsapp.session'),
-                'to'         => $phone,
-                'type'       => $type,
-                'caption'    => $caption,
-            ], fn ($val) => $val !== null && $val !== '');
-
-            $response = $req->post('/api/v1/messages/media', $payload);
-        } catch (\Throwable $e) {
-            Log::warning('Gateway WhatsApp gagal mengirim lampiran berkas', [
-                'phone'    => self::mask($phone),
-                'filename' => $filename,
-                'error'    => $e->getMessage(),
-            ]);
-
-            return false;
-        }
-
-        if ($response->successful()) {
-            return true;
-        }
-
-        Log::warning('Gateway WhatsApp menolak lampiran berkas', [
-            'phone'    => self::mask($phone),
-            'filename' => $filename,
-            'status'   => $response->status(),
-            'error'    => $response->json('error.message') ?? $response->body(),
-        ]);
-
-        return false;
-    }
-
-    /**
-     * Mengirim pesan massal (bulk) ke banyak nomor.
-     *
-     * @param array<int, string> $phones
-     * @param string $message
-     * @param string|null $sessionId
-     * @return bool
-     */
-    public static function broadcast(array $phones, string $message, ?string $sessionId = null): bool
-    {
-        $key = config('whatsapp.key');
-
-        if (! config('whatsapp.enabled') || ! $key) {
-            return false;
-        }
-
-        $targets = array_values(array_filter(array_map(self::normalize(...), $phones)));
-
-        if ($targets === [] || trim($message) === '') {
-            return false;
-        }
-
-        try {
-            $response = self::request($key)->post('/api/v1/messages/bulk', array_filter([
-                'session_id' => $sessionId ?? config('whatsapp.session'),
-                'to'         => $targets,
-                'message'    => $message,
-            ]));
-
-            return $response->successful();
-        } catch (\Throwable $e) {
-            Log::warning('Broadcast WhatsApp gagal menghubungi gateway', [
-                'error' => $e->getMessage(),
-            ]);
-
-            return false;
-        }
-    }
-
-    /**
-     * Mengirim memakai template yang tersimpan di gateway.
-     *
-     * @param string|null $phone
-     * @param string $template
-     * @param array<string, string> $variables
-     * @param string|null $sessionId
-     * @return bool
-     */
-    public static function template(
-        ?string $phone,
-        string $template,
-        array $variables = [],
-        ?string $sessionId = null
-    ): bool {
-        $key = config('whatsapp.key');
-
-        if (! config('whatsapp.enabled') || ! $key) {
-            return false;
-        }
-
-        $phone = self::normalize($phone);
-
-        if ($phone === null) {
-            return false;
-        }
-
-        try {
-            $response = self::request($key)->post('/api/v1/messages/template', array_filter([
-                'session_id' => $sessionId ?? config('whatsapp.session'),
-                'to'         => $phone,
-                'template'   => $template,
-                'variables'  => $variables,
-            ]));
-
-            return $response->successful();
-        } catch (\Throwable $e) {
-            Log::warning('Pengiriman template WhatsApp gagal', [
-                'template' => $template,
-                'error'    => $e->getMessage(),
-            ]);
-
-            return false;
-        }
     }
 
     /**

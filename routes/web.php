@@ -4,17 +4,24 @@ use App\Http\Controllers\Admin\AbuseController as AdminAbuseController;
 use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
 use App\Http\Controllers\Admin\BillingCenterController as AdminBillingCenterController;
 use App\Http\Controllers\Admin\BroadcastController as AdminBroadcastController;
-use App\Http\Controllers\Admin\FulfillmentController as AdminFulfillmentController;
+use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ImpersonationController as AdminImpersonationController;
+use App\Http\Controllers\Admin\InstanceController as AdminInstanceController;
 use App\Http\Controllers\Admin\MaintenanceController as AdminMaintenanceController;
+use App\Http\Controllers\Admin\MonitoringController as AdminMonitoringController;
 use App\Http\Controllers\Admin\NotificationTemplateController as AdminTemplateController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\PackageController as AdminPackageController;
 use App\Http\Controllers\Admin\PaymentGatewayController as AdminPaymentGatewayController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
+use App\Http\Controllers\Admin\ShopeeController as AdminShopeeController;
 use App\Http\Controllers\Admin\SupplierPurchaseController as AdminSupplierPurchaseController;
+use App\Http\Controllers\Admin\TicketController as AdminTicketController;
 use App\Http\Controllers\Admin\VpsActionController as AdminVpsActionController;
 use App\Http\Controllers\Admin\WebhookLogController as AdminWebhookLogController;
 use App\Http\Controllers\Admin\WhatsAppController as AdminWhatsAppController;
-use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Dashboard\VpsActionController as DashboardVpsActionController;
 use App\Http\Controllers\DashboardController;
@@ -36,11 +43,9 @@ use Illuminate\Support\Facades\Route;
 // Public Landing Page
 Route::get('/', function () {
     $vpsSpecs = VpsSpec::where('category', 'vps')->orderBy('sell_price', 'asc')->get();
-    $aiSpecs = VpsSpec::where('category', 'ai_combo')->orderBy('sell_price', 'asc')->get();
-    $dbSpecs = VpsSpec::where('category', 'managed_db')->orderBy('sell_price', 'asc')->get();
     $specs = $vpsSpecs;
 
-    return view('landing', compact('specs', 'vpsSpecs', 'aiSpecs', 'dbSpecs'));
+    return view('landing', compact('specs', 'vpsSpecs'));
 })->name('home');
 
 // Public Content & Info Pages
@@ -158,6 +163,8 @@ Route::get('/checkout/{spec_id?}', [OrderController::class, 'checkout'])
     ->middleware('maintenance:checkout')->name('checkout');
 Route::post('/checkout', [OrderController::class, 'store'])
     ->middleware('maintenance:checkout')->name('order.store');
+Route::post('/checkout/apply-coupon', [OrderController::class, 'applyCoupon'])
+    ->middleware('maintenance:checkout')->name('checkout.apply-coupon');
 Route::post('/checkout/quick-login', [OrderController::class, 'quickLogin'])->name('checkout.quick-login');
 Route::get('/order/payment/{id}', [OrderController::class, 'payment'])->name('order.payment')->middleware('auth');
 // Halaman polling status pembayaran (read-only, diotentikasi via controller & session order).
@@ -295,40 +302,57 @@ Route::middleware(['auth', '2fa', 'org.context'])->group(function () {
 
     // Admin Panel Routes (Owner Only - PRD 8.2)
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
-        Route::get('/', [AdminController::class, 'index'])->name('index');
-        Route::get('/payments', [AdminController::class, 'payments'])->name('payments');
-        Route::post('/payments/{id}/approve', [AdminController::class, 'approvePayment'])->name('payments.approve');
-        Route::post('/payments/{id}/hold', [AdminController::class, 'holdPayment'])->name('payments.hold');
-        Route::post('/payments/{id}/reject', [AdminController::class, 'rejectPayment'])->name('payments.reject');
-        Route::get('/orders', [AdminController::class, 'orders'])->name('orders');
-        Route::post('/orders/{id}/provision', [AdminController::class, 'provision'])->name('orders.provision');
-        Route::post('/orders/{id}/cancel', [AdminController::class, 'cancelOrder'])->name('orders.cancel');
+        Route::get('/', [AdminDashboardController::class, 'index'])->name('index');
+        Route::get('/orders', [AdminOrderController::class, 'orders'])->name('orders');
+        Route::post('/orders/{id}/provision', [AdminOrderController::class, 'provision'])->name('orders.provision');
+        Route::post('/orders/{id}/cancel', [AdminOrderController::class, 'cancelOrder'])->name('orders.cancel');
         // Admin manual mark paid (untuk payment offline / rekonsiliasi manual).
-        Route::post('/orders/{id}/mark-paid', [AdminController::class, 'markOrderPaid'])->name('orders.mark-paid');
+        Route::post('/orders/{id}/mark-paid', [AdminOrderController::class, 'markOrderPaid'])->name('orders.mark-paid');
         // Retry provisioning yang gagal.
-        Route::post('/orders/{id}/retry-provision', [AdminController::class, 'retryProvision'])->name('orders.retry-provision');
+        Route::post('/orders/{id}/retry-provision', [AdminOrderController::class, 'retryProvision'])->name('orders.retry-provision');
+        // Cek status Midtrans langsung dari barisan order pending.
+        Route::post('/orders/{id}/sync-midtrans', [AdminOrderController::class, 'syncMidtrans'])
+            ->middleware('throttle:10,1')->name('orders.sync-midtrans');
         // Riwayat status order (audit trail).
-        Route::get('/orders/{id}/history', [AdminController::class, 'orderHistory'])->name('orders.history');
-        Route::get('/shopee', [AdminController::class, 'showShopeeForm'])->name('shopee');
-        Route::post('/shopee/process', [AdminController::class, 'processShopeeOrder'])->name('shopee.process');
-        Route::get('/instances', [AdminController::class, 'instances'])->name('instances');
-        Route::get('/monitoring', [AdminController::class, 'monitoring'])->name('monitoring');
-        Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
-        Route::get('/reports/preview', [AdminController::class, 'previewReport'])->name('reports.preview');
-        Route::get('/reports/export', [AdminController::class, 'exportReport'])->name('reports.export');
-        Route::post('/instances/{id}/status', [AdminController::class, 'updateInstanceStatus'])->name('instances.status');
-        Route::post('/instances/{id}/panel-url', [AdminController::class, 'updateInstancePanelUrl'])->name('instances.panel-url');
-        Route::post('/instances/{id}/ssh-username', [AdminController::class, 'updateInstanceSshUsername'])->name('instances.ssh-username');
-        Route::post('/instances/{id}/renewal-price', [AdminController::class, 'updateInstanceRenewalPrice'])->name('instances.renewal-price');
-        Route::post('/instances/{id}/suspend', [AdminController::class, 'suspendInstance'])->name('instances.suspend');
-        Route::post('/instances/{id}/unsuspend', [AdminController::class, 'unsuspendInstance'])->name('instances.unsuspend');
-        Route::post('/instances/{id}/terminate', [AdminController::class, 'terminateInstance'])->name('instances.terminate');
+        Route::get('/orders/{id}/history', [AdminOrderController::class, 'orderHistory'])->name('orders.history');
+        Route::get('/shopee', [AdminShopeeController::class, 'showShopeeForm'])->name('shopee');
+        Route::post('/shopee/process', [AdminShopeeController::class, 'processShopeeOrder'])->name('shopee.process');
+        Route::get('/instances', [AdminInstanceController::class, 'instances'])->name('instances');
+        Route::get('/monitoring', [AdminMonitoringController::class, 'monitoring'])->name('monitoring');
+        Route::post('/monitoring/refresh-balance', [AdminMonitoringController::class, 'refreshBalance'])
+            ->middleware('throttle:5,1')->name('monitoring.refresh-balance');
+        Route::post('/monitoring/reconcile', [AdminMonitoringController::class, 'runReconcile'])
+            ->middleware('throttle:2,1')->name('monitoring.reconcile');
+        Route::post('/tasks/{id}/retry', [AdminMonitoringController::class, 'retryTask'])
+            ->middleware('throttle:10,1')->name('tasks.retry');
+        Route::post('/tasks/{id}/cancel', [AdminMonitoringController::class, 'cancelTask'])
+            ->middleware('throttle:10,1')->name('tasks.cancel');
+        Route::post('/instances/{id}/retry-stack', [AdminMonitoringController::class, 'retryStack'])
+            ->middleware('throttle:10,1')->name('instances.retry-stack');
+        Route::post('/instances/{id}/retry-renew', [AdminMonitoringController::class, 'retryRenew'])
+            ->middleware('throttle:10,1')->name('instances.retry-renew');
+        Route::post('/failed-jobs/{uuid}/retry', [AdminMonitoringController::class, 'retryFailedJob'])
+            ->middleware('throttle:10,1')->name('failed-jobs.retry');
+        Route::delete('/failed-jobs/{uuid}', [AdminMonitoringController::class, 'deleteFailedJob'])
+            ->middleware('throttle:10,1')->name('failed-jobs.destroy');
+        Route::get('/reports', [AdminReportController::class, 'reports'])->name('reports');
+        Route::get('/reports/preview', [AdminReportController::class, 'previewReport'])->name('reports.preview');
+        Route::get('/reports/export', [AdminReportController::class, 'exportReport'])->name('reports.export');
+        Route::post('/instances/{id}/status', [AdminInstanceController::class, 'updateInstanceStatus'])->name('instances.status');
+        Route::post('/instances/{id}/panel-url', [AdminInstanceController::class, 'updateInstancePanelUrl'])->name('instances.panel-url');
+        Route::post('/instances/{id}/ssh-username', [AdminInstanceController::class, 'updateInstanceSshUsername'])->name('instances.ssh-username');
+        Route::post('/instances/{id}/renewal-price', [AdminInstanceController::class, 'updateInstanceRenewalPrice'])->name('instances.renewal-price');
+        Route::post('/instances/{id}/suspend', [AdminInstanceController::class, 'suspendInstance'])->name('instances.suspend');
+        Route::post('/instances/{id}/unsuspend', [AdminInstanceController::class, 'unsuspendInstance'])->name('instances.unsuspend');
+        Route::post('/instances/{id}/terminate', [AdminInstanceController::class, 'terminateInstance'])->name('instances.terminate');
+        Route::post('/instances/{id}/sync-upstream', [AdminInstanceController::class, 'syncUpstream'])->middleware('throttle:10,1')->name('instances.sync-upstream');
 
         // Phase 5D — admin Day-2 mirror (semua tenant, jejak AdminAuditLog).
         Route::get('/instances/{id}/day2/capabilities.json', [AdminVpsActionController::class, 'capabilities'])->name('instances.day2.capabilities');
         Route::get('/instances/{id}/day2/status.json', [AdminVpsActionController::class, 'status'])->name('instances.day2.status');
         Route::post('/instances/{id}/day2/power', [AdminVpsActionController::class, 'power'])->middleware('throttle:vps-power')->name('instances.day2.power');
         Route::post('/instances/{id}/day2/reset-password', [AdminVpsActionController::class, 'resetPassword'])->middleware('throttle:vps-reset-password')->name('instances.day2.reset-password');
+        Route::post('/instances/{id}/day2/reinstall', [AdminVpsActionController::class, 'reinstall'])->middleware('throttle:5,1')->name('instances.day2.reinstall');
         Route::get('/instances/{id}/day2/console.json', [AdminVpsActionController::class, 'console'])->middleware('throttle:vps-console')->name('instances.day2.console');
         Route::get('/instances/{id}/day2/firewall.json', [AdminVpsActionController::class, 'firewallIndex'])->name('instances.day2.firewall.index');
         Route::post('/instances/{id}/day2/firewall', [AdminVpsActionController::class, 'firewallStore'])->middleware('throttle:vps-firewall')->name('instances.day2.firewall.store');
@@ -336,16 +360,17 @@ Route::middleware(['auth', '2fa', 'org.context'])->group(function () {
         Route::get('/instances/{id}/day2/traffic.json', [AdminVpsActionController::class, 'traffic'])->name('instances.day2.traffic');
         Route::post('/instances/{id}/day2/upgrade/preview', [AdminVpsActionController::class, 'upgradePreview'])->middleware('throttle:vps-upgrade')->name('instances.day2.upgrade.preview');
         Route::post('/instances/{id}/day2/upgrade', [AdminVpsActionController::class, 'upgrade'])->middleware('throttle:vps-upgrade')->name('instances.day2.upgrade');
-        Route::get('/packages', [AdminController::class, 'packages'])->name('packages.index');
-        Route::post('/packages', [AdminController::class, 'storePackage'])->name('packages.store');
-        Route::put('/packages/{id}', [AdminController::class, 'updatePackage'])->name('packages.update');
-        Route::delete('/packages/{id}', [AdminController::class, 'destroyPackage'])->name('packages.destroy');
-        Route::get('/customers', [AdminController::class, 'customers'])->name('customers');
-        Route::get('/tickets', [AdminController::class, 'tickets'])->name('tickets');
-        Route::get('/tickets/{id}', [AdminController::class, 'showTicket'])->name('tickets.show');
-        Route::post('/tickets/{id}/reply', [AdminController::class, 'replyTicket'])->name('tickets.reply');
-        Route::post('/tickets/{id}/assign', [AdminController::class, 'assignTicket'])->name('tickets.assign');
-        Route::post('/tickets/{id}/complete-reinstall', [AdminController::class, 'completeReinstall'])->name('tickets.complete-reinstall');
+        Route::get('/packages', [AdminPackageController::class, 'packages'])->name('packages.index');
+        Route::post('/packages', [AdminPackageController::class, 'storePackage'])->name('packages.store');
+        Route::put('/packages/{id}', [AdminPackageController::class, 'updatePackage'])->name('packages.update');
+        Route::delete('/packages/{id}', [AdminPackageController::class, 'destroyPackage'])->name('packages.destroy');
+        Route::post('/packages/stacks/toggle', [AdminPackageController::class, 'toggleStackVisibility'])->name('packages.stacks.toggle');
+        Route::get('/customers', [AdminCustomerController::class, 'customers'])->name('customers');
+        Route::get('/tickets', [AdminTicketController::class, 'tickets'])->name('tickets');
+        Route::get('/tickets/{id}', [AdminTicketController::class, 'showTicket'])->name('tickets.show');
+        Route::post('/tickets/{id}/reply', [AdminTicketController::class, 'replyTicket'])->name('tickets.reply');
+        Route::post('/tickets/{id}/assign', [AdminTicketController::class, 'assignTicket'])->name('tickets.assign');
+        Route::post('/tickets/{id}/complete-reinstall', [AdminTicketController::class, 'completeReinstall'])->name('tickets.complete-reinstall');
 
         // ============================================================
         // PHASE 1 - Pengaturan Sistem, Branding, dan Maintenance
@@ -359,6 +384,8 @@ Route::middleware(['auth', '2fa', 'org.context'])->group(function () {
         Route::post('/settings/mail', [AdminSettingsController::class, 'updateMail'])->name('settings.mail');
         Route::post('/settings/mail/test', [AdminSettingsController::class, 'testMail'])->middleware('throttle:5,1')->name('settings.mail.test');
         Route::post('/settings/maintenance', [AdminSettingsController::class, 'updateMaintenance'])->name('settings.maintenance');
+        Route::post('/settings/provisioning', [AdminSettingsController::class, 'updateProvisioning'])->name('settings.provisioning');
+        Route::put('/settings/quota-pools/{id}', [AdminSettingsController::class, 'updateQuotaPool'])->name('settings.quota-pools.update');
         Route::post('/settings/bypass-token', [AdminSettingsController::class, 'regenerateBypassToken'])->name('settings.bypass-token');
         Route::post('/settings/components/{id}', [AdminSettingsController::class, 'updateComponent'])->name('settings.components.update');
 
@@ -404,13 +431,9 @@ Route::middleware(['auth', '2fa', 'org.context'])->group(function () {
             ->middleware('throttle:10,1')->name('webhooks.replay');
 
         // ============================================================
-        // PHASE 5 - Fulfillment Workboard
+        // PHASE 5 - Fulfillment Workboard (Decommissioned -> Redirect ke Orders)
         // ============================================================
-        Route::get('/fulfillment', [AdminFulfillmentController::class, 'index'])->name('fulfillment.index');
-        Route::post('/fulfillment/{id}/purchase', [AdminFulfillmentController::class, 'recordPurchase'])->name('fulfillment.purchase');
-        Route::post('/fulfillment/{id}/stage', [AdminFulfillmentController::class, 'moveStage'])->name('fulfillment.stage');
-        Route::post('/fulfillment/{id}/steps/{step}', [AdminFulfillmentController::class, 'toggleStep'])
-            ->where('step', '[a-z_]+')->name('fulfillment.step');
+        Route::get('/fulfillment', fn () => redirect()->route('admin.orders', ['status' => 'needs_provision']))->name('fulfillment.index');
 
         // ============================================================
         // PHASE 6 - Billing Center

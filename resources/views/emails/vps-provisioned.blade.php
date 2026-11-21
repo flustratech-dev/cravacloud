@@ -25,7 +25,7 @@
             <table border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
                     <td style="padding: 6px 0; color: #71717a; width: 140px;">Paket:</td>
-                    <td style="padding: 6px 0; color: #000000; font-weight: 600;">{{ $instance->vpsSpec->name ?? 'VPS Instance' }}</td>
+                    <td style="padding: 6px 0; color: #000000; font-weight: 600;">{{ $instance->order?->vpsSpec?->name ?? 'Cloud VPS' }}</td>
                 </tr>
                 <tr>
                     <td style="padding: 6px 0; color: #71717a;">Hostname:</td>
@@ -45,24 +45,24 @@
                     <td style="padding: 6px 0; color: #71717a;">Username:</td>
                     <td style="padding: 6px 0; color: #000000; font-family: Consolas, Monaco, monospace; font-weight: 600;">{{ $instance->ssh_user }}</td>
                 </tr>
-                @if($instance->initial_root_password)
-                <tr>
-                    <td style="padding: 6px 0; color: #71717a;">Password:</td>
-                    <td style="padding: 6px 0;">
-                        <span style="display: inline-block; background-color: #f4f4f5; color: #000000; border: 1px solid #d4d4d8; padding: 2px 8px; border-radius: 4px; font-family: Consolas, Monaco, monospace; font-weight: 700; font-size: 13px;">
-                            {{ $instance->initial_root_password }}
-                        </span>
-                    </td>
-                </tr>
-                @endif
                 <tr>
                     <td style="padding: 6px 0; color: #71717a;">Sistem Operasi:</td>
-                    <td style="padding: 6px 0; color: #000000;">{{ strtoupper($instance->os ?? 'Ubuntu') }}</td>
+                    <td style="padding: 6px 0; color: #000000;">{{ $instance->os_label }}</td>
                 </tr>
                 @if(!empty($instance->control_panel) && $instance->control_panel !== 'none')
                 <tr>
                     <td style="padding: 6px 0; color: #71717a;">Control Panel:</td>
-                    <td style="padding: 6px 0; color: #000000; font-weight: 600;">{{ ucfirst($instance->control_panel) }}</td>
+                    <td style="padding: 6px 0; color: #000000; font-weight: 600;">{{ $instance->control_panel_label }}</td>
+                </tr>
+                @endif
+                @if(!empty($instance->app_url))
+                <tr>
+                    <td style="padding: 6px 0; color: #71717a;">URL Aplikasi / Panel:</td>
+                    <td style="padding: 6px 0; font-family: Consolas, Monaco, monospace;">
+                        <a href="{{ $instance->app_url }}" target="_blank" rel="noopener noreferrer" style="color: #000000; font-weight: 600; text-decoration: underline;">
+                            {{ $instance->app_url }}
+                        </a>
+                    </td>
                 </tr>
                 @endif
             </table>
@@ -78,9 +78,11 @@
     </code>
 </div>
 
-<p style="margin: 0 0 8px 0; font-size: 13px; line-height: 1.5; color: #71717a;">
-    Demi keamanan, silakan segera ubah password awal Anda setelah berhasil login pertama kali.
-</p>
+<div style="background-color: #fafafa; border: 1px solid #e4e4e7; border-left: 3px solid #000000; border-radius: 6px; padding: 12px 16px; margin-bottom: 12px;">
+    <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #3f3f46;">
+        <strong>Keamanan Kredensial SSH:</strong> Demi keamanan, password login SSH tidak dikirim melalui email. Buka <strong>Dashboard &rarr; Detail VPS &rarr; tab Akses</strong> (klik ikon mata) untuk menyalin password awal Anda, lalu segera ganti password setelah login pertama kali.
+    </p>
+</div>
 
 <!-- Solid Black Action Button -->
 <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="margin: 28px 0 12px 0;">

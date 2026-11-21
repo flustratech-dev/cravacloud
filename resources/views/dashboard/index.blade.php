@@ -189,13 +189,7 @@
                                     <div>
                                         <div class="flex flex-wrap items-center gap-2">
                                             <h3 class="font-display font-bold text-ink text-base">{{ $order->hostname ?? 'cv-server-' . $order->id }}</h3>
-                                            @if($order->isDatabasePackage())
-                                                <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-emerald-100 text-emerald-900 border border-emerald-400">Managed DB</span>
-                                            @elseif($order->isAiPackage())
-                                                <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-electric text-white">AI Agent</span>
-                                            @else
-                                                <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-creamDark text-ink border border-hairline">{{ $order->vpsSpec->name ?? 'Cloud VPS' }}</span>
-                                            @endif
+                                            <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-creamDark text-ink border border-hairline">{{ $order->vpsSpec->name ?? 'Cloud VPS' }}</span>
                                         </div>
                                         <p class="font-mono text-[11px] text-muted mt-0.5">Setup Server Sedang Berjalan</p>
                                     </div>
@@ -256,16 +250,14 @@
 
                 {{-- Active / Existing VPS Instances --}}
                 @foreach($vps as $instance)
-                    <div class="bg-white border {{ $instance->isDatabasePackage() ? 'border-2 border-emerald-600' : ($instance->isAiPackage() ? 'border-2 border-electric' : 'border-hairline hover:border-ink') }} p-5 transition-colors flex flex-col justify-between">
+                    <div class="bg-white border border-hairline hover:border-ink p-5 transition-colors flex flex-col justify-between">
                         <div>
                             <div class="flex items-start justify-between gap-2 mb-3">
                                 <div class="min-w-0">
                                     <div class="flex flex-wrap items-center gap-2">
                                         <h3 class="font-display font-bold text-ink text-base truncate">{{ $instance->hostname ?? 'vps-' . $instance->id }}</h3>
-                                        @if($instance->isDatabasePackage())
-                                            <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-emerald-100 text-emerald-900 border border-emerald-400">Managed DB</span>
-                                        @elseif($instance->isAiPackage())
-                                            <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-electric text-white">AI Agent</span>
+                                        @if($instance->order?->vpsSpec?->name)
+                                            <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-creamDark text-ink border border-hairline">{{ $instance->order->vpsSpec->name }}</span>
                                         @endif
                                     </div>
                                     <div class="flex items-center gap-1.5 mt-1">
@@ -335,49 +327,12 @@
                                     <span class="font-mono font-semibold text-ink uppercase text-[11px] text-right">{{ str_replace('_', ' ', $instance->billing_cycle ?? 'monthly') }}</span>
                                 </div>
                             </div>
-
-                            @if($instance->isAiPackage())
-                                <div class="my-3 p-3 bg-creamDark/60 border border-electric text-xs space-y-1.5">
-                                    <div class="flex items-center justify-between">
-                                        <span class="font-mono font-bold text-ink text-[11px] uppercase flex items-center gap-1.5">
-                                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                            <span>Link Web App:</span>
-                                        </span>
-                                        <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 bg-electric text-white">Web App</span>
-                                    </div>
-                                    @if($instance->app_url && $instance->status === 'running')
-                                        <div class="flex items-center justify-between gap-1.5 p-2 bg-white border border-hairline font-mono text-[11px]">
-                                            <a href="{{ $instance->app_url }}" target="_blank" rel="noopener" class="text-electric font-bold hover:underline truncate">
-                                                {{ $instance->app_url }}
-                                            </a>
-                                            <button type="button" @click="copyIp('{{ $instance->app_url }}')" title="Salin Link App" class="text-muted hover:text-ink shrink-0 cursor-pointer">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                                            </button>
-                                        </div>
-                                    @else
-                                        <p class="text-[11px] text-muted italic">
-                                            {{ $instance->status === 'running' ? ($instance->provider === 'tencent' ? 'Tautan web sedang disiapkan otomatis.' : 'Tautan web sedang disiapkan tim.') : 'Layanan sedang tidak aktif. Buka detail untuk informasi lebih lanjut.' }}
-                                        </p>
-                                    @endif
-                                </div>
-                            @endif
                         </div>
 
                         <!-- Action Buttons -->
                         <div class="flex items-center gap-2 pt-3 border-t border-hairline">
-                            @if($instance->isAiPackage() && $instance->app_url && $instance->status === 'running')
-                                <a href="{{ $instance->app_url }}" target="_blank" rel="noopener"
-                                   class="flex-1 rounded-none py-2.5 px-3 bg-electric hover:bg-electricHover text-white font-mono text-[11px] font-bold uppercase text-center transition-colors inline-flex items-center justify-center gap-1.5">
-                                    <span>Buka Web App</span>
-                                    <span>↗</span>
-                                </a>
-                                <a href="{{ route('dashboard.vps.show', $instance->id) }}"
-                                   class="rounded-none py-2.5 px-3 border border-ink hover:bg-creamDark text-ink font-mono text-[11px] font-bold uppercase text-center transition-colors">
-                                    Detail
-                                </a>
-                            @else
-                                <a href="{{ route('dashboard.vps.show', $instance->id) }}"
-                                   class="flex-1 rounded-none py-2.5 px-3 bg-ink hover:bg-electric text-white font-mono text-[11px] font-bold uppercase text-center transition-colors">
+                            <a href="{{ route('dashboard.vps.show', $instance->id) }}"
+                               class="flex-1 rounded-none py-2.5 px-3 bg-ink hover:bg-electric text-white font-mono text-[11px] font-bold uppercase text-center transition-colors">
                                     Kelola Layanan
                                 </a>
                                 @if($instance->canBeRenewed())
@@ -387,7 +342,6 @@
                                         Perpanjang
                                     </a>
                                 @endif
-                            @endif
                         </div>
                     </div>
                 @endforeach

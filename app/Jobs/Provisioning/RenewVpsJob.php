@@ -98,10 +98,22 @@ class RenewVpsJob extends AbstractProvisioningJob
             $instance->provider_meta = $meta;
             $instance->save();
 
-            app(AdminAlertService::class)->digest(
-                'Renewal upstream tertunda — saldo tidak cukup',
-                "Instance #{$instance->id} ({$instance->hostname}) gagal diperpanjang di upstream karena saldo tidak cukup. "
-                ."Masa aktif pelanggan TETAP aman. Top up saldo upstream lalu jalankan ulang task renew #{$task->id}.\n\nError: {$error}"
+            app(AdminAlertService::class)->alert(
+                'provisioning.failed',
+                [
+                    'title' => 'Renewal upstream tertunda — saldo tidak cukup',
+                    'order_id' => $task->order_id,
+                    'details' => [
+                        'Task' => "#{$task->id} (renew)",
+                        'Instance' => "#{$instance->id} ({$instance->hostname})",
+                        'Status' => 'Masa aktif pelanggan TETAP aman (renew_pending)',
+                    ],
+                    'body' => "Instance #{$instance->id} ({$instance->hostname}) gagal diperpanjang di upstream karena saldo tidak cukup. "
+                        . "Masa aktif pelanggan TETAP aman. Top up saldo upstream lalu jalankan ulang task renew #{$task->id}.\n\nError: {$error}",
+                    'action_url' => url('/admin/monitoring?tab=tasks&status=failed'),
+                ],
+                dedupeKey: 'task-' . $task->id,
+                cooldownSeconds: 3600
             );
 
             return; // never flip the instance to error for a balance issue
@@ -109,10 +121,22 @@ class RenewVpsJob extends AbstractProvisioningJob
 
         // Other permanent failures: alert admin, keep the instance state
         // (no destructive transition — reconcile will re-check upstream).
-        app(AdminAlertService::class)->digest(
-            'Renewal upstream gagal',
-            "Instance #{$instance->id} ({$instance->hostname}) gagal diperpanjang di upstream (task #{$task->id}). "
-            ."Masa aktif pelanggan tetap aman; periksa manual.\n\nError: {$error}"
+        app(AdminAlertService::class)->alert(
+            'provisioning.failed',
+            [
+                'title' => 'Renewal upstream gagal',
+                'order_id' => $task->order_id,
+                'details' => [
+                    'Task' => "#{$task->id} (renew)",
+                    'Instance' => "#{$instance->id} ({$instance->hostname})",
+                    'Error' => \Illuminate\Support\Str::limit($error, 160),
+                ],
+                'body' => "Instance #{$instance->id} ({$instance->hostname}) gagal diperpanjang di upstream (task #{$task->id}). "
+                    . "Masa aktif pelanggan tetap aman; periksa manual.\n\nError: {$error}",
+                'action_url' => url('/admin/monitoring?tab=tasks&status=failed'),
+            ],
+            dedupeKey: 'task-' . $task->id,
+            cooldownSeconds: 3600
         );
     }
 

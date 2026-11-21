@@ -96,18 +96,8 @@ class KatalogProduk
      */
     public static function paket(string $slug): Collection
     {
-        $retiredLegacyNames = [
-            'Student Basic',
-            'Standard',
-            'Premium',
-            'Startup',
-            'Business',
-            'Mahasiswa Basic',
-        ];
-
         return VpsSpec::query()
             ->where('category', self::ambil($slug)['kategori'])
-            ->whereNotIn('name', $retiredLegacyNames)
             ->orderBy('sell_price')
             ->get();
     }

@@ -18,6 +18,7 @@
         'status' => $vps->status,
         'caps' => $day2,
         'csrf' => csrf_token(),
+        'lazy' => $isAdminCtx,
         'redirect' => $isAdminCtx ? route('admin.instances') : route('dashboard.billing'),
         'routes' => [
             'power' => $r('dashboard.vps.day2.power', 'admin.instances.day2.power'),
@@ -46,7 +47,14 @@
     $day2Config['upgradeSpecs'] = $upgradeSpecs;
 @endphp
 
-<div x-data="day2Panel(@js($day2Config))" x-init="init()" class="space-y-6">
+<div x-data="day2Panel(@js($day2Config))" x-init="init()" @day2-open-{{ $vps->id }}.window="activate()" class="space-y-6">
+
+    <template x-if="globalError">
+        <div class="border border-ink bg-creamDark/60 px-4 py-3 font-mono text-[11px] text-ink flex items-center justify-between gap-3">
+            <span x-text="globalError"></span>
+            <button type="button" @click="globalError = ''" class="font-bold px-1.5 cursor-pointer">&times;</button>
+        </div>
+    </template>
 
     {{-- Status + task progress --}}
     <div class="border-2 border-ink bg-white p-5">
@@ -104,7 +112,7 @@
         </div>
         <div class="border border-hairline bg-white p-5" x-show="caps.reset_password">
             <h3 class="font-display text-base font-bold text-ink mb-1">Reset Password</h3>
-            <p class="font-mono text-[11px] text-muted mb-4">Buat password login baru secara otomatis. Password dikirim via email &amp; notifikasi{{ $isAdminCtx ? '' : ' serta diperbarui pada tab Detail Akses & SSH' }}.</p>
+            <p class="font-mono text-[11px] text-muted mb-4">Buat password login baru secara otomatis. Password baru tersimpan terenkripsi di tab Detail Akses &amp; SSH (pemberitahuan dikirim via email{{ $isAdminCtx ? '' : ' &amp; notifikasi dasbor' }}).</p>
             <button type="button" @click="resetPassword()" :disabled="busy || status !== 'running'"
                 class="rounded-none px-4 py-2.5 border border-ink bg-white hover:bg-creamDark disabled:opacity-40 disabled:cursor-not-allowed font-mono text-xs font-bold uppercase text-ink cursor-pointer">Reset Password</button>
         </div>
@@ -247,6 +255,44 @@
                 Reinstall OS Otomatis
             </button>
         </div>
+    </div>
+    @elseif($isAdminCtx && $vps->acceptsServiceRequests())
+    @php
+        $adminStackList = app(\App\Services\Provisioning\Stacks\StackRegistry::class)->all();
+        $adminOsList = collect(\App\Models\Order::osLabels())->except(['custom']);
+    @endphp
+    <div class="border border-hairline bg-white p-5">
+        <h3 class="font-display text-base font-bold text-ink mb-1">Reinstall OS Otomatis (Admin Override)</h3>
+        <p class="font-mono text-[11px] text-muted mb-3">Memasang ulang OS dan stack via provider secara otomatis. Seluruh data di server akan terhapus.</p>
+        <form action="{{ route('admin.instances.day2.reinstall', $vps->id) }}" method="POST"
+              data-confirm="Mulai reinstall otomatis untuk {{ $vps->hostname }}? Seluruh data di server akan terhapus!"
+              class="grid sm:grid-cols-4 gap-2 items-end">
+            @csrf
+            <div>
+                <label class="block font-mono text-[10px] uppercase text-muted mb-1">Sistem Operasi</label>
+                <select name="os" class="w-full border border-ink bg-white px-2 py-2 font-mono text-xs text-ink">
+                    @foreach($adminOsList as $osKey => $osLabel)
+                        <option value="{{ $osKey }}" {{ ($vps->os ?? 'ubuntu_24_04') === $osKey ? 'selected' : '' }}>{{ $osLabel }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block font-mono text-[10px] uppercase text-muted mb-1">Control Panel / Stack</label>
+                <select name="control_panel" class="w-full border border-ink bg-white px-2 py-2 font-mono text-xs text-ink">
+                    @foreach($adminStackList as $stackDef)
+                        <option value="{{ $stackDef->key }}" {{ ($vps->control_panel ?? 'none') === $stackDef->key ? 'selected' : '' }}>{{ $stackDef->label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block font-mono text-[10px] uppercase text-muted mb-1">Ketik Hostname ({{ $vps->hostname }})</label>
+                <input type="text" name="confirm_hostname" placeholder="{{ $vps->hostname }}" required
+                       class="w-full border border-ink bg-white px-2 py-2 font-mono text-xs text-ink">
+            </div>
+            <button type="submit" class="rounded-none px-4 py-2 bg-ink hover:bg-electric text-cream font-mono text-xs font-bold uppercase cursor-pointer">
+                Reinstall Otomatis
+            </button>
+        </form>
     </div>
     @endif
 

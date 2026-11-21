@@ -2,22 +2,20 @@
 
 namespace App\Notifications;
 
-use App\Channels\WhatsAppChannel;
 use App\Models\RenewalReminder;
 use App\Models\VpsInstance;
-use App\Services\WhatsAppMessage;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * PHASE 3 - Pengingat perpanjangan layanan ke pelanggan.
+ * PHASE 3 - Pengingat perpanjangan layanan ke pelanggan (100% Email & Dashboard).
  *
  * Nada pesan berbeda per tahap. Tahap akhir tenggang menyatakan dengan tegas
- * bahwa data sudah tidak dapat dipulihkan, karena di sisi supplier memang
- * sudah terhapus permanen.
+ * bahwa data sudah tidak dapat dipulihkan karena terminasi permanen telah berjalan.
  */
-class InstanceRenewalReminderNotification extends Notification
+class InstanceRenewalReminderNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     use \App\Notifications\Concerns\UsesMailIdentity;
@@ -28,17 +26,12 @@ class InstanceRenewalReminderNotification extends Notification
         public int $daysUntil,
         public int $graceDays
     ) {
+        $this->onQueue('notifications');
     }
 
     public function via(object $notifiable): array
     {
-        $channels = ['mail', 'database'];
-
-        if (config('whatsapp.enabled') && ! empty($notifiable->phone)) {
-            $channels[] = WhatsAppChannel::class;
-        }
-
-        return $channels;
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -126,43 +119,5 @@ class InstanceRenewalReminderNotification extends Notification
                 "Layanan {$name} akan jatuh tempo pada {$due}.",
             ],
         };
-    }
-
-    public function toWhatsApp(object $notifiable): ?WhatsAppMessage
-    {
-        $appUrl = rtrim(config('app.url', 'https://cravacloud.id'), '/');
-        $namaPelanggan = $notifiable->full_name ?? 'Pelanggan CravaCloud';
-        $name = $this->instance->hostname ?: 'Layanan Cloud';
-        $due = $this->instance->expires_at?->timezone('Asia/Jakarta')->translatedFormat('d F Y') ?? '-';
-        $graceEnd = $this->instance->grace_period_ends_at?->timezone('Asia/Jakarta')->translatedFormat('d F Y') ?? '-';
-        $billingUrl = "{$appUrl}/dashboard/billing";
-
-        [$subject, $badge, $heading, $body] = $this->content($name, $due, $graceEnd);
-
-        $lines = [
-            "Halo *{$namaPelanggan}*,",
-            '',
-            "⚠️ *{$heading}*",
-            $body,
-            '',
-            "• *Server:* `{$name}`",
-            "• *IP Public:* `{$this->instance->public_ip}`",
-            "• *Jatuh Tempo:* {$due}",
-        ];
-
-        if ($this->stage === RenewalReminder::STAGE_H0) {
-            $lines[] = "• *Batas Masa Tenggang:* {$graceEnd} ({$this->graceDays} hari)";
-        }
-
-        if ($this->stage !== RenewalReminder::STAGE_GRACE_ENDED) {
-            $lines[] = '';
-            $lines[] = 'Perpanjang layanan Anda sekarang:';
-            $lines[] = $billingUrl;
-        }
-
-        $lines[] = '';
-        $lines[] = '_CravaCloud Solutions_';
-
-        return WhatsAppMessage::create(implode("\n", $lines));
     }
 }

@@ -8,6 +8,7 @@ use App\Models\TaxRate;
 use App\Models\VpsInstance;
 use App\Models\VpsSpec;
 use App\Jobs\Provisioning\UpgradeBundleJob;
+use App\Services\Provisioning\Exceptions\QuotaExhaustedException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -108,6 +109,36 @@ class UpgradeService
             ]);
         }
 
+        // Guard: tolak bila masih ada order upgrade yang belum selesai.
+        if (Order::where('vps_instance_id', $instance->id)
+            ->where('order_type', 'upgrade')
+            ->whereIn('status', ['pending', 'provisioning'])
+            ->exists()) {
+            return array_merge($base, [
+                'code' => 'upgrade_in_progress',
+                'error' => 'Masih ada permintaan upgrade yang sedang diproses untuk server ini.',
+            ]);
+        }
+
+        // Guard cross-pool: bila tipe bundle berbeda (Starter vs General), pastikan pool tujuan masih punya slot.
+        if ($targetSpec->upstream_bundle_type && $currentSpec->upstream_bundle_type
+            && $targetSpec->upstream_bundle_type !== $currentSpec->upstream_bundle_type) {
+            $quota = app(UpstreamQuotaService::class);
+            $region = $instance->datacenterRegion?->code
+                ?: $quota->regionForLocation((string) ($instance->order?->datacenter_location ?? $instance->datacenter_location));
+
+            if ($region) {
+                try {
+                    $quota->assertAvailable($region, (string) $targetSpec->upstream_bundle_type);
+                } catch (QuotaExhaustedException $e) {
+                    return array_merge($base, [
+                        'code' => 'quota_exhausted',
+                        'error' => $e->customerMessage(),
+                    ]);
+                }
+            }
+        }
+
         $monthlyDifference = $this->round((float) $targetSpec->sell_price - (float) $currentSpec->sell_price);
         if ($monthlyDifference <= 0) {
             return array_merge($base, [
@@ -120,6 +151,15 @@ class UpgradeService
         $remainingDays = $instance->expires_at
             ? max(0, (int) floor(now()->diffInDays($instance->expires_at, false)))
             : $cycleDays;
+
+        // Guard Rp0 prorata saat siklus sudah berakhir hari ini.
+        if ($instance->expires_at && $remainingDays < 1) {
+            return array_merge($base, [
+                'code' => 'cycle_ending',
+                'error' => 'Masa aktif server berakhir hari ini. Perpanjang layanan terlebih dahulu sebelum melakukan upgrade.',
+            ]);
+        }
+
         $factor = $cycleDays > 0 ? min(1.0, $remainingDays / $cycleDays) : 1.0;
 
         $prorataAmount = $this->round($monthlyDifference * $factor);
@@ -182,10 +222,10 @@ class UpgradeService
                 'vps_spec_id' => $targetSpec->id,
                 'vps_instance_id' => $instance->id,
                 'subscription_id' => $instance->subscription?->id,
-                'control_panel' => $instance->control_panel,
-                'datacenter_location' => $instance->datacenter_location,
+                'control_panel' => $instance->control_panel ?: 'none',
+                'datacenter_location' => $instance->datacenter_location ?: 'indonesia',
                 'datacenter_region_id' => $instance->datacenter_region_id,
-                'os' => $instance->os,
+                'os' => $instance->os ?: 'ubuntu2404',
                 'hostname' => $instance->hostname,
                 'billing_cycle' => $instance->billing_cycle ?: 'monthly',
                 'order_type' => 'upgrade',

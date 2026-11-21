@@ -60,14 +60,7 @@
     </div>
 
     <!-- Navigasi Tab -->
-    <div class="bg-white p-1.5 border border-hairline flex flex-wrap items-center gap-1">
-        @foreach($tabs as $key => $label)
-            <a href="{{ route('admin.billing.index', ['tab' => $key]) }}"
-               class="px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap {{ $tab === $key ? 'bg-electric text-white' : 'text-ink hover:bg-creamDark/60' }}">
-                {{ $label }}
-            </a>
-        @endforeach
-    </div>
+    @include('admin.partials.billing-tabs')
 
     {{-- ================================================================== --}}
     {{-- FAKTUR --}}
@@ -722,7 +715,7 @@
                     <span class="px-2 py-0.5 font-mono text-[10px] font-bold uppercase bg-ink text-cream shrink-0 mt-0.5">Data Belum Lengkap</span>
                     <p class="text-xs text-muted leading-relaxed">
                         {{ $missingCost }} order lunas dalam 60 hari terakhir belum punya catatan pembelian Supplier, sehingga biayanya
-                        belum ikut dihitung. Catat pembeliannya di <a href="{{ route('admin.fulfillment.index') }}" class="font-semibold text-electric hover:underline">Papan Fulfillment</a>
+                        belum ikut dihitung. Catat pembeliannya di <a href="{{ route('admin.supplier.index') }}" class="font-semibold text-electric hover:underline">Kelola Supplier</a>
                         agar margin di bawah akurat.
                     </p>
                 </div>

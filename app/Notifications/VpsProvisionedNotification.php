@@ -2,35 +2,31 @@
 
 namespace App\Notifications;
 
-use App\Channels\WhatsAppChannel;
 use App\Models\VpsInstance;
-use App\Services\WhatsAppMessage;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class VpsProvisionedNotification extends Notification
+class VpsProvisionedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     use \App\Notifications\Concerns\UsesMailIdentity;
 
     public function __construct(
         public VpsInstance $instance
-    ) {}
+    ) {
+        $this->onQueue('notifications');
+    }
 
     public function via(object $notifiable): array
     {
-        $channels = ['mail', 'database'];
-
-        if (config('whatsapp.enabled') && ! empty($notifiable->phone)) {
-            $channels[] = WhatsAppChannel::class;
-        }
-
-        return $channels;
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
     {
+        $this->instance->loadMissing(['order.vpsSpec']);
         $hostname = $this->instance->hostname;
         $ip = $this->instance->public_ip ?? 'Aktif';
 
@@ -50,47 +46,5 @@ class VpsProvisionedNotification extends Notification
             'public_ip' => $this->instance->public_ip,
             'status' => $this->instance->status,
         ];
-    }
-
-    public function toWhatsApp(object $notifiable): ?WhatsAppMessage
-    {
-        $this->instance->loadMissing(['customer', 'order.vpsSpec']);
-        $appUrl = rtrim(config('app.url', 'https://cravacloud.id'), '/');
-        $namaPelanggan = $notifiable->full_name ?? 'Pelanggan CravaCloud';
-        $paket = $this->instance->order?->vpsSpec?->name ?? 'VPS Instance';
-        $ip = $this->instance->public_ip ?? 'Pending';
-        $port = $this->instance->ssh_port ?? 22;
-        $sshUser = $this->instance->ssh_user;
-        $os = strtoupper($this->instance->os ?? 'Ubuntu');
-        $password = $this->instance->initial_root_password ? "`{$this->instance->initial_root_password}`" : '(Tersimpan di dashboard)';
-        $dashboardUrl = "{$appUrl}/dashboard/vps/{$this->instance->id}";
-
-        $message = implode("\n", [
-            "Halo *{$namaPelanggan}*,",
-            '',
-            '🚀 *SERVER VPS ANDA TELAH AKTIF*',
-            'Layanan Virtual Private Server (VPS) Anda telah selesai dikonfigurasi dan berstatus *Online (Running)*.',
-            '',
-            '📋 *Detail Kredensial Server:*',
-            "• *Paket:* {$paket}",
-            "• *Hostname:* `{$this->instance->hostname}`",
-            "• *IP Public:* `{$ip}`",
-            "• *Port SSH:* `{$port}`",
-            "• *Username:* `{$sshUser}`",
-            "• *Password:* {$password}",
-            "• *Sistem Operasi:* {$os}",
-            '',
-            '💻 *Akses Cepat Terminal (SSH):*',
-            "`ssh {$sshUser}@{$ip} -p {$port}`",
-            '',
-            '⚠️ _Demi keamanan, segera ganti password default Anda setelah berhasil login pertama kali._',
-            '',
-            'Buka Dashboard Server:',
-            $dashboardUrl,
-            '',
-            '_CravaCloud Solutions_',
-        ]);
-
-        return WhatsAppMessage::create($message);
     }
 }

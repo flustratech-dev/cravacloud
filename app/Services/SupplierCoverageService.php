@@ -34,6 +34,9 @@ class SupplierCoverageService
     {
         return VpsInstance::with(['customer', 'supplierPurchases'])
             ->whereIn('status', self::LIVE_STATUSES)
+            ->where(function ($q) {
+                $q->whereNull('provider')->orWhere('provider', '!=', 'tencent');
+            })
             ->get()
             ->map(fn (VpsInstance $instance) => $this->rowFor($instance))
             ->sort(fn (array $a, array $b) => [

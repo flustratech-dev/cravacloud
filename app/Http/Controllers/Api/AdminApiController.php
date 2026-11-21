@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\InvalidStateTransitionException;
 use App\Http\Controllers\Controller;
+use App\Models\AdminAuditLog;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
@@ -90,20 +91,6 @@ class AdminApiController extends Controller
                 // Tenggang mengikuti jenis produk dan selalu di bawah batas hapus Supplier.
                 $graceEndsAt = $expiresAt->copy()->addDays(app(\App\Services\RenewalService::class)->graceDaysForOrder($order));
 
-                $isDb = $order->isDatabasePackage();
-                $dbEngine = $order->db_engine ?: ($isDb ? 'postgres' : null);
-                $dbManager = $order->db_manager ?: ($isDb ? 'cloudbeaver' : null);
-                $dbPort = $order->db_port ?: ($isDb ? match($dbEngine) {
-                    'mysql' => 3306,
-                    'redis' => 6379,
-                    'mongodb' => 27017,
-                    'vector' => 6333,
-                    default => 5432,
-                } : null);
-                $dbPassword = $isDb ? ($order->db_password ?: ($validated['server_root_password'] ?? null)) : null;
-                $appUrl = ($isDb && $dbManager === 'cloudbeaver') ? "https://{$validated['server_ip']}:8080" : null;
-                $appName = ($isDb && $dbManager === 'cloudbeaver') ? 'CloudBeaver Web GUI' : null;
-
                 $instance = VpsInstance::create([
                     'customer_id' => $order->customer_id,
                     'order_id' => $order->id,
@@ -121,14 +108,6 @@ class AdminApiController extends Controller
                     'ram' => $spec->ram ?? 4,
                     'disk' => $spec->disk ?? 60,
                     'control_panel' => $validated['control_panel'],
-                    'db_engine' => $dbEngine,
-                    'db_manager' => $dbManager,
-                    'db_name' => $isDb ? ($order->db_name ?: 'cravadb_production') : null,
-                    'db_user' => $isDb ? ($order->db_user ?: 'admin_crava') : null,
-                    'db_password' => $dbPassword,
-                    'db_port' => $dbPort,
-                    'app_url' => $appUrl,
-                    'app_name' => $appName,
                     'provider' => $order->provider ?: Order::DEFAULT_PROVIDER,
                     'uptime_percent' => null,
                     'billing_cycle' => $order->billing_cycle ?? 'monthly',
@@ -159,15 +138,12 @@ class AdminApiController extends Controller
                     'reason' => 'Provisioning sukses via Admin API.',
                     'actor_type' => 'admin',
                     'metadata' => ['vps_instance_id' => $instance->id],
-                    'onLocked' => function (Order $locked) use ($startsAt, $expiresAt, $graceEndsAt, $validated, $isDb, $dbPassword) {
+                    'onLocked' => function (Order $locked) use ($startsAt, $expiresAt, $graceEndsAt, $validated) {
                         $locked->starts_at = $startsAt;
                         $locked->expires_at = $expiresAt;
                         $locked->grace_period_ends_at = $graceEndsAt;
                         if (!empty($validated['server_root_password'])) {
                             $locked->root_password = $validated['server_root_password'];
-                        }
-                        if ($isDb && empty($locked->db_password)) {
-                            $locked->db_password = $dbPassword;
                         }
                         $locked->save();
                     },
@@ -178,6 +154,8 @@ class AdminApiController extends Controller
                     description: "VPS {$instance->hostname} (IP: {$instance->public_ip}) berhasil di-provision via API.",
                     status: 'completed'
                 );
+
+                app(\App\Services\SubscriptionSyncService::class)->ensureForInstance($instance->fresh());
 
                 return $instance;
             });
@@ -207,6 +185,21 @@ class AdminApiController extends Controller
                 'success' => false,
                 'message' => 'Provisioning gagal: ' . $e->getMessage(),
             ], 500);
+        }
+
+        try {
+            AdminAuditLog::create([
+                'admin_user_id' => auth()->id(),
+                'action' => 'api.vps.provision',
+                'description' => "Provisioning VPS #{$instance->id} (Order #{$order->id}) via Admin API.",
+                'subject_type' => VpsInstance::class,
+                'subject_id' => $instance->id,
+                'changes' => ['order_id' => $order->id, 'public_ip' => $instance->public_ip, 'hostname' => $instance->hostname],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        } catch (\Throwable) {
+            // Audit log must not break API response.
         }
 
         return response()->json([
@@ -270,71 +263,14 @@ class AdminApiController extends Controller
         $user->switchToOrganization($organization);
 
         $packageKey = strtolower(trim($validated['package']));
-        $packageNameMap = [
-            'starter xs' => 'Starter XS',
-            'starter-xs' => 'Starter XS',
-            'starter s' => 'Starter S',
-            'starter-s' => 'Starter S',
-            'starter m' => 'Starter M',
-            'starter-m' => 'Starter M',
-            'starter l' => 'Starter L',
-            'starter-l' => 'Starter L',
-            'enterprise pro' => 'Enterprise Pro',
-            'enterprise-pro' => 'Enterprise Pro',
-            'enterprise max' => 'Enterprise Max',
-            'enterprise-max' => 'Enterprise Max',
-            'enterprise ultra' => 'Enterprise Ultra',
-            'enterprise-ultra' => 'Enterprise Ultra',
-            'enterprise extreme' => 'Enterprise Extreme',
-            'enterprise-extreme' => 'Enterprise Extreme',
-            'student basic' => 'Starter XS',
-            'student-basic' => 'Starter XS',
-            'student' => 'Starter XS',
-            'basic' => 'Starter XS',
-            'mahasiswa basic' => 'Starter XS',
-            'mahasiswa-basic' => 'Starter XS',
-            'mahasiswa' => 'Starter XS',
-            'standard' => 'Starter S',
-            'standar' => 'Starter S',
-            'premium' => 'Starter M',
-            'startup' => 'Starter L',
-            'business' => 'Enterprise Pro',
-            'bisnis' => 'Enterprise Pro',
-            'terminal coding agent' => 'Terminal Coding Agent',
-            'terminal-coding-agent' => 'Terminal Coding Agent',
-            'terminal' => 'Terminal Coding Agent',
-            'claude opencode' => 'Terminal Coding Agent',
-            'cloud ai workstation' => 'Cloud AI Workstation',
-            'cloud-ai-workstation' => 'Cloud AI Workstation',
-            'ai workstation' => 'Cloud AI Workstation',
-            'vscode server' => 'Cloud AI Workstation',
-            'hermes autonomous hub' => 'Hermes Autonomous Hub',
-            'hermes-autonomous-hub' => 'Hermes Autonomous Hub',
-            'hermes' => 'Hermes Autonomous Hub',
-            'omniroute' => 'Hermes Autonomous Hub',
-            'enterprise private ai & rag' => 'Enterprise Private AI & RAG',
-            'enterprise private ai and rag' => 'Enterprise Private AI & RAG',
-            'enterprise private ai' => 'Enterprise Private AI & RAG',
-            'enterprise-private-ai-rag' => 'Enterprise Private AI & RAG',
-            'private ai' => 'Enterprise Private AI & RAG',
-            'dify' => 'Enterprise Private AI & RAG',
-            'ollama' => 'Enterprise Private AI & RAG',
-            'db micro' => 'DB Micro',
-            'db-micro' => 'DB Micro',
-            'micro' => 'DB Micro',
-            'db standard' => 'DB Standard',
-            'db-standard' => 'DB Standard',
-            'db enterprise' => 'DB Enterprise / AI Vector',
-            'db-enterprise' => 'DB Enterprise / AI Vector',
-            'db enterprise / ai vector' => 'DB Enterprise / AI Vector',
-            'ai vector' => 'DB Enterprise / AI Vector',
-        ];
-        $mappedName = $packageNameMap[$packageKey] ?? null;
-        $spec = (is_numeric($packageKey) ? VpsSpec::find((int) $packageKey) : null)
-            ?? ($mappedName ? VpsSpec::whereRaw('LOWER(name) = ?', [strtolower($mappedName)])->first() : null)
-            ?? VpsSpec::whereRaw('LOWER(name) = ?', [$packageKey])->first()
-            ?? VpsSpec::where('is_active', true)->orderBy('sell_price', 'asc')->first()
-            ?? VpsSpec::first();
+        $packageSlug = Str::slug($packageKey);
+
+        $allSpecs = VpsSpec::where('category', 'vps')->orderBy('sell_price', 'asc')->get();
+        $spec = (is_numeric($packageKey) ? $allSpecs->firstWhere('id', (int) $packageKey) : null)
+            ?? $allSpecs->first(fn (VpsSpec $s) => strtolower($s->name) === $packageKey)
+            ?? $allSpecs->first(fn (VpsSpec $s) => Str::slug($s->name) === $packageSlug)
+            ?? $allSpecs->firstWhere('is_active', true)
+            ?? $allSpecs->first();
 
         $provider = Order::DEFAULT_PROVIDER;
         $datacenterLocation = $validated['datacenter_location'] ?? 'indonesia';
@@ -439,8 +375,41 @@ class AdminApiController extends Controller
                 $order->loadMissing(['customer', 'vpsSpec']);
                 $adminUser->notify(new \App\Notifications\AdminShopeeOrderNotification($order));
             }
+            app(\App\Services\AdminAlertService::class)->alert(
+                'payment.shopee_created',
+                [
+                    'title' => "Pesanan Shopee (API) #{$order->id} ({$validated['shopee_order_id']})",
+                    'order_id' => $order->id,
+                    'send_email' => false,
+                    'email_sent_override' => (bool) $adminUser,
+                    'details' => [
+                        'Order' => "#{$order->id} · {$validated['shopee_order_id']}",
+                        'Paket' => $spec->name,
+                        'Pelanggan' => $user->full_name . " ({$user->email})",
+                        'Kanal' => 'Admin API',
+                    ],
+                    'action_url' => url('/admin/orders?channel=shopee'),
+                ],
+                dedupeKey: 'shopee-api-' . $order->id,
+                cooldownSeconds: 86400
+            );
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('api.admin.shopee.admin_notify_failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+        }
+
+        try {
+            AdminAuditLog::create([
+                'admin_user_id' => auth()->id(),
+                'action' => 'api.shopee.process',
+                'description' => "Memproses order Shopee {$validated['shopee_order_id']} (Order #{$order->id}) via Admin API.",
+                'subject_type' => Order::class,
+                'subject_id' => $order->id,
+                'changes' => ['shopee_order_id' => $validated['shopee_order_id'], 'spec_id' => $spec->id, 'is_new_user' => $isNewUser],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        } catch (\Throwable) {
+            // Audit log must not break API response.
         }
 
         return response()->json([

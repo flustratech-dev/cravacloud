@@ -219,12 +219,4 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $this->notify(new VerifyEmailNotification());
     }
-
-    /**
-     * Rute nomor tujuan untuk notifikasi WhatsApp.
-     */
-    public function routeNotificationForWhatsApp(): ?string
-    {
-        return $this->phone;
-    }
 }

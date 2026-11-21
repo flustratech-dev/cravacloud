@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -12,7 +13,7 @@ use Illuminate\Notifications\Notification;
  * Subjek dan isi sudah berupa teks jadi, bukan template mentah.
  * Isi di-escape saat dirender di blade, sehingga aman dari penyisipan HTML.
  */
-class TemplatedNotification extends Notification
+class TemplatedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     use \App\Notifications\Concerns\UsesMailIdentity;
@@ -23,6 +24,7 @@ class TemplatedNotification extends Notification
         public ?string $badgeText = null,
         public string $senderType = 'noreply'
     ) {
+        $this->onQueue('notifications');
     }
 
     public function via(object $notifiable): array
