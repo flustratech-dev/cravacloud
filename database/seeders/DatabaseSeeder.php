@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
         $adminUsername = env('ADMIN_USERNAME', env('SEED_ADMIN_USERNAME', 'admin'));
         $adminName = env('ADMIN_NAME', env('SEED_ADMIN_NAME', 'Administrator'));
         $adminPassword = env('ADMIN_PASSWORD', env('SEED_ADMIN_PASSWORD', '12345678'));
-        $adminPhone = env('ADMIN_PHONE', env('SEED_ADMIN_PHONE', env('CRAVACLOUD_WHATSAPP', '6285808749131')));
+        $adminPhone = env('ADMIN_PHONE', env('SEED_ADMIN_PHONE', env('CRAVACLOUD_WHATSAPP', '6285776361743')));
         $adminCompany = env('ADMIN_COMPANY', env('SEED_ADMIN_COMPANY', 'CravaCloud Indonesia'));
 
         $admin = User::where('email', $adminEmail)

@@ -6,7 +6,7 @@ namespace App\Support;
  * Nomor WhatsApp bisnis CravaCloud dalam setiap bentuk yang dipakai halaman.
  *
  * Satu sumber (`config('cravacloud.whatsapp')`, env `CRAVACLOUD_WHATSAPP`) untuk
- * tautan wa.me, teks "CS: 0858-…", dan data terstruktur untuk mesin pencari.
+ * tautan wa.me, teks "CS: 0857-…", dan data terstruktur untuk mesin pencari.
  * Sebelumnya nomor yang tampil sebagai teks ditulis mati di Blade terpisah
  * dari nomor di tautannya — begitu nomornya berganti, tombol chat menuju nomor
  * baru sementara teks di sebelahnya masih menyebut nomor lama.
@@ -35,7 +35,7 @@ class NomorWhatsApp
         return str_starts_with($angka, '62') ? '0'.substr($angka, 2) : $angka;
     }
 
-    /** Format lokal yang mudah dibaca: 0858-0874-9131. */
+    /** Format lokal yang mudah dibaca: 0857-7636-1743. */
     public static function tampil(): string
     {
         return preg_replace('/^(\d{4})(\d{4})(\d+)$/', '$1-$2-$3', self::lokal()) ?? self::lokal();

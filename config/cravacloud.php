@@ -13,7 +13,7 @@ return [
 
     // Nomor WhatsApp customer service (format internasional tanpa +)
     // Ganti dengan nomor WhatsApp Business real Anda
-    'whatsapp' => env('CRAVACLOUD_WHATSAPP', '6285808749131'),
+    'whatsapp' => env('CRAVACLOUD_WHATSAPP', '6285776361743'),
 
     // Email support
     'support_email' => env('CRAVACLOUD_SUPPORT_EMAIL', env('MAIL_SUPPORT_ADDRESS', 'support@cravacloud.id')),
