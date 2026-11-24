@@ -51,7 +51,7 @@
 
     <!-- Schema.org JSON-LD Structured Data -->
     @php
-        $waGatewayUrl = rtrim(config('whatsapp.url', 'https://wa.cravacloud.id'), '/');
+        $waGatewayUrl = rtrim(config('whatsapp.url', 'https://wa.vexahostcloud.my.id'), '/');
 
         try {
             $hargaAktif = \App\Models\VpsSpec::where('is_active', true)->pluck('sell_price');

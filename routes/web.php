@@ -413,11 +413,9 @@ Route::middleware(['auth', '2fa', 'org.context'])->group(function () {
         Route::get('/broadcast/export-contacts', [AdminBroadcastController::class, 'exportContacts'])->name('broadcast.export');
 
         // ============================================================
-        // WhatsApp Gateway Management & Test
+        // WhatsApp Gateway Monitoring & Test (Konfigurasi via .env)
         // ============================================================
         Route::get('/whatsapp', [AdminWhatsAppController::class, 'index'])->name('whatsapp.index');
-        Route::post('/whatsapp/settings', [AdminWhatsAppController::class, 'updateSettings'])->name('whatsapp.settings');
-        Route::post('/whatsapp/settings/forget', [AdminWhatsAppController::class, 'forgetSetting'])->name('whatsapp.settings.forget');
         Route::get('/whatsapp/status', [AdminWhatsAppController::class, 'status'])->name('whatsapp.status');
         Route::post('/whatsapp/test', [AdminWhatsAppController::class, 'test'])->name('whatsapp.test');
 

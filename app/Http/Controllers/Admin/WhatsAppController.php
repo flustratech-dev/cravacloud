@@ -7,16 +7,14 @@ use App\Http\Controllers\Controller;
 use App\Services\WhatsAppGateway;
 use App\Services\WhatsAppSettings;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 /**
- * Pengelolaan WhatsApp Gateway di Panel Admin CravaCloud.
+ * Pemantauan & Pengujian WhatsApp Gateway di Panel Admin CravaCloud.
  *
- * Mengontrol kredensial, koneksi, status live, dan pengujian pesan langsung dari UI admin.
+ * Seluruh kredensial dan konfigurasi gateway dibaca penuh dari .env (WA_GATEWAY_*).
  */
 class WhatsAppController extends Controller
 {
@@ -25,102 +23,42 @@ class WhatsAppController extends Controller
     public function index(): View
     {
         return view('admin.whatsapp', [
-            'gatewayUrl' => rtrim(config('whatsapp.url', 'https://wa.cravacloud.id'), '/'),
+            'gatewayUrl' => rtrim((string) config('whatsapp.url', 'https://wa.vexahostcloud.my.id'), '/'),
             'pengaturan' => WhatsAppSettings::summary(),
+            'webhookUrl' => url('/api/webhooks/whatsapp'),
+            'webhookConfigured' => filled(config('whatsapp.webhook_secret')),
         ]);
     }
 
     /**
-     * Menyimpan kredensial dan pengaturan WhatsApp Gateway ke basis data.
+     * Endpoint status live gateway (sesi terhubung, daftar sesi, dan kuota pesan).
      */
-    public function updateSettings(Request $request): RedirectResponse
+    public function status(Request $request): JsonResponse
     {
-        $data = $request->validate([
-            'wa_enabled' => ['nullable', 'boolean'],
-            'wa_url'     => ['nullable', 'string', 'max:255', 'url'],
-            'wa_key'     => ['nullable', 'string', 'max:255'],
-            'wa_session' => ['nullable', 'string', 'max:100'],
-            'wa_timeout' => ['nullable', 'integer', 'min:1', 'max:60'],
-        ], [
-            'wa_url.url' => 'Format URL Gateway tidak valid (harus diawali http:// atau https://).',
-        ]);
-
-        $data['wa_enabled'] = $request->boolean('wa_enabled');
-
-        WhatsAppSettings::save($data);
-
-        $this->audit('whatsapp.settings_updated', 'Memperbarui konfigurasi WhatsApp Gateway Admin.', null, [
-            'wa_enabled' => $data['wa_enabled'],
-            'wa_url' => $data['wa_url'] ?? null,
-            'wa_session' => $data['wa_session'] ?? null,
-        ]);
-
-        Log::info('Pengaturan WhatsApp Gateway diperbarui', [
-            'oleh' => $request->user()?->id,
-        ]);
-
-        return redirect()
-            ->route('admin.whatsapp.index')
-            ->with('success', 'Pengaturan WhatsApp Gateway berhasil disimpan dan langsung aktif.');
+        return response()->json(WhatsAppGateway::healthCheck($request->boolean('fresh')));
     }
 
     /**
-     * Menghapus nilai pengaturan database agar kembali mengikuti .env / config default.
-     */
-    public function forgetSetting(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'field' => ['required', 'string', 'in:' . implode(',', array_keys(WhatsAppSettings::FIELDS))],
-        ]);
-
-        WhatsAppSettings::forget($validated['field']);
-
-        $this->audit('whatsapp.setting_reset', "Mengembalikan pengaturan {$validated['field']} WA Gateway ke default.");
-
-        Log::info('Pengaturan WhatsApp Gateway dikembalikan ke default', [
-            'oleh'  => $request->user()?->id,
-            'kolom' => $validated['field'],
-        ]);
-
-        return redirect()
-            ->route('admin.whatsapp.index')
-            ->with('success', "Pengaturan {$validated['field']} dikembalikan ke nilai default.");
-    }
-
-    /**
-     * Endpoint status live gateway (sesi terhubung dan kuota pesan).
-     */
-    public function status(): JsonResponse
-    {
-        $health = WhatsAppGateway::healthCheck();
-
-        return response()->json($health);
-    }
-
-    /**
-     * Kirim pesan uji ke nomor tujuan untuk memvalidasi integrasi gateway.
+     * Kirim pesan uji ke nomor atau ID grup tujuan untuk memvalidasi integrasi gateway.
      */
     public function test(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'phone'   => ['required', 'string', 'max:25'],
-            'message' => ['required', 'string', 'max:1000'],
+            'phone'   => ['required', 'string', 'max:40'],
+            'message' => ['required', 'string', 'max:4096'],
         ]);
-
-        $key = config('whatsapp.key');
-        $session = config('whatsapp.session');
 
         if (! config('whatsapp.enabled')) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Pengiriman WhatsApp sedang nonaktif. Aktifkan saklar "Aktifkan Pengiriman WhatsApp" di halaman ini terlebih dahulu.',
+                'message' => 'Pengiriman WhatsApp sedang nonaktif. Atur WA_GATEWAY_ENABLED=true di file .env.',
             ], 422);
         }
 
-        if (! $key) {
+        if (! config('whatsapp.key')) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'API Key Gateway belum diisi. Masukkan API Key Anda pada formulir kredensial di atas.',
+                'message' => 'WA_GATEWAY_KEY belum diisi pada file .env.',
             ], 422);
         }
 
@@ -129,55 +67,52 @@ class WhatsAppController extends Controller
         if ($phone === null) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Nomor tujuan tidak valid. Masukkan nomor dengan format 08xx, 62xx, atau +62xx.',
+                'message' => 'Nomor tujuan tidak valid. Masukkan format 08xx, 62xx, +62xx, atau ID grup (@g.us).',
             ], 422);
         }
 
-        try {
-            $response = Http::baseUrl(rtrim(config('whatsapp.url'), '/'))
-                ->withHeader('X-Api-Key', $key)
-                ->connectTimeout(5)
-                ->timeout(15)
-                ->acceptJson()
-                ->post('/api/v1/messages/text', array_filter([
-                    'session_id' => $session,
-                    'to'         => $phone,
-                    'message'    => $data['message'],
-                ]));
-        } catch (\Throwable $e) {
-            Log::warning('Uji kirim WhatsApp gagal menghubungi gateway', ['error' => $e->getMessage()]);
+        $result = WhatsAppGateway::sendWithResult($phone, $data['message']);
 
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Gateway tidak dapat dihubungi: ' . $e->getMessage(),
-            ], 502);
-        }
+        if (! $result['ok']) {
+            if ($result['http_status'] === null) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Gateway tidak dapat dihubungi: ' . ($result['error'] ?? 'Koneksi gagal.'),
+                ], 502);
+            }
 
-        if ($response->failed()) {
-            return response()->json([
+            return response()->json(array_filter([
                 'status'      => 'error',
-                'message'     => $response->json('error.message') ?? 'Gateway menolak pesan.',
-                'http_status' => $response->status(),
-            ], 422);
+                'message'     => $result['error'] ?? 'Gateway menolak pesan.',
+                'http_status' => $result['http_status'],
+                'retry_after' => $result['retry_after'],
+            ], static fn ($value) => $value !== null), 422);
         }
 
-        $messageId = $response->json('data.id') ?? $response->json('data.message_id') ?? 'OK';
+        $messageId = $result['id'] ?? 'OK';
+        $queueStatus = $result['status'] ?? 'queued';
+        $target = $result['to'] ?? $phone;
 
-        $this->audit('whatsapp.test_sent', 'Mengirim pesan uji WhatsApp Admin ke ' . WhatsAppGateway::mask($phone) . '.', null, [
-            'message_id' => $messageId,
+        $this->audit('whatsapp.test_sent', 'Mengirim pesan uji WhatsApp Admin ke ' . WhatsAppGateway::mask($target) . '.', null, [
+            'message_id'   => $messageId,
+            'queue_status' => $queueStatus,
+            'scheduled_at' => $result['scheduled_at'],
         ]);
 
         Log::info('Uji kirim WhatsApp berhasil', [
-            'oleh'       => $request->user()?->id,
-            'tujuan'     => WhatsAppGateway::mask($phone),
-            'message_id' => $messageId,
+            'oleh'         => $request->user()?->id,
+            'tujuan'       => WhatsAppGateway::mask($target),
+            'message_id'   => $messageId,
+            'queue_status' => $queueStatus,
         ]);
 
         return response()->json([
-            'status'     => 'ok',
-            'message'    => 'Pesan uji berhasil diterima oleh WhatsApp Gateway dan masuk dalam antrean kirim. Silakan periksa nomor WhatsApp tujuan.',
-            'to'         => $phone,
-            'message_id' => $messageId,
+            'status'       => 'ok',
+            'message'      => 'Pesan uji berhasil diterima oleh WhatsApp Gateway dan masuk dalam antrean kirim. Silakan periksa WhatsApp tujuan.',
+            'to'           => $target,
+            'message_id'   => $messageId,
+            'queue_status' => $queueStatus,
+            'scheduled_at' => $result['scheduled_at'],
         ]);
     }
 }

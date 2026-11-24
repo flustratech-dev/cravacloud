@@ -4,11 +4,17 @@ use App\Http\Controllers\Api\AdminApiController;
 use App\Http\Controllers\Api\LinkedAccountController;
 use App\Http\Controllers\Api\LinkedAccountLookupController;
 use App\Http\Controllers\Api\PaymentWebhookController;
+use App\Http\Controllers\Api\WhatsAppWebhookController;
 use App\Http\Middleware\VerifyLinkedAccountSignature;
 use Illuminate\Support\Facades\Route;
 
 // Midtrans Payment Webhook (public - diverifikasi dengan SHA-512 signature_key)
 Route::match(['get', 'post'], '/webhooks/payment', [PaymentWebhookController::class, 'handle'])->name('api.webhooks.payment');
+
+// VexaHost WA Gateway Webhook (public - diverifikasi dengan HMAC-SHA256 X-VexaHost-Signature)
+Route::post('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'handle'])
+    ->middleware('throttle:120,1')
+    ->name('api.webhooks.whatsapp');
 
 // Admin API Endpoints - PROTECTED with admin.api middleware (ApiKey or Admin Session)
 Route::prefix('admin')->middleware(['admin.api', 'throttle:60,1'])->group(function () {

@@ -56,9 +56,6 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        // Terapkan pengaturan WhatsApp Gateway dari database jika ada
-        \App\Services\WhatsAppSettings::apply();
-
         // Setiap perubahan identitas masuk ikut dikirim ke CravaCloud WA Gateway,
         // dari jalur mana pun perubahannya datang (akun tertaut, hanya auth).
         User::observe(LinkedAccountObserver::class);

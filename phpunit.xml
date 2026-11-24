@@ -31,6 +31,13 @@
         <!-- Akun tertaut tidak pernah memanggil aplikasi seberang dari tes, walau .env lokal mengisinya. -->
         <env name="LINKED_ACCOUNTS_URL" value=""/>
         <env name="LINKED_ACCOUNTS_SECRET" value=""/>
+        <!-- WA Gateway tidak pernah memanggil gateway live dari tes, walau .env lokal mengisinya. -->
+        <env name="WA_GATEWAY_ENABLED" value="false"/>
+        <env name="WA_GATEWAY_URL" value="https://wa.vexahostcloud.my.id"/>
+        <env name="WA_GATEWAY_KEY" value=""/>
+        <env name="WA_GATEWAY_SESSION" value=""/>
+        <env name="WA_GATEWAY_HEALTH_CACHE_SECONDS" value="0"/>
+        <env name="WA_GATEWAY_WEBHOOK_SECRET" value=""/>
         <env name="MIDTRANS_SERVER_KEY" value=""/>
         <env name="MIDTRANS_CLIENT_KEY" value=""/>
         <env name="MIDTRANS_IS_PRODUCTION" value="false"/>

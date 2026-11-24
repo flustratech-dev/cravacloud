@@ -148,14 +148,14 @@ class SettingsController extends Controller
     public function updateNotification(Request $request)
     {
         $validated = $request->validate([
-            'admin_notification_whatsapp' => ['nullable', 'string', 'max:200', 'regex:/^[0-9+\s,;\-]*$/'],
+            'admin_notification_whatsapp' => ['nullable', 'string', 'max:200', 'regex:/^\s*(?:[0-9+\-]+(?:@g\.us)?(?:[\s,;]+[0-9+\-]+(?:@g\.us)?)*)?\s*$/'],
             'digest_enabled' => ['nullable'],
             'fulfillment_sla_minutes' => ['required', 'integer', 'min:5', 'max:1440'],
             'renewal_grace_days_vps' => ['required', 'integer', 'min:1', 'max:6'],
             'renewal_grace_days_database' => ['nullable', 'integer', 'min:1', 'max:29'],
             'renewal_grace_days_app' => ['nullable', 'integer', 'min:1', 'max:29'],
         ], [
-            'admin_notification_whatsapp.regex' => 'Nomor WA admin hanya boleh berisi angka, +, spasi, atau koma sebagai pemisah.',
+            'admin_notification_whatsapp.regex' => 'Nomor WA admin hanya boleh berisi angka, +, -, spasi, koma, atau ID grup (@g.us).',
             'renewal_grace_days_vps.max' => 'Tenggang VPS wajib di bawah 7 hari, karena Supplier menghapus VPS pada hari ke-7.',
             'renewal_grace_days_database.max' => 'Tenggang database wajib di bawah 30 hari, mengikuti batas Supplier.',
             'renewal_grace_days_app.max' => 'Tenggang aplikasi wajib di bawah 30 hari, mengikuti batas Supplier.',

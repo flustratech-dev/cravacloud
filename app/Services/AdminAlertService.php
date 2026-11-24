@@ -664,18 +664,17 @@ class AdminAlertService
         $sent = false;
         $lastError = null;
 
-        foreach ($numbers as $phone) {
-            try {
-                $ok = WhatsAppGateway::send($phone, $message);
-                if ($ok) {
-                    $sent = true;
-                } else {
-                    $lastError = 'Gateway menolak/nonaktif atau gagal kirim.';
-                }
-            } catch (\Throwable $e) {
-                $lastError = $e->getMessage();
-                Log::error('admin_alert.whatsapp_failed', ['context' => $context, 'order_id' => $orderId, 'error' => $lastError]);
+        try {
+            $sent = count($numbers) > 1
+                ? WhatsAppGateway::broadcast($numbers, $message)
+                : WhatsAppGateway::send($numbers[0], $message);
+
+            if (! $sent) {
+                $lastError = 'Gateway menolak/nonaktif atau gagal kirim.';
             }
+        } catch (\Throwable $e) {
+            $lastError = $e->getMessage();
+            Log::error('admin_alert.whatsapp_failed', ['context' => $context, 'order_id' => $orderId, 'error' => $lastError]);
         }
 
         return [$sent, count($numbers), $sent ? null : $lastError];
