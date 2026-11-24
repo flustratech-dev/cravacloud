@@ -425,7 +425,11 @@ Route::middleware(['auth', '2fa', 'org.context'])->group(function () {
         // PHASE 4 - Payment Gateway dan Webhook Log
         // ============================================================
         Route::get('/payment-gateways', [AdminPaymentGatewayController::class, 'index'])->name('gateways.index');
+        Route::get('/payment-gateways/reconcile.csv', [AdminPaymentGatewayController::class, 'exportReconciliation'])
+            ->name('gateways.reconcile');
         Route::put('/payment-gateways/{id}', [AdminPaymentGatewayController::class, 'update'])->name('gateways.update');
+        Route::post('/payment-gateways/{id}/test', [AdminPaymentGatewayController::class, 'testConnection'])
+            ->middleware('throttle:10,1')->name('gateways.test');
         Route::get('/webhooks', [AdminWebhookLogController::class, 'index'])->name('webhooks.index');
         Route::post('/webhooks/{id}/replay', [AdminWebhookLogController::class, 'replay'])
             ->middleware('throttle:10,1')->name('webhooks.replay');

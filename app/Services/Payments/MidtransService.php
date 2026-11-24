@@ -138,7 +138,7 @@ class MidtransService
         // 3. Susun data customer
         $customer = $order->customer;
         $customerName = $customer ? ($customer->full_name ?: $customer->username ?: 'Pelanggan') : 'Pelanggan';
-        $customerEmail = $customer ? $customer->email : 'support@cravacloud.id';
+        $customerEmail = $customer ? $customer->email : config('cravacloud.support_email', 'support@cravacloud.com');
         $customerPhone = $customer ? ($customer->phone ?: '') : '';
 
         // 4. Susun item details
@@ -276,6 +276,84 @@ class MidtransService
     }
 
     /**
+     * Ambil status transaksi langsung dari Midtrans Core API (/v2/{order_id}/status).
+     *
+     * @throws \RuntimeException Bila server key kosong, autentikasi ditolak (401), koneksi gagal, atau server Midtrans error (5xx).
+     */
+    public static function fetchTransactionStatus(string $orderId, ?string $serverKey = null): array
+    {
+        $key = trim((string) ($serverKey ?: self::getServerKey()));
+        if ($key === '') {
+            throw new \RuntimeException('MIDTRANS_SERVER_KEY belum dikonfigurasi.');
+        }
+
+        $response = Http::withBasicAuth($key, '')
+            ->withHeaders(['Accept' => 'application/json'])
+            ->timeout(10)
+            ->get(self::getStatusApiUrl($orderId));
+
+        $json = $response->json();
+        if (! is_array($json)) {
+            if ($response->status() === 401) {
+                throw new \RuntimeException('Autentikasi Midtrans ditolak (401). Periksa Server Key & mode.');
+            }
+            if ($response->serverError()) {
+                throw new \RuntimeException('Midtrans Core API sedang gangguan (HTTP ' . $response->status() . ').');
+            }
+            throw new \RuntimeException('Respons Midtrans Core API tidak valid (HTTP ' . $response->status() . ').');
+        }
+
+        $statusCode = (string) ($json['status_code'] ?? $response->status());
+        $json['status_code'] = $statusCode;
+
+        if ($response->status() === 401 || $statusCode === '401') {
+            throw new \RuntimeException('Autentikasi Midtrans ditolak (401). Periksa Server Key & mode.');
+        }
+
+        if ($response->serverError() || ((int) $statusCode >= 500 && (int) $statusCode < 600)) {
+            throw new \RuntimeException('Midtrans Core API sedang gangguan (HTTP ' . ($statusCode ?: $response->status()) . ').');
+        }
+
+        return $json;
+    }
+
+    /**
+     * Uji koneksi & validitas Server Key Midtrans (read-only tanpa membuat transaksi).
+     *
+     * @return array{ok: bool, mode: string, message: string}
+     */
+    public static function testConnection(?string $serverKey = null): array
+    {
+        $mode = self::isProduction() ? 'production' : 'sandbox';
+        $modeLabel = $mode === 'production' ? 'Produksi' : 'Sandbox';
+
+        try {
+            $res = self::fetchTransactionStatus('crv-ping-' . bin2hex(random_bytes(6)), $serverKey);
+            $code = (string) ($res['status_code'] ?? '');
+
+            if ($code === '404') {
+                return [
+                    'ok' => true,
+                    'mode' => $mode,
+                    'message' => "Koneksi Midtrans berhasil (Server Key valid untuk mode {$modeLabel}).",
+                ];
+            }
+
+            return [
+                'ok' => false,
+                'mode' => $mode,
+                'message' => 'Respons Midtrans tidak terduga: ' . ($res['status_message'] ?? $code ?: 'unknown'),
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'ok' => false,
+                'mode' => $mode,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Cek status transaksi langsung ke Midtrans Core API dan otomatis sinkronkan jika telah lunas.
      */
     public static function checkAndSyncStatus(Order $order): ?array
@@ -324,10 +402,13 @@ class MidtransService
                 }
 
                 $data = $response->json();
-                $txStatus = strtolower($data['transaction_status'] ?? '');
-                $fraudStatus = strtolower($data['fraud_status'] ?? '');
+                $txStatus = strtolower((string) ($data['transaction_status'] ?? ''));
+                $fraudStatus = strtolower((string) ($data['fraud_status'] ?? ''));
 
-                if (in_array($txStatus, ['settlement', 'capture', 'paid'], true) && $fraudStatus !== 'challenge') {
+                $isCaptureAccepted = $txStatus !== 'capture' || $fraudStatus === '' || $fraudStatus === 'accept';
+                $isFraudBlocked = in_array($fraudStatus, ['challenge', 'deny'], true);
+
+                if (in_array($txStatus, ['settlement', 'capture', 'paid'], true) && ! $isFraudBlocked && $isCaptureAccepted) {
                     $settled = self::settleOrderFromMidtrans($order, $data, $refId);
                     if (! $settled) {
                         return null;

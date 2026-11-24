@@ -20,13 +20,14 @@ use Illuminate\Support\Facades\Validator;
  * Kontrak keamanan:
  *   1. MIDTRANS_SERVER_KEY WAJIB di-set. Tanpa itu, endpoint langsung 500.
  *   2. Signature SHA-512 diverifikasi sebelum apapun lainnya.
- *   3. Idempotent: webhook duplikat (provider + transaction_id sama) tidak
- *      pernah memproses ulang. Sekali sukses = terkunci.
- *   4. Amount verify: gross_amount di webhook harus == order.amount.
+ *   3. Konfirmasi balik ke Midtrans Core API (/v2/{order_id}/status) sebagai
+ *      sumber kebenaran status & nominal transaksi (signature tidak melindungi transaction_status).
+ *   4. Idempotent status-aware: pending -> settlement/expire diproses; duplikat diabaikan.
+ *   5. Amount verify: gross_amount dari Midtrans API harus == order.amount.
  *      Kalau tidak match → tolak, catat sebagai anomaly.
- *   5. Semua write dalam DB::transaction + lockForUpdate untuk cegah race.
- *   6. Perubahan status order lewat OrderStateMachine (validated transitions).
- *   7. Raw payload disimpan permanen di webhook_events + payment_transactions
+ *   6. Semua write dalam DB::transaction + lockForUpdate untuk cegah race.
+ *   7. Perubahan status order lewat OrderStateMachine (validated transitions).
+ *   8. Raw payload disimpan permanen di webhook_events + payment_transactions
  *      untuk forensik dan replay admin.
  */
 class PaymentWebhookController extends Controller
@@ -95,7 +96,7 @@ class PaymentWebhookController extends Controller
             ], 403);
         }
 
-        $outcome = $this->processVerifiedPayload($validated, $request->all(), (string) $request->ip());
+        $outcome = $this->processVerifiedPayload($validated, $request->all(), (string) $request->ip(), null, $serverKey);
 
         $response = response()->json($outcome['body'], $outcome['http']);
 
@@ -154,7 +155,9 @@ class PaymentWebhookController extends Controller
         $validated = $validator->validated();
         $validated['signature_key'] = $validated['signature_key'] ?? ($event->signature ?: 'verified-replay');
 
-        $outcome = $this->processVerifiedPayload($validated, $payload, (string) ($event->ip_address ?: '127.0.0.1'), $event);
+        $serverKey = PaymentGateway::credential('midtrans', 'server_key', config('services.midtrans.server_key'));
+
+        $outcome = $this->processVerifiedPayload($validated, $payload, (string) ($event->ip_address ?: '127.0.0.1'), $event, $serverKey);
 
         if (!empty($outcome['needs_notification']) && !empty($outcome['order'])) {
             $this->dispatchPostPaymentNotifications($outcome['order']);
@@ -175,13 +178,15 @@ class PaymentWebhookController extends Controller
         array $validated,
         array $rawPayload,
         string $ipAddress,
-        ?WebhookEvent $existingEvent = null
+        ?WebhookEvent $existingEvent = null,
+        ?string $serverKey = null
     ): array {
         $provider = 'midtrans';
         $rawOrderId = (string) $validated['order_id'];
         $grossAmount = (string) ($validated['gross_amount'] ?? '');
         $incomingSignature = (string) ($validated['signature_key'] ?? ($existingEvent?->signature ?? ''));
         $providerTxId = (string) ($validated['transaction_id'] ?? $existingEvent?->event_id ?? $incomingSignature);
+        $serverKey = $serverKey ?: PaymentGateway::credential('midtrans', 'server_key', config('services.midtrans.server_key'));
 
         $statusField = $validated['transaction_status'] ?? $validated['status'] ?? null;
         if (!$statusField) {
@@ -220,6 +225,151 @@ class PaymentWebhookController extends Controller
                 'needs_notification' => false,
                 'order' => null,
             ];
+        }
+
+        // Guard 3: Konfirmasi balik status & nominal ke Midtrans Core API.
+        // signature_key Midtrans tidak menandatangani transaction_status maupun fraud_status.
+        if (config('services.midtrans.verify_webhook_via_api', true)) {
+            try {
+                $verified = \App\Services\Payments\MidtransService::fetchTransactionStatus($rawOrderId, $serverKey);
+            } catch (\Throwable $e) {
+                Log::error('Payment webhook Midtrans API verification failed', [
+                    'order_id' => $order->id,
+                    'raw_order_id' => $rawOrderId,
+                    'ip' => $ipAddress,
+                    'error' => $e->getMessage(),
+                ]);
+
+                $this->recordWebhook(
+                    $provider,
+                    $providerTxId,
+                    $paymentStatus,
+                    $incomingSignature,
+                    $rawPayload,
+                    $ipAddress,
+                    $order->id,
+                    null,
+                    'failed',
+                    'Gagal verifikasi status ke Midtrans API: ' . $e->getMessage(),
+                    503,
+                    $existingEvent
+                );
+
+                try {
+                    app(\App\Services\AdminAlertService::class)->alert(
+                        'payment.failed',
+                        [
+                            'title' => "Gagal Verifikasi API Midtrans Order #{$order->id}",
+                            'order_id' => $order->id,
+                            'details' => [
+                                'Order' => "#{$order->id}",
+                                'Ref' => $rawOrderId,
+                                'Error' => \Illuminate\Support\Str::limit($e->getMessage(), 150),
+                            ],
+                            'action_url' => url('/admin/webhooks?status=failed'),
+                        ],
+                        dedupeKey: 'wh-verify-' . $order->id,
+                        cooldownSeconds: 1800
+                    );
+                } catch (\Throwable) {
+                    // ignore
+                }
+
+                return [
+                    'http' => 503,
+                    'body' => ['success' => false, 'message' => 'Unable to verify payment status with Midtrans API.'],
+                    'needs_notification' => false,
+                    'order' => $order,
+                ];
+            }
+
+            if ((string) ($verified['status_code'] ?? '') === '404') {
+                $this->recordWebhook(
+                    $provider,
+                    $providerTxId,
+                    $paymentStatus,
+                    $incomingSignature,
+                    $rawPayload,
+                    $ipAddress,
+                    $order->id,
+                    null,
+                    'failed',
+                    'Transaksi tidak ditemukan di Midtrans Core API (404).',
+                    422,
+                    $existingEvent
+                );
+
+                return [
+                    'http' => 422,
+                    'body' => ['success' => false, 'message' => 'Transaction not found in Midtrans API.'],
+                    'needs_notification' => false,
+                    'order' => $order,
+                ];
+            }
+
+            if (isset($verified['order_id']) && (string) $verified['order_id'] !== $rawOrderId) {
+                $this->recordWebhook(
+                    $provider,
+                    $providerTxId,
+                    $paymentStatus,
+                    $incomingSignature,
+                    $rawPayload,
+                    $ipAddress,
+                    $order->id,
+                    null,
+                    'failed',
+                    'Order ID tidak cocok dengan respons Midtrans Core API.',
+                    422,
+                    $existingEvent
+                );
+
+                return [
+                    'http' => 422,
+                    'body' => ['success' => false, 'message' => 'Order ID mismatch with Midtrans API.'],
+                    'needs_notification' => false,
+                    'order' => $order,
+                ];
+            }
+
+            $verifiedStatus = strtolower((string) ($verified['transaction_status'] ?? ''));
+            if ($verifiedStatus === '') {
+                $this->recordWebhook(
+                    $provider,
+                    $providerTxId,
+                    $paymentStatus,
+                    $incomingSignature,
+                    $rawPayload,
+                    $ipAddress,
+                    $order->id,
+                    null,
+                    'failed',
+                    'Respons Midtrans Core API tidak menyertakan transaction_status.',
+                    422,
+                    $existingEvent
+                );
+
+                return [
+                    'http' => 422,
+                    'body' => ['success' => false, 'message' => 'Missing verified transaction status from Midtrans API.'],
+                    'needs_notification' => false,
+                    'order' => $order,
+                ];
+            }
+
+            $paymentStatus = $verifiedStatus;
+            $validated['transaction_status'] = $paymentStatus;
+            $validated['fraud_status'] = isset($verified['fraud_status']) ? strtolower((string) $verified['fraud_status']) : null;
+            $validated['payment_type'] = $verified['payment_type'] ?? ($validated['payment_type'] ?? null);
+
+            if (!empty($verified['transaction_id'])) {
+                $validated['transaction_id'] = (string) $verified['transaction_id'];
+            }
+            if (isset($verified['gross_amount']) && $verified['gross_amount'] !== '') {
+                $grossAmount = (string) $verified['gross_amount'];
+            }
+
+            $providerTxId = (string) ($validated['transaction_id'] ?? $existingEvent?->event_id ?? $incomingSignature);
+            $rawPayload['verified_api_status'] = $verified;
         }
 
         // Guard amount match untuk nominal webhook.
@@ -280,7 +430,7 @@ class PaymentWebhookController extends Controller
 
         try {
             $result = DB::transaction(function () use (
-                $provider, $providerTxId, $paymentStatus, $incomingSignature,
+                $provider, $providerTxId, $rawOrderId, $paymentStatus, $incomingSignature,
                 $rawPayload, $ipAddress, $order, $validated, $grossAmount, $existingEvent, &$needsNotification
             ) {
                 $lockedEvent = $existingEvent
@@ -290,35 +440,78 @@ class PaymentWebhookController extends Controller
                         ->lockForUpdate()
                         ->first();
 
+                $isSettledIncoming = in_array($paymentStatus, ['settlement', 'capture', 'paid'], true);
                 if ($lockedEvent && $lockedEvent->processing_status === 'processed') {
-                    return [
-                        'status' => 'duplicate',
-                        'message' => 'Webhook already processed (idempotent).',
-                        'order_status' => $order->status,
-                    ];
+                    $previousType = strtolower((string) $lockedEvent->event_type);
+                    $previousSettled = in_array($previousType, ['settlement', 'capture', 'paid'], true);
+                    $previousFailed = in_array($previousType, ['cancel', 'deny', 'expire', 'failure'], true);
+
+                    $shouldDedupe = ($previousType === $paymentStatus)
+                        || $previousSettled
+                        || ($previousFailed && !$isSettledIncoming);
+
+                    if ($shouldDedupe) {
+                        return [
+                            'status' => 'duplicate',
+                            'message' => 'Webhook already processed (idempotent).',
+                            'order_status' => $order->status,
+                        ];
+                    }
                 }
 
-                $event = $lockedEvent ?: WebhookEvent::create([
-                    'provider' => $provider,
-                    'event_id' => $providerTxId,
-                    'event_type' => $paymentStatus,
-                    'signature' => $incomingSignature,
-                    'signature_verified' => true,
-                    'ip_address' => $ipAddress,
-                    'payload' => $rawPayload,
-                    'processing_status' => 'received',
-                    'http_status' => 200,
-                    'order_id' => $order->id,
-                ]);
-
-                if ($lockedEvent && !$lockedEvent->signature_verified) {
-                    $lockedEvent->signature_verified = true;
+                if ($lockedEvent) {
+                    $lockedEvent->update([
+                        'event_type' => $paymentStatus,
+                        'signature' => $incomingSignature,
+                        'signature_verified' => true,
+                        'ip_address' => $ipAddress,
+                        'payload' => $rawPayload,
+                        'processing_status' => 'received',
+                        'processing_error' => null,
+                        'order_id' => $order->id,
+                        'attempts' => $existingEvent ? $lockedEvent->attempts : ($lockedEvent->attempts + 1),
+                    ]);
+                    $event = $lockedEvent;
+                } else {
+                    $event = WebhookEvent::create([
+                        'provider' => $provider,
+                        'event_id' => $providerTxId,
+                        'event_type' => $paymentStatus,
+                        'signature' => $incomingSignature,
+                        'signature_verified' => true,
+                        'ip_address' => $ipAddress,
+                        'payload' => $rawPayload,
+                        'processing_status' => 'received',
+                        'http_status' => 200,
+                        'order_id' => $order->id,
+                    ]);
                 }
 
                 $tx = PaymentTransaction::where('provider', $provider)
                     ->where('provider_transaction_id', $providerTxId)
                     ->lockForUpdate()
                     ->first();
+
+                if (!$tx) {
+                    $tx = PaymentTransaction::where('provider', $provider)
+                        ->where('order_id', $order->id)
+                        ->where('provider_order_ref', $rawOrderId)
+                        ->whereNull('provider_transaction_id')
+                        ->lockForUpdate()
+                        ->latest('id')
+                        ->first();
+
+                    if ($tx) {
+                        $tx->update([
+                            'provider_transaction_id' => $providerTxId,
+                            'payment_method' => $validated['payment_type'] ?? $tx->payment_method,
+                            'amount' => $grossAmount !== '' ? $grossAmount : $tx->amount,
+                            'fraud_status' => $validated['fraud_status'] ?? $tx->fraud_status,
+                            'signature_key' => $incomingSignature,
+                            'raw_payload' => $rawPayload,
+                        ]);
+                    }
+                }
 
                 if (!$tx) {
                     $tx = PaymentTransaction::create([
@@ -328,7 +521,7 @@ class PaymentWebhookController extends Controller
                         'provider_transaction_id' => $providerTxId,
                         'provider_order_ref' => $validated['order_id'] ?? $order->id,
                         'payment_method' => $validated['payment_type'] ?? $order->payment_method,
-                        'amount' => $grossAmount,
+                        'amount' => $grossAmount !== '' ? $grossAmount : $order->amount,
                         'currency' => 'IDR',
                         'status' => 'pending',
                         'fraud_status' => $validated['fraud_status'] ?? null,
@@ -355,7 +548,7 @@ class PaymentWebhookController extends Controller
                     ];
                 }
 
-                $fraudStatus = $validated['fraud_status'] ?? null;
+                $fraudStatus = strtolower((string) ($validated['fraud_status'] ?? ''));
                 if ($fraudStatus === 'challenge') {
                     $tx->update(['fraud_status' => 'challenge']);
                     $event->update([
@@ -395,7 +588,38 @@ class PaymentWebhookController extends Controller
                     ];
                 }
 
-                if (in_array($paymentStatus, ['settlement', 'capture', 'paid'], true)) {
+                if ($fraudStatus === 'deny') {
+                    $this->handleFailure($order, $tx, $event, 'deny');
+
+                    try {
+                        app(\App\Services\AdminAlertService::class)->alert(
+                            'payment.failed',
+                            [
+                                'title' => "Pembayaran Ditolak Fraud (DENY) Order #{$order->id}",
+                                'order_id' => $order->id,
+                                'details' => [
+                                    'Order' => "#{$order->id}",
+                                    'Status Gateway' => strtoupper($paymentStatus) . ' / DENY',
+                                    'Nominal' => 'Rp ' . number_format((float) $order->amount, 0, ',', '.'),
+                                ],
+                                'action_url' => url('/admin/webhooks?status=failed'),
+                            ],
+                            dedupeKey: 'wh-deny-' . $order->id,
+                            cooldownSeconds: 3600
+                        );
+                    } catch (\Throwable) {
+                        // ignore
+                    }
+
+                    return [
+                        'status' => 'cancelled',
+                        'message' => 'Payment denied by fraud detection.',
+                        'order_status' => 'cancelled',
+                    ];
+                }
+
+                $isCaptureAccepted = $paymentStatus !== 'capture' || $fraudStatus === '' || $fraudStatus === 'accept';
+                if (in_array($paymentStatus, ['settlement', 'capture', 'paid'], true) && $isCaptureAccepted) {
                     $this->handleSettlement($order, $tx, $event, $validated);
                     $needsNotification = true;
 

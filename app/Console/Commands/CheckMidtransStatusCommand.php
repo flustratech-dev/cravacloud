@@ -9,7 +9,7 @@ use Illuminate\Console\Command;
 
 class CheckMidtransStatusCommand extends Command
 {
-    protected $signature = 'midtrans:check-status {order_id? : ID pesanan spesifik yang ingin dicek}';
+    protected $signature = 'midtrans:check-status {order_id? : ID pesanan spesifik yang ingin dicek} {--hours=48 : Batas umur order pending (jam) saat cek massal; 0 untuk semua}';
 
     protected $description = 'Cek status transaksi ke Core API Midtrans dan sinkronkan pesanan lunas secara real-time';
 
@@ -29,6 +29,11 @@ class CheckMidtransStatusCommand extends Command
         } else {
             $query->whereNull('paid_at')
                 ->where('status', 'pending');
+
+            $hours = max(0, (int) $this->option('hours'));
+            if ($hours > 0) {
+                $query->where('created_at', '>=', now()->subHours($hours));
+            }
         }
 
         $orders = $query->get();

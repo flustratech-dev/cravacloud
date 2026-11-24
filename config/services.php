@@ -40,6 +40,7 @@ return [
         'client_key' => env('MIDTRANS_CLIENT_KEY'),
         'merchant_id' => env('MIDTRANS_MERCHANT_ID'),
         'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
+        'verify_webhook_via_api' => (bool) env('MIDTRANS_VERIFY_WEBHOOK_VIA_API', true),
     ],
 
     // Provisioning provider config (Poin 4).

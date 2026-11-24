@@ -11,7 +11,9 @@ use App\Models\VpsSpec;
 use App\Support\KatalogDokumentasi;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Factory as HttpClientFactory;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
@@ -391,6 +393,19 @@ class ExampleTest extends TestCase
         $statusCode = '200';
         $grossAmount = '80000.00';
         $signature = hash('sha512', $orderId.$statusCode.$grossAmount.$serverKey);
+
+        Http::swap(new HttpClientFactory());
+        Http::fake([
+            '*/v2/*/status' => Http::response([
+                'status_code' => '200',
+                'order_id' => $orderId,
+                'gross_amount' => $grossAmount,
+                'transaction_status' => 'settlement',
+                'fraud_status' => 'accept',
+                'payment_type' => 'bank_transfer',
+                'transaction_id' => 'TXN-9999',
+            ], 200),
+        ]);
 
         $response = $this->postJson('/api/webhooks/payment', [
             'order_id' => $orderId,

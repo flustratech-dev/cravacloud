@@ -9,10 +9,13 @@ use App\Models\PaymentTransaction;
 use App\Models\User;
 use App\Models\VpsSpec;
 use App\Models\WebhookEvent;
+use Carbon\Carbon;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Factory as HttpClientFactory;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -100,6 +103,25 @@ class PaymentGatewayAndWebhookLogTest extends TestCase
             ?? hash('sha512', $payload['order_id'] . $payload['status_code'] . $payload['gross_amount'] . $serverKey);
 
         return $payload;
+    }
+
+    /**
+     * Palsukan respons Core API GET /v2/{order_id}/status sesuai payload uji.
+     */
+    protected function fakeMidtransStatus(array $payload, array $overrides = [], int $httpStatus = 200): void
+    {
+        Http::swap(new HttpClientFactory());
+        Http::fake([
+            '*/v2/*/status' => Http::response(array_merge([
+                'status_code' => (string) ($payload['status_code'] ?? '200'),
+                'order_id' => $payload['order_id'] ?? '',
+                'gross_amount' => $payload['gross_amount'] ?? '0.00',
+                'transaction_status' => $payload['transaction_status'] ?? 'settlement',
+                'transaction_id' => $payload['transaction_id'] ?? 'tx-fake',
+                'payment_type' => $payload['payment_type'] ?? 'qris',
+                'fraud_status' => $payload['fraud_status'] ?? 'accept',
+            ], $overrides), $httpStatus),
+        ]);
     }
 
     // ======================= Registry & checkout =======================
@@ -274,6 +296,7 @@ class PaymentGatewayAndWebhookLogTest extends TestCase
 
         $order = $this->pendingOrder($this->customer(), 110000);
         $payload = $this->midtransPayload($order, 'mid_reg_key_001', [], 'kunci-dari-panel-777');
+        $this->fakeMidtransStatus($payload);
 
         $this->postJson(route('api.webhooks.payment'), $payload)
             ->assertStatus(200)
@@ -286,6 +309,7 @@ class PaymentGatewayAndWebhookLogTest extends TestCase
     {
         $order = $this->pendingOrder($this->customer(), 110000);
         $payload = $this->midtransPayload($order, 'mid_log_ok_001');
+        $this->fakeMidtransStatus($payload);
 
         $this->postJson(route('api.webhooks.payment'), $payload)->assertStatus(200);
 
@@ -302,6 +326,7 @@ class PaymentGatewayAndWebhookLogTest extends TestCase
         $order = $this->pendingOrder($this->customer(), 110000);
         // Nominal webhook mismatch -> ditolak 422, tapi tetap tercatat untuk forensik & replay.
         $payload = $this->midtransPayload($order, 'mid_log_fail_001', ['gross_amount' => '50000.00']);
+        $this->fakeMidtransStatus($payload);
 
         $this->postJson(route('api.webhooks.payment'), $payload)->assertStatus(422);
 
@@ -318,6 +343,7 @@ class PaymentGatewayAndWebhookLogTest extends TestCase
     {
         $order = $this->pendingOrder($this->customer(), 110000);
         $payload = $this->midtransPayload($order, 'mid_log_ign_001', ['fraud_status' => 'challenge']);
+        $this->fakeMidtransStatus($payload);
 
         $this->postJson(route('api.webhooks.payment'), $payload)
             ->assertStatus(200)
@@ -342,6 +368,7 @@ class PaymentGatewayAndWebhookLogTest extends TestCase
     {
         $order = $this->pendingOrder($this->customer(), 110000);
         $payload = $this->midtransPayload($order, 'mid_log_view_001');
+        $this->fakeMidtransStatus($payload);
         $this->postJson(route('api.webhooks.payment'), $payload);
 
         $this->actingAs($this->admin())->get('/admin/webhooks')
@@ -355,6 +382,7 @@ class PaymentGatewayAndWebhookLogTest extends TestCase
     {
         $order = $this->pendingOrder($this->customer(), 110000);
         $payload = $this->midtransPayload($order, 'mid_replay_001');
+        $this->fakeMidtransStatus($payload);
 
         $event = WebhookEvent::create([
             'provider' => 'midtrans',
@@ -385,6 +413,7 @@ class PaymentGatewayAndWebhookLogTest extends TestCase
     {
         $order = $this->pendingOrder($this->customer(), 110000);
         $payload = $this->midtransPayload($order, 'mid_replay_dup_001');
+        $this->fakeMidtransStatus($payload);
 
         $event = WebhookEvent::create([
             'provider' => 'midtrans',
@@ -407,6 +436,7 @@ class PaymentGatewayAndWebhookLogTest extends TestCase
     {
         $order = $this->pendingOrder($this->customer(), 110000);
         $payload = $this->midtransPayload($order, 'mid_replay_settled_001');
+        $this->fakeMidtransStatus($payload);
 
         $this->postJson(route('api.webhooks.payment'), $payload)->assertStatus(200);
 
@@ -453,5 +483,96 @@ class PaymentGatewayAndWebhookLogTest extends TestCase
         $this->actingAs($customer)->get('/admin/payment-gateways')->assertStatus(403);
         $this->actingAs($customer)->get('/admin/webhooks')->assertStatus(403);
         $this->actingAs($customer)->post("/admin/webhooks/{$event->id}/replay")->assertStatus(403);
+    }
+
+    // ======================= Tes Koneksi & Rekonsiliasi =======================
+
+    public function test_admin_can_test_midtrans_connection_success_and_auth_failure(): void
+    {
+        $gateway = PaymentGateway::where('code', 'midtrans')->firstOrFail();
+
+        // 404 pada order fiktif menandakan Server Key diterima Midtrans
+        Http::swap(new HttpClientFactory());
+        Http::fake([
+            '*/v2/*/status' => Http::response([
+                'status_code' => '404',
+                'status_message' => "Transaction doesn't exist.",
+            ], 200),
+        ]);
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.gateways.test', $gateway->id))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        // 401 menandakan Server Key ditolak
+        Http::swap(new HttpClientFactory());
+        Http::fake([
+            '*/v2/*/status' => Http::response([
+                'status_code' => '401',
+                'status_message' => 'Access denied due to unauthorized transaction',
+            ], 401),
+        ]);
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.gateways.test', $gateway->id))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->actingAs($this->customer())
+            ->post(route('admin.gateways.test', $gateway->id))
+            ->assertStatus(403);
+    }
+
+    public function test_admin_can_export_midtrans_reconciliation_csv(): void
+    {
+        $customer = $this->customer();
+        $customer->update(['full_name' => '=CMD|calc']);
+        $orderNov = $this->pendingOrder($customer, 150000);
+        $orderNov->update(['status' => 'paid', 'paid_at' => Carbon::create(2026, 11, 15, 10, 0, 0, 'Asia/Jakarta')->utc()]);
+
+        PaymentTransaction::create([
+            'order_id' => $orderNov->id,
+            'provider' => 'midtrans',
+            'provider_transaction_id' => 'MID-NOV-001',
+            'provider_order_ref' => "CRV-{$orderNov->id}-170000",
+            'payment_method' => 'qris',
+            'amount' => 150000,
+            'currency' => 'IDR',
+            'status' => 'settled',
+            'settled_at' => Carbon::create(2026, 11, 15, 10, 0, 0, 'Asia/Jakarta')->utc(),
+        ]);
+
+        // Bulan lain: tidak boleh ikut bulan 2026-11
+        $orderOct = $this->pendingOrder($customer, 99000);
+        PaymentTransaction::create([
+            'order_id' => $orderOct->id,
+            'provider' => 'midtrans',
+            'provider_transaction_id' => 'MID-OCT-999',
+            'provider_order_ref' => "CRV-{$orderOct->id}-169000",
+            'payment_method' => 'qris',
+            'amount' => 99000,
+            'currency' => 'IDR',
+            'status' => 'settled',
+            'settled_at' => Carbon::create(2026, 10, 15, 10, 0, 0, 'Asia/Jakarta')->utc(),
+        ]);
+
+        $response = $this->actingAs($this->admin())
+            ->get(route('admin.gateways.reconcile', ['month' => '2026-11']));
+
+        $response->assertStatus(200);
+        $this->assertStringContainsString('text/csv', (string) $response->headers->get('Content-Type'));
+
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString("CRV-{$orderNov->id}-170000", $csv);
+        $this->assertStringContainsString("'=CMD|calc", $csv);
+        $this->assertStringContainsString('TOTAL', $csv);
+        $this->assertStringContainsString('1 transaksi', $csv);
+        $this->assertStringContainsString('150000.00', $csv);
+        $this->assertStringNotContainsString('MID-OCT-999', $csv);
+
+        $this->actingAs($customer)
+            ->get(route('admin.gateways.reconcile', ['month' => '2026-11']))
+            ->assertStatus(403);
     }
 }

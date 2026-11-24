@@ -163,3 +163,15 @@ Schedule::command('tickets:check-sla')
     ->withoutOverlapping()
     ->onOneServer()
     ->description('Cek tiket support yang melewati SLA respons admin & kirim alert WA+email.');
+
+// ============================================================
+// Midtrans Safety Net — Polling order pending (tiap 5 menit)
+// ============================================================
+// Jaring pengaman bila webhook X-Override-Notification terlambat atau
+// gagal terkirim pada akun Midtrans bersama.
+Schedule::command('midtrans:check-status')
+    ->everyFiveMinutes()
+    ->timezone('Asia/Jakarta')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->description('Sinkronisasi otomatis order pending Midtrans ke Core API sebagai fallback webhook.');

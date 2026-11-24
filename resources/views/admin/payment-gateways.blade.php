@@ -152,16 +152,46 @@
                                 @endif
                             </td>
                             <td class="px-5 py-3.5 text-right">
-                                <button type="button" @click="editId = {{ $gateway->id }}; editName = @js($gateway->name); editModalOpen = true"
-                                        class="px-3 py-1 font-mono text-[10px] font-bold uppercase bg-white hover:border-ink text-ink border border-hairline cursor-pointer">
-                                    Atur
-                                </button>
+                                <div class="inline-flex items-center justify-end gap-1.5">
+                                    @if($gateway->code === 'midtrans')
+                                        <form action="{{ route('admin.gateways.test', $gateway->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="px-3 py-1 font-mono text-[10px] font-bold uppercase bg-white hover:border-electric hover:text-electric text-ink border border-hairline cursor-pointer">
+                                                Tes Koneksi
+                                            </button>
+                                        </form>
+                                    @endif
+                                    <button type="button" @click="editId = {{ $gateway->id }}; editName = @js($gateway->name); editModalOpen = true"
+                                            class="px-3 py-1 font-mono text-[10px] font-bold uppercase bg-white hover:border-ink text-ink border border-hairline cursor-pointer">
+                                        Atur
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <!-- Rekonsiliasi Bulanan Midtrans Bersama -->
+    <div class="bg-white p-5 border border-hairline flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="space-y-1">
+            <h3 class="font-display font-bold text-ink text-sm">Rekonsiliasi Bulanan Midtrans (Prefix <code class="font-mono bg-creamDark px-1">CRV-</code>)</h3>
+            <p class="text-xs text-muted leading-relaxed">
+                Unduh seluruh transaksi Midtrans yang berstatus <strong>settled</strong> di CravaCloud untuk dipisahkan dari transaksi Pesanvo (<code class="font-mono bg-creamDark px-1">PSV-</code>) pada laporan Payout Dashboard Midtrans.
+            </p>
+        </div>
+        <form action="{{ route('admin.gateways.reconcile') }}" method="GET" class="flex items-center gap-2 shrink-0">
+            <input type="month" name="month" value="{{ now('Asia/Jakarta')->format('Y-m') }}"
+                   aria-label="Bulan rekonsiliasi"
+                   class="px-3 py-1.5 border border-hairline text-xs font-mono text-ink bg-white focus:outline-none focus:border-electric">
+            <button type="submit"
+                    class="px-4 py-1.5 bg-electric hover:bg-electricHover text-white font-mono text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                Unduh CSV
+            </button>
+        </form>
     </div>
 
     <!-- Modal Atur Gateway -->
